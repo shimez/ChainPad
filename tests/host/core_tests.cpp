@@ -122,14 +122,21 @@ void midiTests() {
   fake::connected[0] = false; settle();
   assert(midiDispatch(a) == SendResult::Unavailable);
   fake::midi.clear(); fake::connected[0] = true; ++fake::epoch[0]; settle();
-  assert(fake::midi.size() == 48 && fake::midi.back().status == 0xbf && fake::midi.back().a == 123);
-  // Overflow must replace a potentially lost Note Off with an all-channel reset.
+  assert(fake::midi.empty());
+  // Overflow drops the backlog without synthesizing MIDI messages.
   fake::writable = false;
   for (int i = 0; i < 64; ++i) assert(midiDispatch(a) == SendResult::Accepted);
   assert(midiDispatch(a) == SendResult::Failed);
   fake::midi.clear(); fake::writable = true; settle();
-  assert(fake::midi.size() == 48);
-  std::cout << "PASS MIDI ordered retry / reconnect reset / overflow panic\n";
+  assert(fake::midi.empty());
+  fake::writable = false;
+  assert(midiDispatch(a) == SendResult::Accepted);
+  midiPanic(); fake::writable = true; settle();
+  assert(fake::midi.empty());
+  a.message = MidiMessage::CC; a.number = 123; a.value = 0;
+  assert(midiDispatch(a) == SendResult::Accepted);
+  assert(fake::midi.size() == 1 && fake::midi[0].status == 0xb0 && fake::midi[0].a == 123);
+  std::cout << "PASS MIDI ordered retry / silent reconnect, overflow and cancellation / explicit CC\n";
 }
 void keyboardTests() {
   reset();

@@ -41,7 +41,7 @@ Phase 1では設定は28個のChainを持ち、各Chainに最大8 Actions。ハ�
 
 Configの適用、Action実行、Backend状態更新はloop task内で直列化されています。GPIOスキャナはConfigを参照しません。したがって保存中に半分更新されたChainを実行しません。
 
-HTTP処理中もスキャンは継続しますが、dispatchはHTTP処理後になります。入力がキュー容量を超えたらカウンタを増やして全出力Panicを行い、欠落Releaseによる押しっぱなしを回復します。
+HTTP処理中もスキャンは継続しますが、dispatchはHTTP処理後になります。入力がキュー容量を超えたらカウンタを増やし、実行中止・入力出力キュー破棄・HID解除を行います。MIDIメッセージは生成しません。
 
 ## Backend
 
@@ -54,7 +54,7 @@ S3ではUSB CDCの自動起動を無効化し、明示的にCDCを作成して�
 
 BLE advertisingは31-byte制限内で両Service UUID・Appearance・Flagsを格納し、名前はscan responseへ分離します。MIDI/HIDそれぞれのonSubscribeとdisconnectでgenerationを更新し、loopが切断状態を観測できないほど短い再購読でもローカル状態をリセットします。
 
-Panicまたは再接続時、MIDIは全チャンネルのSustain Off/All Sound Off/All Notes Off、HIDは空report。未送信の過去イベントは破棄します。これは状態初期化であり、送信結果の端末間ackではありません。
+実行中止または再接続時、未送信の過去イベントを破棄し、HIDは空reportを送ります。MIDIは保存・実行中止・接続・キューoverflowのいずれでも自動メッセージを生成しません。明示的に設定されたCC Actionは通常どおり送信します。HID送信は端末間ackではありません。
 
 ## Config schemaVersion 1
 
@@ -126,7 +126,7 @@ S3/C5はapplication 6MiB＋LittleFS 1856KiB（0x630000）、C3/C6はapplication 
 | POST | `/api/config/commit?token=…` | 全件再検証→LittleFS rename→適用→Panic。Wi-Fi変更は再起動で反映 |
 | GET | `/api/status` | 接続、静的ハードウェア情報、実行/失敗/overflow/retry、最終Action |
 | POST | `/api/trigger` | `{"input":0}`：保存済みChainを実行 |
-| POST | `/api/panic` | MIDI/HID状態リセット、入力キュー破棄 |
+| POST | `/api/panic` | 実行中止・入力出力キュー破棄・HID解除（MIDI送信なし） |
 | POST | `/api/restart` | Panic後に再起動 |
 
 Action結果 `accepted/unavailable/busy/failed` は直近1件と累積カウンタです。USB/BLEの接続表示はmounted/subscribed状態であり、相手アプリが受信していることまでは示しません。

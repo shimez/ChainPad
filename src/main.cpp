@@ -103,7 +103,7 @@ void setupWeb() {
   web.on("/api/status", HTTP_GET, [] {
     JsonDocument doc;
     auto s = backendStatus();
-    doc["name"] = "ChainPad"; doc["version"] = "0.4.0-chimera";
+    doc["name"] = "ChainPad"; doc["version"] = "0.4.1-chimera";
     doc["hardware"] = HARDWARE_NAME;
     doc["usbMidiSupported"] = HAS_USB_MIDI; doc["usbKeyboardSupported"] = HAS_USB_KEYBOARD;
     doc["keyCount"] = 12; doc["encoder"] = true; doc["encoderPush"] = true; doc["led"] = true;
@@ -136,7 +136,7 @@ void setupWeb() {
     lastActivity = millis();
     result(200, "Saved chain dispatched; see status for transport results.");
   });
-  web.on("/api/panic", HTTP_POST, [] { panic(); result(200, "All outputs reset; queued input events discarded."); });
+  web.on("/api/panic", HTTP_POST, [] { panic(); result(200, "実行中のChainと未処理の入力・出力を破棄し、HID解除を要求しました。MIDIメッセージは送信しません。"); });
   web.on("/api/restart", HTTP_POST, [] { panic(); restartAt = millis() + 750; result(200, "Restarting"); });
   // Android /generate_204, Apple /hotspot-detect.html, Windows
   // /connecttest.txt (and other HTTP probes) all land on the same portal.
@@ -178,7 +178,7 @@ void loop() {
   backendsTick(now);
   uint32_t overflows = inputOverflows();
   if (overflows != observedOverflows) {
-    observedOverflows = overflows; panic(); // A dropped release cannot strand notes/keys.
+    observedOverflows = overflows; panic(); // Cancel pending work and release HID; no generated MIDI.
   }
   if (!restartAt) {
     engine.tick(now);

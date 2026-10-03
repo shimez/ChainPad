@@ -86,9 +86,9 @@ ReceiverのDirect BLE-MIDIで接続し、ConfiguratorでBLE MIDIとBLE HIDが両
 
 - BLE切断中もOSC/USBが動作する。未接続ActionだけSkippedになる。
 - BLE再接続後、過去のNote On/KeyDownを再生しない。新しい押下が動作する。
-- USB MIDIポートの開閉、USB再接続後に古いNote/Keyが残らない。
-- キー押下中にPanicし、MIDI/HIDが解放される。
-- キー押下中に設定を変更して保存し、旧設定のNote/Keyが残らない。
+- USB MIDIポートの開閉、USB再接続後に過去のキューを再送せず、自動CCも送らない。HIDは空レポートで解除する。
+- キー押下中に「実行中止・HID解除」を押し、HIDが解放される。MIDIの追加メッセージは発生しないこと。
+- キー押下中に設定を変更して保存し、待機・キューが中止され、HIDが解除される。MIDIの自動CC/Note Offは発生しない。
 - Wi-Fi不達でもSetup APとUSB/BLEが利用できる。
 - 設定を変更・保存して電源を入れ直し、Press/Release両Chainが残る。
 - 多数のAction（合計JSON >4 KiB）を保存し再起動して読み戻せる。

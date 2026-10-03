@@ -10,7 +10,7 @@
 ## 実機確認手順（未実施）
 
 1. PressにNote On → Wait 1000 → Note Offを設定。待機中に別キーを操作し、即時出力を確認する。
-2. PressをWait 1000 → Note On、ReleaseをNote Offとし、短く押す。Note Offが先に届くことを確認する。終了後Panicで解除する。
+2. PressをWait 1000 → Note On、ReleaseをNote Offとし、短く押す。Note Offが先に届くことを確認する。終了後はテスト用Note Offを送信する。
 3. 同じキーをWait中に複数回押し、それぞれのChainが独立して完了することを確認する。
 4. 長いWait中に保存・Panic・Restartを行い、待機後のActionが出力されないことを確認する。
 5. Key PresetをExportし別キーへファイルImport。Press/Release、WaitとAction順が保存・再起動後も一致することを確認する。
