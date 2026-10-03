@@ -64,6 +64,10 @@ pio device monitor --port COM番号 --baud 115200
 
 ## 最初のAction Chain
 
+ブラウザから書き込む場合は **[Web Installer](https://shimez.github.io/ChainPad/)** をPC版Chrome / Edgeで開いてください。S3/C3/C6/C5を自動判別します。
+
+Web Installerは `site/index.html`、公開用manifest・結合Firmwareは `scripts/build_site.py` で生成します。GitHub Actionsの `.github/workflows/pages.yml` がmainのFirmware/UI変更時に4機種をビルド・検査し、GitHub Pagesへまとめて配信します。公開画面にソースのコミットID、ダウンロード欄にSHA256付きビルド情報を表示します。
+
 1. 起動後、Wi-Fi **`ChainPad-Setup`** に接続します。Password: **`chimera-pad`**。
 2. OSの「ネットワークにログイン」通知／自動表示されたWi-Fi専用画面でSSID / Passwordを入力し、**保存して再起動** を押します。自動表示されない場合は **http://192.168.4.1/** を開いてください（HTTPSではなくHTTP）。
 3. 同じWi-Fiに接続し、**http://chainpad.local/** または本体のSTA IPを開きます。上部の常時表示される「OSC送信先」にReceiver PCのIPv4 / Port（既定9000）を入力します。Wi-Fi設定は画面下部の独立した折りたたみ欄にあります。APから通常の設定画面を開く場合は **http://192.168.4.1/configurator** を使用できます。
