@@ -40,7 +40,7 @@ void jsonResponse(int status, JsonDocument& doc) {
 void result(int status, const String& message) {
   JsonDocument doc; doc["ok"] = status < 400; doc["message"] = message; jsonResponse(status, doc);
 }
-void panic() { backendsPanic(); discardInputs(); }
+void panic() { engine.cancelAll(); backendsPanic(); discardInputs(); }
 void setupWeb() {
   web.on("/", HTTP_GET, [] {
     if (apRequest() && (!web.hasArg("setup") || web.hostHeader() != WiFi.softAPIP().toString())) {
@@ -103,7 +103,7 @@ void setupWeb() {
   web.on("/api/status", HTTP_GET, [] {
     JsonDocument doc;
     auto s = backendStatus();
-    doc["name"] = "ChainPad"; doc["version"] = "0.3.0-chimera";
+    doc["name"] = "ChainPad"; doc["version"] = "0.4.0-chimera";
     doc["hardware"] = HARDWARE_NAME;
     doc["usbMidiSupported"] = HAS_USB_MIDI; doc["usbKeyboardSupported"] = HAS_USB_KEYBOARD;
     doc["keyCount"] = 12; doc["encoder"] = true; doc["encoderPush"] = true; doc["led"] = true;
@@ -113,6 +113,8 @@ void setupWeb() {
     doc["bleMidi"] = s.bleMidi; doc["bleKeyboard"] = s.bleKeyboard;
     doc["events"] = engine.stats.events; doc["accepted"] = engine.stats.accepted;
     doc["skipped"] = engine.stats.skipped;
+    doc["runningChains"] = engine.activeCount(); doc["rejectedChains"] = engine.stats.rejectedChains;
+    doc["cancelledChains"] = engine.stats.cancelledChains;
     doc["lastInput"] = inputName(engine.stats.lastInput);
     doc["lastAction"] = engine.stats.lastAction + 1;
     const char* results[] = {"accepted", "unavailable", "busy", "failed"};
@@ -130,7 +132,8 @@ void setupWeb() {
     if (deserializeJson(doc, web.arg("plain")) || !doc["input"].is<unsigned>() || doc["input"].as<unsigned>() >= INPUT_COUNT) {
       result(400, "input must be 0..27"); return;
     }
-    engine.trigger({doc["input"].as<uint8_t>(), millis()}); lastActivity = millis();
+    if (!engine.trigger({doc["input"].as<uint8_t>(), millis()})) { result(409, "Wait scheduler full (32 running chains)"); return; }
+    lastActivity = millis();
     result(200, "Saved chain dispatched; see status for transport results.");
   });
   web.on("/api/panic", HTTP_POST, [] { panic(); result(200, "All outputs reset; queued input events discarded."); });
@@ -164,7 +167,7 @@ void setup() {
   MDNS.begin("chainpad"); MDNS.addService("http", "tcp", 80);
   setupWeb();
   inputReady = inputsBegin();
-  console.println("ChainPad / Project Chimera Phase 1"); console.println(bootMessage);
+   console.println("ChainPad / Project Chimera Phase 2"); console.println(bootMessage);
   console.println("Setup: ChainPad-Setup / http://192.168.4.1");
 }
 void loop() {
@@ -178,6 +181,7 @@ void loop() {
     observedOverflows = overflows; panic(); // A dropped release cannot strand notes/keys.
   }
   if (!restartAt) {
+    engine.tick(now);
     InputEvent event;
     for (unsigned budget = 0; budget < 16 && nextInput(event); ++budget) {
       engine.trigger(event); lastActivity = now;

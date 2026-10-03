@@ -282,7 +282,53 @@ void settingsScaleTests() {
   assert(config.chains[27].count == MAX_ACTIONS && config.chains[27].actions[7].stringValue[63] == 1);
   std::cout << "PASS maximum 224 long OSC Actions / >48KB snapshot / bounded save-load / Wi-Fi preservation\n";
 }
+void waitTests() {
+  reset(); Engine scheduler;
+  Config source;
+  Action wait; wait.protocol=Protocol::Wait; wait.delayMs=100;
+  Action note; note.protocol=Protocol::Midi; note.transport=Transport::Usb;
+  auto& press=source.chains[0]; press.count=3;
+  press.actions[0]=note; press.actions[1]=wait; press.actions[2]=note; press.actions[2].number=50;
+  source.chains[1].count=1; source.chains[1].actions[0]=note;
+  source.chains[1].actions[0].message=MidiMessage::NoteOff;
+  source.chains[1].actions[0].value=0;
+  source.chains[2].count=1; source.chains[2].actions[0]=note; source.chains[2].actions[0].number=60;
+  String error; assert(saveSource(source,error)); assert(loadConfig(error));
+  assert(config.chains[0].actions[1].protocol==Protocol::Wait && config.chains[0].actions[1].delayMs==100);
+  JsonDocument doc; encodeChain(config.chains[0],0,doc); Chain decoded;
+  assert(!doc["actions"][1].containsKey("transport"));
+  for (int bad : {-1,86400001}) { doc["actions"][1]["delayMs"]=bad; assert(!decodeChain(doc.as<JsonVariantConst>(),0,decoded,error)); }
+  doc["actions"][1]["delayMs"]=1.5; assert(!decodeChain(doc.as<JsonVariantConst>(),0,decoded,error));
+  hostMillis=1000; assert(scheduler.trigger({0,0}));
+  assert(scheduler.activeCount()==1 && fake::midi.size()==1);
+  hostMillis=1010; assert(scheduler.trigger({1,0})); assert(scheduler.trigger({2,0})); assert(scheduler.trigger({0,0}));
+  assert(fake::midi.size()==4 && fake::midi[1].status==0x80 && fake::midi[2].a==60);
+  scheduler.tick(1099); assert(fake::midi.size()==4);
+  scheduler.tick(1100); assert(fake::midi.size()==5 && fake::midi.back().a==50 && scheduler.activeCount()==1);
+  scheduler.tick(1110); assert(fake::midi.size()==6 && scheduler.activeCount()==0);
+  // Consecutive Waits measure from each Action's actual execution time.
+  config.chains[0].actions[0]=wait; config.chains[0].actions[1]=wait;
+  hostMillis=2000; scheduler.trigger({0,0}); scheduler.tick(2150);
+  auto count=fake::midi.size(); scheduler.tick(2249); assert(fake::midi.size()==count);
+  scheduler.tick(2250); assert(fake::midi.size()==count+1);
+  // millis wrap-around and zero-duration Wait.
+  config.chains[0].actions[0].delayMs=0;
+  hostMillis=0xfffffff0u; scheduler.trigger({0,0});
+  count=fake::midi.size(); scheduler.tick(83); assert(fake::midi.size()==count);
+  scheduler.tick(84); assert(fake::midi.size()==count+1);
+  // A full wait pool must not block an immediate Release or partially run a rejected Chain.
+  config.chains[0]=press; // source's Note On -> Wait -> Note On
+  hostMillis=3000;
+  for (unsigned i=0;i<Engine::MAX_RUNNING;++i) assert(scheduler.trigger({0,0}));
+  count=fake::midi.size(); assert(!scheduler.trigger({0,0}));
+  assert(fake::midi.size()==count && scheduler.stats.rejectedChains==1);
+  assert(scheduler.trigger({1,0}) && fake::midi.back().status==0x80);
+  scheduler.cancelAll(); count=fake::midi.size(); scheduler.tick(4000);
+  assert(fake::midi.size()==count && scheduler.activeCount()==0 && scheduler.stats.cancelledChains==32);
+  hostMillis=1234;
+  std::cout << "PASS Wait independent Press/Release/retrigger / consecutive and zero Wait / wrap / overload / cancellation / persistence\n";
+}
 int main() {
-  configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests();
+  configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests();
   std::cout << "All firmware host tests passed.\n";
 }

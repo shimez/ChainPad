@@ -11,6 +11,7 @@ SendResult dispatch(const Action& a, uint32_t) {
     case Protocol::Osc: return oscDispatch(a);
     case Protocol::Midi: return midiDispatch(a);
     case Protocol::Keyboard: return keyboardDispatch(a);
+    case Protocol::Wait: return SendResult::Failed; // Owned by the Chain scheduler.
   }
   return SendResult::Failed;
 }

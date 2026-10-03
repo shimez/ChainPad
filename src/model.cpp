@@ -21,9 +21,14 @@ bool integer(JsonVariantConst v, int64_t low, int64_t high) {
   return v.is<int64_t>() && v.as<int64_t>() >= low && v.as<int64_t>() <= high;
 }
 bool parseAction(JsonVariantConst j, Action& a) {
-  if (!j.is<JsonObjectConst>() || !integer(j["delayMs"], 0, 0)) return false;
-  a.delayMs = j["delayMs"];
+  if (!j.is<JsonObjectConst>()) return false;
   String p = j["protocol"] | "";
+  if (p == "wait") {
+    if (!integer(j["delayMs"], 0, MAX_WAIT_MS)) return false;
+    a.protocol = Protocol::Wait; a.delayMs = j["delayMs"]; return true;
+  }
+  if (!integer(j["delayMs"], 0, 0)) return false;
+  a.delayMs = 0;
   String t = j["transport"] | "";
   if (p == "midi" && j["transport"].isUnbound()) t = "both";
   if (p == "osc") {
@@ -117,6 +122,7 @@ void encodeCapabilities(JsonDocument& doc) {
   doc["usbMidi"] = HAS_USB_MIDI;
   doc["usbKeyboard"] = HAS_USB_KEYBOARD;
   doc["defaultMidiTransport"] = HAS_USB_MIDI ? "both" : "ble";
+  doc["maxWaitMs"] = MAX_WAIT_MS;
   auto midi = doc["midiTransports"].to<JsonArray>();
   if (HAS_USB_MIDI) { midi.add("both"); midi.add("usb"); }
   midi.add("ble");
@@ -143,6 +149,7 @@ void encodeChain(const Chain& source, uint8_t id, JsonDocument& doc) {
     for (uint8_t k = 0; k < source.count; ++k) {
       const auto& a = source.actions[k]; auto j = actions.add<JsonObject>();
       j["delayMs"] = a.delayMs;
+      if (a.protocol == Protocol::Wait) { j["protocol"] = "wait"; continue; }
       j["transport"] = a.transport == Transport::Wifi ? "wifi" : a.transport == Transport::Usb ? "usb" : a.transport == Transport::Ble ? "ble" : "both";
       if (a.protocol == Protocol::Osc) {
         j["protocol"] = "osc"; j["address"] = a.address;

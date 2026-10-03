@@ -7,13 +7,14 @@ namespace chimera {
 constexpr uint8_t INPUT_COUNT = 28;
 constexpr uint8_t MAX_ACTIONS = 8;
 constexpr size_t MAX_RECORD_BYTES = 16384;
-enum class Protocol : uint8_t { Osc, Midi, Keyboard };
+constexpr uint32_t MAX_WAIT_MS = 86400000; // 24 hours; safely below half the millis() range.
+enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait };
 enum class Transport : uint8_t { Wifi, Usb, Ble, Both };
 enum class OscType : uint8_t { Int, Float, Bool, String };
 enum class MidiMessage : uint8_t { NoteOn, NoteOff, CC };
 enum class KeyMessage : uint8_t { Down, Up, ReleaseAll };
 
-// Reserved for a later scheduler. Phase 1 accepts only zero delay.
+// delayMs is the duration of an explicit Wait Action; other Actions use zero.
 struct Action {
   Protocol protocol = Protocol::Osc;
   Transport transport = Transport::Wifi;

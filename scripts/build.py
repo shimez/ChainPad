@@ -7,6 +7,8 @@ root = Path(env.subst("$PROJECT_DIR"))
 asset = '#pragma once\n#include <Arduino.h>\n'
 for filename, symbol in (("index.html", "WEB_UI"), ("wifi.html", "WIFI_UI")):
     html = (root / "web" / filename).read_text(encoding="utf-8")
+    if filename == "index.html":
+        html = html.replace('<script src="presets.js"></script>', '<script>\n' + (root / "web/presets.js").read_text(encoding="utf-8") + '\n</script>')
     asset += f'inline const char {symbol}[] PROGMEM = R"CHIMERA(' + html + ')CHIMERA";\n'
 target = root / "src/web_assets.h"
 if not target.exists() or target.read_text(encoding="utf-8") != asset:

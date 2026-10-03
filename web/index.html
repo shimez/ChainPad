@@ -16,7 +16,7 @@ header,main{max-width:1280px;padding-left:16px;padding-right:16px}
 <script>
 try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme==='dark')document.documentElement.dataset.theme=theme;}catch{}
 </script>
-<header><div class="header-row"><div><small>PROJECT CHIMERA · PHASE 1</small><h1>ChainPad</h1></div><label class="theme-choice">表示テーマ / Theme<select id="theme"><option value="dark">Dark</option><option value="light">Light</option></select></label></div><p class="hint">Physical Input → Input Event → Action Chain</p></header>
+<header><div class="header-row"><div><small>PROJECT CHIMERA · PHASE 2</small><h1>ChainPad</h1></div><label class="theme-choice">表示テーマ / Theme<select id="theme"><option value="dark">Dark</option><option value="light">Light</option></select></label></div><p class="hint">Physical Input → Input Event → Action Chain</p></header>
 <main>
 <section class="status panel"><div id="connections">接続中…</div><div id="stats"></div></section>
 <section class="network panel" id="oscDestination"><h2>OSC送信先</h2><div class="fields">
@@ -24,17 +24,20 @@ try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme
 <label>OSC Port<input id="oscPort" type="number" min="1" max="65535"></label>
 </div><p class="hint">全OSC Action共通の送信先です。変更後は「保存・適用」を押してください。</p></section>
 <nav class="panel"><h2>Input</h2><div id="inputs"></div></nav>
-<section><div class="panel"><h2 id="title">Action Chain</h2><label>Input Event<select id="event"></select></label><p class="hint">登録順に即時実行。PressとReleaseは別のChainです。最大8 Actions / Event。</p><div class="buttons"><button id="example">3 Protocolの設定例を配置</button><button id="trigger">保存済みEventをテスト</button></div></div><div id="actions"></div><button id="add">+ Add Action</button></section>
+<section><div class="panel"><h2 id="title">Action Chain</h2><label>Input Event<select id="event"></select></label><p class="hint">登録順に実行。WaitはこのChainだけを待機させます。Press / Releaseは独立。最大8 Actions / Event。</p><p id="waitWarning" class="danger" role="status" hidden></p><div class="buttons"><button id="example">3 Protocolの設定例を配置</button><button id="trigger">保存済みEventをテスト</button><button id="exportKey">Key Preset Export</button><button id="importKey">Key Preset Import</button></div><p class="hint">Key Presetは選択中のキーのPress / Release両方を含みます（Encoder Pushも対応）。Encoder回転は全体設定で保存できます。</p></div><div id="actions"></div><button id="add">+ Add Action</button></section>
 <div class="toolbar"><button class="primary" id="save">保存・適用</button><button id="reload">保存済み設定を読み込み</button><button class="danger" id="panic">Panic / 全出力解放</button><button id="restart">Restart</button><span id="dirty" class="hint"></span></div>
 <div id="message" role="status"></div>
+<section class="network panel"><h2>設定ファイル Import / Export</h2><div class="buttons"><button id="exportFull">全体設定 Export</button><button id="importFull">全体設定 Import</button></div><p class="hint">Exportは未保存の編集も含みます。全体設定にはWi-Fiパスワードも含まれます。Importは編集画面へ反映され、「保存・適用」で本体に保存します。</p></section>
+<input id="presetFile" type="file" accept=".json,application/json" hidden>
 <details class="network" id="network"><summary>Wi-Fi設定</summary><div class="fields">
 <label>Wi-Fi SSID<input id="ssid" maxlength="32" autocomplete="off"></label>
 <label>Wi-Fi Password<input id="password" type="password" maxlength="64" autocomplete="new-password"></label>
 </div><p class="hint">SSID / Passwordの変更後は「保存・適用」→「Restart」の順に押してください。</p><div class="buttons"><button class="primary" id="networkSave">保存・適用</button><button id="networkRestart">Restart</button></div></details>
 </main>
+<script src="presets.js"></script>
 <script>
 'use strict';
-let config, capabilities, selected=0, dirty=false, statusTimer;
+let config, capabilities, selected=0, dirty=false, statusTimer, saving=false, importTarget;
 const $=id=>document.getElementById(id);
 $('theme').value=document.documentElement.dataset.theme||'dark';
 $('theme').onchange=()=>{const theme=$('theme').value;document.documentElement.dataset.theme=theme;try{localStorage.setItem('chainpad-theme',theme);}catch{}};
@@ -43,14 +46,16 @@ const usageNames={4:'A',5:'B',6:'C',7:'D',8:'E',9:'F',10:'G',11:'H',12:'I',13:'J
 for(let i=0;i<10;i++)usageNames[30+i]=String((i+1)%10);
 for(let i=0;i<12;i++){usageNames[58+i]=`F${i+1}`;usageNames[104+i]=`F${i+13}`;}
 function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);}
-function changed(){dirty=true;$('dirty').textContent='未保存の変更あり';}
+function changed(){dirty=true;$('dirty').textContent='未保存の変更あり';waitWarning();}
+function waitWarning(){if(!config)return;const base=Math.floor(selected/2)*2;const pair=config.chains.filter(c=>c.input===base||c.input===base+1);const waits=pair.some(c=>c.actions.some(a=>a.protocol==='wait'&&a.delayMs>0));$('waitWarning').hidden=!waits;$('waitWarning').textContent=waits?'Wait中もRelease・別キー・同じキーの再入力は独立して実行されます。Releaseが先に実行され、待機後のNote On / KeyDownが後から届く場合があります。Actionの順序は自動補正されません。保存・Panic・Restartで待機中のChainは中止されます。':'';}
 async function api(path,method='GET',body){const r=await fetch('/api/'+path,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const data=await r.json();if(!r.ok)throw Error(data.message||r.statusText);return data;}
 function control(label,value,options,onchange,type='text',min,max){const wrap=document.createElement('label');wrap.textContent=label;const el=document.createElement(options?'select':'input');if(options){for(const [v,name]of options){const o=document.createElement('option');o.value=v;o.textContent=name;el.append(o);}}else{el.type=type;if(min!==undefined)el.min=min;if(max!==undefined)el.max=max;}el.value=value;el.onchange=()=>{onchange(type==='number'?Number(el.value):el.value);changed();};wrap.append(el);return wrap;}
-function defaults(protocol){if(protocol==='osc')return {protocol,transport:'wifi',delayMs:0,address:'/avatar/parameters/Costume',type:'int',value:2};if(protocol==='midi')return {protocol,transport:capabilities.defaultMidiTransport,delayMs:0,message:'noteOn',channel:1,number:48,value:127};return {protocol,transport:'ble',delayMs:0,message:'keyDown',usage:104,modifiers:0};}
+function defaults(protocol){if(protocol==='wait')return {protocol,delayMs:100};if(protocol==='osc')return {protocol,transport:'wifi',delayMs:0,address:'/avatar/parameters/Costume',type:'int',value:2};if(protocol==='midi')return {protocol,transport:capabilities.defaultMidiTransport,delayMs:0,message:'noteOn',channel:1,number:48,value:127};return {protocol,transport:'ble',delayMs:0,message:'keyDown',usage:104,modifiers:0};}
 function current(){return config.chains.find(c=>c.input===selected).actions;}
 function button(text,fn,disabled=false){const b=document.createElement('button');b.textContent=text;b.onclick=fn;b.disabled=disabled;return b;}
-function renderActions(){const list=$('actions');list.replaceChildren();const actions=current();actions.forEach((a,i)=>{const card=document.createElement('article');const head=document.createElement('div');head.className='action-head';const title=document.createElement('strong');title.textContent=`ACTION ${i+1} · ${a.protocol.toUpperCase()}`;const ops=document.createElement('div');ops.className='buttons';ops.append(button('↑',()=>{[actions[i-1],actions[i]]=[actions[i],actions[i-1]];changed();renderActions();},i===0),button('↓',()=>{[actions[i+1],actions[i]]=[actions[i],actions[i+1]];changed();renderActions();},i===actions.length-1),button('削除',()=>{actions.splice(i,1);changed();renderActions();}));head.append(title,ops);card.append(head);const fields=document.createElement('div');fields.className='fields';fields.append(control('Protocol',a.protocol,[['osc','OSC'],['midi','MIDI'],['keyboard','Keyboard HID']],v=>{actions[i]=defaults(v);renderActions();}));
-if(a.protocol!=='osc'){
+function renderActions(){waitWarning();$('exportKey').disabled=$('importKey').disabled=selected>=26;const list=$('actions');list.replaceChildren();const actions=current();actions.forEach((a,i)=>{const card=document.createElement('article');const head=document.createElement('div');head.className='action-head';const title=document.createElement('strong');title.textContent=`ACTION ${i+1} · ${a.protocol.toUpperCase()}`;const ops=document.createElement('div');ops.className='buttons';ops.append(button('↑',()=>{[actions[i-1],actions[i]]=[actions[i],actions[i-1]];changed();renderActions();},i===0),button('↓',()=>{[actions[i+1],actions[i]]=[actions[i],actions[i+1]];changed();renderActions();},i===actions.length-1),button('削除',()=>{actions.splice(i,1);changed();renderActions();}));head.append(title,ops);card.append(head);const fields=document.createElement('div');fields.className='fields';fields.append(control('Action',a.protocol,[['osc','OSC'],['midi','MIDI'],['keyboard','Keyboard HID'],['wait','Wait']],v=>{actions[i]=defaults(v);renderActions();}));
+if(a.protocol==='wait')fields.append(control('待機時間 (ms)',a.delayMs,null,v=>a.delayMs=v,'number',0,86400000));
+if(a.protocol==='midi'||a.protocol==='keyboard'){
   if(a.protocol==='midi')fields.classList.add('midi');
   const allowed=a.protocol==='midi'?capabilities.midiTransports:capabilities.keyboardTransports;
   const fixed=allowed.length===1;
@@ -66,7 +71,7 @@ if(a.protocol==='keyboard'){fields.append(control('Message',a.message,[['keyDown
 card.append(fields);if(a.protocol==='keyboard'&&a.message==='keyDown'){const mods=document.createElement('div');mods.className='modifiers';['L Ctrl','L Shift','L Alt','L GUI','R Ctrl','R Shift','R Alt','R GUI'].forEach((name,bit)=>{const label=document.createElement('label');const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!(a.modifiers&(1<<bit));cb.onchange=()=>{a.modifiers=cb.checked?a.modifiers|(1<<bit):a.modifiers&~(1<<bit);changed();};label.append(cb,document.createTextNode(name));mods.append(label);});card.append(mods);}list.append(card);});if(!actions.length){const p=document.createElement('p');p.className='hint';p.textContent='このEventにはActionがありません。';list.append(p);}$('add').disabled=actions.length>=8;}
 function selectInput(group){selected=group*2;$('title').textContent=names[group];$('event').replaceChildren();const labels=group===13?['Clockwise','Counterclockwise']:['Press','Release'];labels.forEach((name,i)=>{const o=document.createElement('option');o.value=group*2+i;o.textContent=name;$('event').append(o);});[...$('inputs').children].forEach((b,i)=>b.classList.toggle('active',i===group));renderActions();}
 async function load(){[config,capabilities]=await Promise.all([api('config'),api('capabilities')]);for(const id of ['ssid','password','oscHost','oscPort'])$(id).value=config.network[id];dirty=false;$('dirty').textContent='保存済み';selectInput(Math.floor(selected/2));message('設定を読み込みました。');}
-async function status(){try{const s=await api('status');$('connections').replaceChildren();for(const [key,label]of [['wifi','Wi-Fi'],['usbMidi','USB MIDI'],['usbKeyboard','USB HID'],['bleMidi','BLE MIDI'],['bleKeyboard','BLE HID']]){const unsupported=(key==='usbMidi'&&s.usbMidiSupported===false)||(key==='usbKeyboard'&&s.usbKeyboardSupported===false);const tag=document.createElement('span');tag.className='tag'+(!unsupported&&s[key]?' on':'');tag.textContent=`${label}: ${unsupported?'非対応':s[key]?'接続':'未接続'}`;$('connections').append(tag);}$('stats').textContent=`${s.hardware||'ChainPad'} · IP ${s.ip} / AP ${s.apIp} · Events ${s.events} · Accepted ${s.accepted} · Skipped ${s.skipped} · Last ${s.lastInput} #${s.lastAction} ${s.lastResult} · Overflow input/output ${s.inputOverflows}/${s.transportOverflows} · Retry ${s.transportRetries} · ${s.bootMessage}${s.restartRequired?' · Wi-Fi設定変更: Restart必要':''}${!s.inputsReady?' · INPUT ERROR':''}`;}catch(e){$('connections').textContent='デバイスに接続できません: '+e.message;}finally{statusTimer=setTimeout(status,1500);}}
+async function status(){try{const s=await api('status');$('connections').replaceChildren();for(const [key,label]of [['wifi','Wi-Fi'],['usbMidi','USB MIDI'],['usbKeyboard','USB HID'],['bleMidi','BLE MIDI'],['bleKeyboard','BLE HID']]){const unsupported=(key==='usbMidi'&&s.usbMidiSupported===false)||(key==='usbKeyboard'&&s.usbKeyboardSupported===false);const tag=document.createElement('span');tag.className='tag'+(!unsupported&&s[key]?' on':'');tag.textContent=`${label}: ${unsupported?'非対応':s[key]?'接続':'未接続'}`;$('connections').append(tag);}$('stats').textContent=`${s.hardware||'ChainPad'} · IP ${s.ip} / AP ${s.apIp} · Events ${s.events} · Accepted ${s.accepted} · Skipped ${s.skipped} · Wait中 ${s.runningChains||0}/32 · Chain受付失敗 ${s.rejectedChains||0} · Last ${s.lastInput} #${s.lastAction} ${s.lastResult} · Overflow input/output ${s.inputOverflows}/${s.transportOverflows} · Retry ${s.transportRetries} · ${s.bootMessage}${s.restartRequired?' · Wi-Fi設定変更: Restart必要':''}${!s.inputsReady?' · INPUT ERROR':''}`;}catch(e){$('connections').textContent='デバイスに接続できません: '+e.message;}finally{statusTimer=setTimeout(status,1500);}}
 function run(fn){return async()=>{try{await fn();}catch(e){message(e.message,true);}};}
 $('event').onchange=()=>{selected=Number($('event').value);renderActions();};
 $('add').onclick=()=>{current().push(defaults('osc'));changed();renderActions();};
@@ -75,6 +80,8 @@ $('save').onclick=run(async()=>{
   for(const id of ['ssid','password','oscHost','oscPort'])config.network[id]=id==='oscPort'?Number($(id).value):$(id).value;
   // Snapshot in the browser; the device receives just one chain per request.
   const snapshot=JSON.parse(JSON.stringify(config));
+  Presets.read(Presets.full(snapshot),'full',capabilities);
+  saving=true;
   const controls=[...document.querySelectorAll('button,input,select')].map(el=>[el,el.disabled]);
   controls.forEach(([el])=>el.disabled=true);
   try{
@@ -82,7 +89,7 @@ $('save').onclick=run(async()=>{
     for(const chain of snapshot.chains){message(`保存準備中… ${chain.input+1}/${snapshot.chains.length}`);await api(`config/chain?token=${token}&input=${chain.input}`,'PUT',chain);}
     const r=await api(`config/commit?token=${token}`,'POST');
     dirty=false;$('dirty').textContent='保存済み';message(r.message);
-  }finally{controls.forEach(([el,disabled])=>el.disabled=disabled);}
+  }finally{saving=false;controls.forEach(([el,disabled])=>el.disabled=disabled);}
 });
 $('reload').onclick=run(async()=>{if(!dirty||confirm('未保存の変更を破棄しますか？'))await load();});
 $('trigger').onclick=run(async()=>{if(dirty){message('テストの前に変更を保存してください。',true);return;}message((await api('trigger','POST',{input:selected})).message);});
@@ -92,6 +99,14 @@ $('networkSave').onclick=()=>{if(config)$('save').click();};
 $('networkRestart').onclick=()=>$('restart').click();
 $('example').onclick=()=>{if(!config)return;const base=Math.floor(selected/2)*2;if(base===26){message('設定例はキーまたはEncoder Pushで使用してください。',true);return;}if((config.chains[base].actions.length||config.chains[base+1].actions.length)&&!confirm('このInputのPress / Releaseを設定例で置き換えますか？'))return;config.chains[base].actions=[defaults('osc'),defaults('midi'),defaults('keyboard')];config.chains[base+1].actions=[{...defaults('osc'),value:0},{...defaults('midi'),message:'noteOff',value:0},{...defaults('keyboard'),message:'keyUp'}];changed();renderActions();const midi=capabilities.usbMidi?'USB + BLE':'BLE';message(`Press: OSC int 2 → ${midi} Note On → BLE F13 Down\nRelease: OSC int 0 → ${midi} Note Off → BLE F13 Up\n送信先を設定し、保存してから実機で確認してください。`);};
 for(const id of ['ssid','password','oscHost','oscPort'])$(id).oninput=changed;
+function editedConfig(){if(!config)throw Error('設定の読み込みを待ってください。');const result=JSON.parse(JSON.stringify(config));for(const id of ['ssid','password','oscHost','oscPort'])result.network[id]=id==='oscPort'?Number($(id).value):$(id).value;return result;}
+function downloadJson(data,name){const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)+'\n'],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+$('exportFull').onclick=run(async()=>{const data=Presets.full(editedConfig());Presets.read(data,'full',capabilities);downloadJson(data,'ChainPad-configuration.json');message('全体設定をExportしました（Wi-Fiパスワードを含みます）。');});
+$('exportKey').onclick=run(async()=>{const group=Math.floor(selected/2);const data=Presets.key(editedConfig(),group);Presets.read(data,'key',capabilities);downloadJson(data,`ChainPad-key-${group+1}.json`);message(`${names[group]}のPress / ReleaseをExportしました。`);});
+function chooseImport(kind){if(!config||saving)return;importTarget={kind,group:Math.floor(selected/2)};$('presetFile').value='';$('presetFile').click();}
+$('importKey').onclick=()=>chooseImport('key');$('importFull').onclick=()=>chooseImport('full');
+function applyImport(raw,target){if(saving)throw Error('保存完了後にImportしてください。');if(target.kind==='key'&&target.group>=13)throw Error('Encoder回転は全体設定を使用してください。');const parsed=Presets.read(raw,target.kind,capabilities);if(target.kind==='key'){for(const c of parsed.chains)config.chains.find(v=>v.input===target.group*2+c.input).actions=c.actions;selectInput(target.group);}else{config=parsed.config;for(const id of ['ssid','password','oscHost','oscPort'])$(id).value=config.network[id];selectInput(Math.floor(selected/2));}changed();renderActions();message(`${target.kind==='key'?names[target.group]+'のPress / Release':'全体設定'}を編集画面へImportしました。「保存・適用」で確定してください。${parsed.converted?'\nこの機種はUSB非対応のため、'+parsed.converted+'個のActionのTransportをBLEに変更しました。':''}`);}
+$('presetFile').onchange=run(async()=>{const file=$('presetFile').files[0];const target=importTarget;if(!file||!target)return;if(file.size>1024*1024)throw Error('Importファイルは1 MiB以下にしてください。');const raw=JSON.parse(await file.text());applyImport(raw,target);});
 names.forEach((name,i)=>$('inputs').append(button(name,()=>{if(config)selectInput(i);})));window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
 run(load)();status();
 </script>

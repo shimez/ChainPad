@@ -1,4 +1,4 @@
-# Phase 1 Architecture
+# Phase 2 Architecture
 
 ## Input / Action境界
 
@@ -88,7 +88,17 @@ MIDI `transport`: `usb`, `ble`, `both`。S3の新規Actionと設定例の既定�
 
 Keyboard `message`: `keyDown`, `keyUp`, `releaseAll`。`usage` はKeyboard Usage Pageの4–115（F13=104）。`modifiers` はbit 0–7 = Left Ctrl, Shift, Alt, GUI, Right Ctrl, Shift, Alt, GUI。KeyUpでは保存済みの該当Usageの修飾キーが解放されます。Release Allでもスキーマ上usage/modifiersを保持しますが実行時には無視します。
 
-Delayは予約フィールド `delayMs: 0`。Phase 1では非ゼロを拒否します。
+Waitは `{"protocol":"wait","delayMs":100}`。0〜86400000 msの整数で、Transportを持ちません。他のActionのdelayMsは0です。
+
+Engineは最大32個の独立した実行状態（入力ID・次のAction位置・再開時刻）を固定配列で保持します。Config/Chainの複製はありません。同じ入力の再発火も新しい実行となります。Wait期限をmillisの差分で判定し、期限到達後は登録順に進みます。連続Waitはそれぞれ実際に到達した時点から計時します。0 msはその場で次へ進みます。PressとReleaseの交錯を並べ替えません。同時再開は実行登録順です。
+
+待機枠が満杯の場合、新規の非ゼロWaitを含むChainは先頭Actionの出力前に全体を拒否します。即時Chainは実行できます。statusのrunningChains/rejectedChains/cancelledChainsで確認できます。設定保存・Panic・Restart・入力overflow時は全実行を中止します。HTTP処理は同じloop上にあり厳密な時間精度は保証しません。
+
+### 設定ファイル
+
+共通Action/Chain構造を `web/presets.js` で検証します。Key Presetはformat=`chainpad-key-preset`, version=1, chains=[{input:0,actions:[…]},{input:1,actions:[…]}]。0/1は対象キーのPress/Releaseへ対応します。
+
+全体ファイルはformat=`chainpad-configuration`, version=1とschemaVersion/network/chainsを持ちます。全28 EventsとWi-Fiパスワードを含みます。Importはブラウザ上で全件検証してから編集へ一括反映します。1 MiBのファイル上限があります。Firmwareへは既存のEvent単位保存APIで送信し、全体JSONをデバイスRAMへ持ち込みません。Action順は保持し、Event IDのみ所定の位置へ対応づけます。
 
 ### 検証と永続化
 

@@ -9,6 +9,7 @@ on:
       - 'site/**'
       - 'scripts/**'
       - 'tests/check_image.py'
+      - 'tests/test_presets.cjs'
       - 'platformio.ini'
       - 'partitions*.csv'
       - '.github/workflows/pages.yml'
@@ -31,6 +32,8 @@ jobs:
           python-version: '3.12'
       - name: Install PlatformIO
         run: pip install platformio==6.1.19
+      - name: Validate preset formats
+        run: node tests/test_presets.cjs
       - name: Build all four boards
         run: pio run
       - name: Validate firmware images

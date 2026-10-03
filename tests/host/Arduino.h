@@ -23,4 +23,5 @@ class String {
   friend bool operator==(const String& a, const String& b) { return a.value == b.value; }
   friend bool operator!=(const String& a, const String& b) { return !(a == b); }
 };
-inline uint32_t millis() { return 1234; }
+inline uint32_t hostMillis = 1234;
+inline uint32_t millis() { return hostMillis; }
