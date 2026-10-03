@@ -1,0 +1,7 @@
+.pio/
+.venv/
+__pycache__/
+*.pyc
+.vscode/
+src/web_assets.h
+tools/ChainPadReceiver/node_modules/
