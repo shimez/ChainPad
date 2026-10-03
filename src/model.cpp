@@ -146,6 +146,42 @@ void encodeConfig(const Config& source, JsonDocument& doc) {
     }
   }
 }
+namespace {
+bool persistDocument(JsonDocument& doc, String& error) {
+  if (doc.overflowed()) { error = "Insufficient JSON memory"; return false; }
+  String canonical;
+  if (serializeJson(doc, canonical) != measureJson(doc) || canonical.length() > MAX_CONFIG_BYTES) {
+    error = "Serialized config exceeds memory/size limit"; return false;
+  }
+  // Release the JSON tree before NVS allocates its own write buffers.
+  doc.clear();
+  Preferences prefs;
+  if (!prefs.begin("chainpad", false, "config_nvs")) { error = "NVS open failed"; return false; }
+  // NVS strings are limited to one page (~4 KB). A blob spans pages.
+  size_t written = prefs.putBytes("config", canonical.c_str(), canonical.length());
+  prefs.end();
+  if (written != canonical.length()) { error = "NVS write failed; config not applied"; return false; }
+  error = "";
+  return true;
+}
+}
+bool saveWifiConfig(const String& json, String& error) {
+  // Only credentials change: no ~44 KB Config copy or full-config reparse.
+  if (json.length() > 1024) { error = "Wi-Fi request too large"; return false; }
+  JsonDocument doc;
+  if (deserializeJson(doc, json)) { error = "Invalid Wi-Fi JSON"; return false; }
+  char ssid[sizeof(config.ssid)]{}, password[sizeof(config.password)]{};
+  if (!text(doc["ssid"], ssid, sizeof(ssid)) || !text(doc["password"], password, sizeof(password))) {
+    error = "Invalid SSID / Password"; return false;
+  }
+  encodeConfig(config, doc);
+  doc["network"]["ssid"] = ssid;
+  doc["network"]["password"] = password;
+  if (!persistDocument(doc, error)) return false;
+  memcpy(config.ssid, ssid, sizeof(ssid));
+  memcpy(config.password, password, sizeof(password));
+  return true;
+}
 bool saveConfig(const String& json, String& error) {
   if (json.length() > MAX_CONFIG_BYTES) { error = "Config exceeds 48000 bytes"; return false; }
   JsonDocument doc;
@@ -155,17 +191,7 @@ bool saveConfig(const String& json, String& error) {
   if (!decodeConfig(doc.as<JsonVariantConst>(), *next, error)) return false;
   // Store canonical JSON as a single NVS blob; NVS commits atomically.
   encodeConfig(*next, doc);
-  if (doc.overflowed()) { error = "Insufficient JSON memory"; return false; }
-  String canonical;
-  if (serializeJson(doc, canonical) != measureJson(doc) || canonical.length() > MAX_CONFIG_BYTES) {
-    error = "Serialized config exceeds memory/size limit"; return false;
-  }
-  Preferences prefs;
-  if (!prefs.begin("chainpad", false, "config_nvs")) { error = "NVS open failed"; return false; }
-  // NVS strings are limited to one page (~4 KB). A blob spans pages.
-  size_t written = prefs.putBytes("config", canonical.c_str(), canonical.length());
-  prefs.end();
-  if (written != canonical.length()) { error = "NVS write failed; config not applied"; return false; }
+  if (!persistDocument(doc, error)) return false;
   config = *next;
   return true;
 }

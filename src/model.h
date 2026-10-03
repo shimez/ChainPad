@@ -47,4 +47,5 @@ void encodeCapabilities(JsonDocument& doc);
 bool decodeConfig(JsonVariantConst root, Config& out, String& error);
 bool loadConfig(String& message);
 bool saveConfig(const String& json, String& error);
+bool saveWifiConfig(const String& json, String& error);
 } // namespace chimera

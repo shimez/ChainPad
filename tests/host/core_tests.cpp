@@ -7,8 +7,14 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
+#include <new>
 
 using namespace chimera;
+bool rejectConfigAllocation = false;
+void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
+  if (rejectConfigAllocation && size >= sizeof(Config)) return nullptr;
+  try { return ::operator new(size); } catch (...) { return nullptr; }
+}
 namespace fake {
 bool connected[2] = {true, true}, writable = true;
 uint32_t epoch[2] = {};
@@ -188,7 +194,31 @@ void engineTests() {
   assert(!engine.trigger({28, 3}));
   std::cout << "PASS heterogeneous Press/Release chain / unavailable protocol isolation\n";
 }
+void wifiSaveTests() {
+  String error;
+  const String before = encoded(config);
+  rejectConfigAllocation = true;
+  assert(!saveConfig(before, error) && error == "Insufficient memory");
+  assert(saveWifiConfig("{\"ssid\":\"C6-test\",\"password\":\"test-password\"}", error));
+  rejectConfigAllocation = false;
+  JsonDocument expected;
+  deserializeJson(expected, before);
+  expected["network"]["ssid"] = "C6-test";
+  expected["network"]["password"] = "test-password";
+  String updated; serializeJson(expected, updated);
+  assert(encoded(config) == updated);
+  fake::writeFailure = true;
+  assert(!saveWifiConfig("{\"ssid\":\"failed\",\"password\":\"\"}", error));
+  assert(encoded(config) == updated);
+  fake::writeFailure = false;
+  assert(!saveWifiConfig("{\"ssid\":42,\"password\":\"\"}", error));
+  assert(!saveWifiConfig("{\"ssid\":\"123456789012345678901234567890123\",\"password\":\"\"}", error));
+  assert(encoded(config) == updated);
+  config.ssid[0] = 0;
+  assert(loadConfig(error) && encoded(config) == updated);
+  std::cout << "PASS Wi-Fi save without Config allocation / preserve chains / failed write atomicity / reload\n";
+}
 int main() {
-  configTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests();
+  configTests(); wifiSaveTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests();
   std::cout << "All firmware host tests passed.\n";
 }

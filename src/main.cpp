@@ -58,15 +58,8 @@ void setupWeb() {
     jsonResponse(200, doc);
   });
   web.on("/api/wifi", HTTP_PUT, [] {
-    JsonDocument credentials;
-    if (deserializeJson(credentials, web.arg("plain")) || !credentials["ssid"].is<const char*>() ||
-        !credentials["password"].is<const char*>()) { result(400, "SSID / Password must be strings"); return; }
-    // Merge into the current configuration so OSC and Action Chains are preserved.
-    JsonDocument doc; encodeConfig(config, doc);
-    doc["network"]["ssid"] = credentials["ssid"];
-    doc["network"]["password"] = credentials["password"];
-    String body, error; serializeJson(doc, body);
-    if (!saveConfig(body, error)) { result(400, error); return; }
+    String error;
+    if (!saveWifiConfig(web.arg("plain"), error)) { result(400, error); return; }
     panic(); restartAt = millis() + 750;
     result(200, "Saved. Restarting.");
   });
@@ -85,7 +78,7 @@ void setupWeb() {
   web.on("/api/status", HTTP_GET, [] {
     JsonDocument doc;
     auto s = backendStatus();
-    doc["name"] = "ChainPad"; doc["version"] = "0.2.0-chimera";
+    doc["name"] = "ChainPad"; doc["version"] = "0.2.1-chimera";
     doc["hardware"] = HARDWARE_NAME;
     doc["usbMidiSupported"] = HAS_USB_MIDI; doc["usbKeyboardSupported"] = HAS_USB_KEYBOARD;
     doc["keyCount"] = 12; doc["encoder"] = true; doc["encoderPush"] = true; doc["led"] = true;

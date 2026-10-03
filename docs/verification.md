@@ -2,6 +2,13 @@
 
 実施日: 2026-10-03
 
+## 0.2.1: C6のWi-Fi保存時メモリ不足
+
+- `/api/wifi` で設定全体のJSON生成→再解析→Config全体の複製を行っていたため、Config用の連続メモリ確保が失敗すると `Insufficient memory` を返していた。
+- Wi-Fi保存専用関数でSSID/Passwordのみ検証し、現行設定を1回JSON化して保存。Configの複製を廃止し、NVS書き込み前にJSONツリーも解放する。
+- ホストテストでConfigサイズ以上のnothrow確保を失敗させ、従来の全体保存が失敗する条件でWi-Fi専用保存が成功することを確認。OSC/Chains保持、NVS失敗時の設定保持、不正入力拒否、再読み込みもPASS。既存ホストテストとC3/C6/C5能力テストもPASS。
+- C6実機での再確認は未実施。
+
 ## MIDI入力欄の1行表示
 
 - Configuratorの最大幅を1280px、左右paddingを16pxへ調整。画面幅1100px以上ではMIDIを6列とし、Channel/Note/Velocityの数値欄をコンパクトに配置。
