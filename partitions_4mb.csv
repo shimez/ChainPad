@@ -2,4 +2,4 @@
 nvs, data, nvs, 0x9000, 0x5000,
 otadata, data, ota, 0xe000, 0x2000,
 factory, app, factory, 0x10000, 0x300000,
-config_nvs, data, nvs, 0x310000, 0x20000,
+settings, data, spiffs, 0x330000, 0xd0000,

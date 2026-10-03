@@ -3,12 +3,15 @@ import json
 import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit, parse_qs
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = {"schemaVersion": 1,
           "network": {"ssid": "", "password": "", "oscHost": "192.168.1.100", "oscPort": 9000},
           "chains": [{"input": i, "actions": []} for i in range(28)]}
 BOARD = "s3"
+PENDING = None
+TOKEN = 0
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -57,13 +60,33 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/wifi":
             for key in ("ssid", "password"):
                 CONFIG["network"][key] = data[key]
+        elif urlsplit(self.path).path == "/api/config/chain":
+            query = parse_qs(urlsplit(self.path).query)
+            if not PENDING or int(query["token"][0]) != TOKEN or int(query["input"][0]) != len(PENDING["chains"]):
+                self.send_error(409)
+                return
+            PENDING["chains"].append(data)
         else:
-            CONFIG = data
+            self.send_error(404)
+            return
         self.reply({"ok": True, "message": "Saved (test fixture)"})
 
     def do_POST(self):
-        if self.headers.get("Content-Length"):
-            self.rfile.read(int(self.headers["Content-Length"]))
+        global CONFIG, PENDING, TOKEN
+        body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+        path = urlsplit(self.path).path
+        if path == "/api/config/begin":
+            TOKEN += 1
+            PENDING = {"schemaVersion": 1, "network": json.loads(body), "chains": []}
+            self.reply({"token": TOKEN})
+            return
+        if path == "/api/config/commit":
+            query = parse_qs(urlsplit(self.path).query)
+            if not PENDING or int(query["token"][0]) != TOKEN or len(PENDING["chains"]) != 28:
+                self.send_error(409)
+                return
+            CONFIG = PENDING
+            PENDING = None
         self.reply({"ok": True, "message": "Dispatched (test fixture)"})
 
 

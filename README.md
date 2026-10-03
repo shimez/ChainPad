@@ -25,7 +25,7 @@ C3/C6/C5もWeb UIのTransport欄を表示し、**「BLE（固定）」＋「こ�
 | USB | MIDI + Keyboard + CDC複合デバイス |
 | BLE | 単一NimBLEサーバーでMIDI/HID共存、個別の購読状態管理 |
 | Configurator | Light/Dark切り替え、Protocol別フォーム、追加/削除/並べ替え、Press/Release、設定保存/読み込み、接続状態、テスト、Panic |
-| 保存 | schemaVersion 1のJSONを専用NVS partitionの単一blobに保存 |
+| 保存 | LittleFSのレコード形式。Network＋Event単位のJSONを逐次処理し、検証後に原子的に切り替え |
 | Receiver | OSC / OS MIDI / Direct BLE-MIDI / フォーカス中HIDの時系列表示、CSV出力 |
 
 Sequence、Delay実行、OTA、可変Hardware Metadataは未実装です。`delayMs: 0` をモデルに予約し、非ゼロの設定は明示的に拒否します。
@@ -59,7 +59,8 @@ pio device monitor --port COM番号 --baud 115200
 
 - 初回書き込みやUSBポートが見えない場合は、XIAOのBOOTを押しながらRESETしてダウンロードモードへ入ります。起動後のCDC COM番号は書き込み時と変わる場合があります。
 - WebUIはビルド時にFirmwareへ埋め込まれます。`uploadfs` は不要です。
-- `partitions.csv` はS3/C5の8MB Flash用で `config_nvs` は `0x610000`。`partitions_4mb.csv` はC3/C6の4MB用で `config_nvs` は `0x310000`。applicationはいずれも `0x10000`。他プロジェクトのFirmware設定を移行する実装はありません。
+- `partitions.csv` はS3/C5の8MB Flash用（LittleFS `settings`: `0x630000`, 1856 KiB）。`partitions_4mb.csv` はC3/C6の4MB用（`settings`: `0x330000`, 832 KiB）。applicationはいずれも `0x10000`。
+- **0.3.0から保存方式はLittleFSのみです。旧設定は読み込み・移行されません。Wi-FiとAction Chainを再設定してください。** 更新時はpartition tableも含むWeb InstallerかPlatformIO uploadを使用してください。`firmware.bin` だけの書き込みでは新しい領域を利用できません。
 - ビルド成果物は `.pio/build/<環境名>/firmware.bin` と `firmware.factory.bin`。通常はPlatformIOのuploadを使用します。
 
 ## 最初のAction Chain
@@ -114,7 +115,8 @@ src/
   hardware.h             現行PCBのピン仕様のみ
   capabilities.h         SoCごとのUSB MIDI/HID可否・機種名
   inputs.*               1msスキャン、debounce、encoder → logical InputEvent
-  model.*                Action / Chain / Config、検証、NVS永続化
+  model.*                Action / Chain / Config、レコード単位の検証・JSON変換
+  config_store.cpp       LittleFSの逐次保存・検証・atomic renameによる確定
   engine.*               InputEvent → 登録順dispatch（GPIO依存なし）
   osc_backend.cpp        OSCワイヤーフォーマット / UDP
   midi_backend.cpp       MIDI送信FIFO、再接続・overflow回復

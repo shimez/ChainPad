@@ -1,6 +1,14 @@
 # Phase 1 検証記録
 
-実施日: 2026-10-03
+## 0.3.0 LittleFS保存（2026-10-04）
+
+- 保存先をLittleFSの唯一の内部形式へ変更。旧形式の読み込み・移行・fallbackコードなし。NetworkとEvent単位で処理し、Config全体の複製・全体JSONのデバイスRAM展開を廃止。
+- Firmwareコアのホストテスト: 通常保存/読み込み、Wi-Fi専用保存、224個の長いOSC Actions（保存全体48KB超）、途中書き込み失敗、rename失敗、未完了/失効token、再起動、中途ファイル・active破損を検証しPASS。既存OSC/MIDI/HID/EngineとC3/C6/C5の保存・BLE正規化テストも全てPASS。
+- ブラウザC6 fixture: 保存がNetwork＋28 Chains＋commitの30リクエストになること、通信失敗時のUI復帰・未確定設定保持・再保存・再読み込みを確認しPASS。設定例の最大リクエスト本文は340 bytes。
+- S3/C3/C6/C5のローカルビルドと生成image検査は全機種PASS。LittleFS partitionのoffset/size、Flash範囲、application配置、機種識別、USB条件付き組み込みを確認。
+- 実機LittleFSの電源断耐性・C6保存再確認は未実施。手順はphysical-test.md参照。
+
+以下は旧版の検証履歴です（2026-10-03）。
 
 ## 0.2.1: C6のWi-Fi保存時メモリ不足
 

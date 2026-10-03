@@ -18,6 +18,7 @@
 <ol><li>ボタンを押し、XIAOのシリアルポートを選択します。</li><li>画面の案内に従って書き込みます。</li><li>完了後、必要に応じてRESETボタンで本体を再起動します。</li></ol>
 <p class="muted">ポートが見つからない場合は、BOOTを押しながらUSBを接続するか、BOOTを押しながらRESETしてダウンロードモードにしてください。シリアルモニターなど、ポートを使用中のアプリは閉じてください。</p>
 <p class="muted">「Erase device」を選ぶと保存設定も消去されます。必要な設定は書き込み前に本体の <code>/api/config</code> から控えてください。</p>
+<p class="muted">0.3.0から設定保存はLittleFSへ変更されました。旧版の設定は引き継がれません。更新後はWi-FiとAction Chainを再設定してください。</p>
 </section>
 <section class="card"><h2>書き込み後のWi-Fi設定</h2><ol><li>Wi-Fi <strong>ChainPad-Setup</strong> に接続します。パスワードは <code>chimera-pad</code> です。</li><li>ログイン通知からWi-Fi設定画面を開きます。自動表示されない場合は <a href="http://192.168.4.1/">http://192.168.4.1/</a> を開きます。</li><li>接続先のSSID・パスワードを入力し「保存して再起動」を押します。</li><li>同じWi-Fiに戻り、<a href="http://chainpad.local/">http://chainpad.local/</a> または本体のIPからAction Chainを設定します。</li></ol><p class="muted">AP接続のまま通常の設定画面を開く場合は <a href="http://192.168.4.1/configurator">/configurator</a> を使用できます。S3はUSB / BLE MIDI・Keyboard、C3 / C6 / C5はBLE MIDI・Keyboardに対応します。</p></section>
 <details class="card"><summary>Firmwareのダウンロード</summary><p>手動書き込み用の結合イメージです。各ファイルの書き込み開始アドレスは <code>0x0</code> です。</p><div id="downloads"></div><p><a href="build.json">ビルド情報・SHA256</a></p></details>

@@ -6,7 +6,7 @@
 namespace chimera {
 constexpr uint8_t INPUT_COUNT = 28;
 constexpr uint8_t MAX_ACTIONS = 8;
-constexpr size_t MAX_CONFIG_BYTES = 48000;
+constexpr size_t MAX_RECORD_BYTES = 16384;
 enum class Protocol : uint8_t { Osc, Midi, Keyboard };
 enum class Transport : uint8_t { Wifi, Usb, Ble, Both };
 enum class OscType : uint8_t { Int, Float, Bool, String };
@@ -33,11 +33,13 @@ struct Action {
   uint8_t modifiers = 0;
 };
 struct Chain { uint8_t count = 0; Action actions[MAX_ACTIONS]; };
-struct Config {
+struct NetworkSettings {
   char ssid[33] = "";
   char password[65] = "";
   char oscHost[16] = "192.168.1.100"; // Numeric IPv4: no blocking DNS in dispatch.
   uint16_t oscPort = 9000;
+};
+struct Config : NetworkSettings {
   Chain chains[INPUT_COUNT];
 };
 extern Config config;
@@ -46,6 +48,12 @@ void encodeConfig(const Config& source, JsonDocument& doc);
 void encodeCapabilities(JsonDocument& doc);
 bool decodeConfig(JsonVariantConst root, Config& out, String& error);
 bool loadConfig(String& message);
-bool saveConfig(const String& json, String& error);
 bool saveWifiConfig(const String& json, String& error);
+bool decodeNetwork(JsonVariantConst root, NetworkSettings& out, String& error);
+bool decodeChain(JsonVariantConst root, uint8_t id, Chain& out, String& error);
+void encodeNetwork(const NetworkSettings& source, JsonDocument& doc);
+void encodeChain(const Chain& source, uint8_t id, JsonDocument& doc);
+uint32_t beginConfigSave(const String& network, String& error);
+bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& error);
+bool commitConfigSave(uint32_t token, String& error);
 } // namespace chimera

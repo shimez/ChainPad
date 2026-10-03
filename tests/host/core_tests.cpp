@@ -1,7 +1,8 @@
 #include "model.h"
 #include "engine.h"
 #include "backend_internal.h"
-#include "Preferences.h"
+#include "LittleFS.h"
+#include "save_helper.h"
 #include "WiFiUdp.h"
 #include "WiFi.h"
 #include <cassert>
@@ -77,21 +78,23 @@ void configTests() {
   assert(!decodeConfig(d.as<JsonVariantConst>(), out, error));
   encodeConfig(source, d); d["network"]["oscHost"] = "not-an-ip";
   assert(!decodeConfig(d.as<JsonVariantConst>(), out, error));
-  assert(saveConfig(encoded(source), error));
+  assert(saveSource(source, error));
   fake::writeFailure = true; source.oscPort = 7777;
-  assert(!saveConfig(encoded(source), error)); assert(config.oscPort == 9000);
+  assert(!saveSource(source, error)); assert(config.oscPort == 9000);
   fake::writeFailure = false; config.chains[0].count = 0;
   assert(loadConfig(error)); assert(config.chains[0].count == 1);
-  // Exercise a multi-page JSON blob (NVS strings cannot store this size).
+  // Exercise every available Action slot using bounded records.
   for (auto& chain : source.chains) {
     chain.count = MAX_ACTIONS;
     for (auto& action : chain.actions) action = on;
   }
   assert(encoded(source).length() > 4096);
-  assert(saveConfig(encoded(source), error));
+  rejectConfigAllocation = true;
+  assert(saveSource(source, error));
+  rejectConfigAllocation = false;
   config.chains[27].count = 0;
   assert(loadConfig(error)); assert(config.chains[27].count == MAX_ACTIONS);
-  assert(!saveConfig(String(std::string(MAX_CONFIG_BYTES + 1, ' ')), error));
+  assert(!beginConfigSave(String(std::string(MAX_RECORD_BYTES + 1, ' ')), error));
   assert(config.chains[27].count == MAX_ACTIONS);
   std::cout << "PASS schema validation / save failure atomicity / reload\n";
 }
@@ -198,7 +201,6 @@ void wifiSaveTests() {
   String error;
   const String before = encoded(config);
   rejectConfigAllocation = true;
-  assert(!saveConfig(before, error) && error == "Insufficient memory");
   assert(saveWifiConfig("{\"ssid\":\"C6-test\",\"password\":\"test-password\"}", error));
   rejectConfigAllocation = false;
   JsonDocument expected;
@@ -218,7 +220,69 @@ void wifiSaveTests() {
   assert(loadConfig(error) && encoded(config) == updated);
   std::cout << "PASS Wi-Fi save without Config allocation / preserve chains / failed write atomicity / reload\n";
 }
+void transactionTests() {
+  String error; const String original = encoded(config);
+  const std::string disk = *fake::files.at("/config.records");
+  JsonDocument doc; encodeNetwork(config, doc); doc["oscPort"] = 9012;
+  String network; serializeJson(doc, network);
+  auto first = beginConfigSave(network, error);
+  assert(first && !commitConfigSave(first, error));
+  auto second = beginConfigSave(network, error);
+  encodeChain(config.chains[0], 0, doc); String chain; serializeJson(doc, chain);
+  assert(!stageConfigChain(first, 0, chain, error));
+  assert(stageConfigChain(second, 0, chain, error));
+  // Simulate restart after a partial transaction. Only the active snapshot loads.
+  assert(loadConfig(error) && encoded(config) == original);
+  assert(!commitConfigSave(second, error));
+  Config source = config; source.oscPort = 9012;
+  fake::writesUntilFailure = 8;
+  assert(!saveSource(source, error));
+  fake::writesUntilFailure = -1;
+  assert(encoded(config) == original && *fake::files.at("/config.records") == disk);
+  fake::renameFailure = true;
+  assert(!saveSource(source, error));
+  fake::renameFailure = false;
+  assert(loadConfig(error) && encoded(config) == original);
+  // A fully staged but corrupt file is rejected before rename.
+  auto token = beginConfigSave(network, error);
+  for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
+    encodeChain(source.chains[i], i, doc); chain = ""; serializeJson(doc, chain);
+    assert(stageConfigChain(token, i, chain, error));
+  }
+  fake::files.at("/pending.records")->pop_back();
+  assert(!commitConfigSave(token, error));
+  assert(encoded(config) == original && *fake::files.at("/config.records") == disk);
+  // Corrupt active storage must not expose a partially loaded configuration.
+  fake::files.at("/config.records")->pop_back();
+  assert(!loadConfig(error));
+  for (const auto& c : config.chains) assert(c.count == 0);
+  assert(config.oscPort == 9000);
+  *fake::files.at("/config.records") = disk;
+  assert(loadConfig(error) && encoded(config) == original);
+  std::cout << "PASS LittleFS interrupted transaction / partial write / rename failure / corrupt records\n";
+}
+void settingsScaleTests() {
+  Config source;
+  Action action; action.oscType = OscType::String;
+  memset(action.address, 'x', 96); action.address[0] = '/'; action.address[96] = 0;
+  memset(action.stringValue, 1, 64); action.stringValue[64] = 0;
+  for (auto& chain : source.chains) {
+    chain.count = MAX_ACTIONS;
+    for (auto& a : chain.actions) a = action;
+  }
+  String error;
+  rejectConfigAllocation = true;
+  assert(saveSource(source, error));
+  assert(loadConfig(error));
+  rejectConfigAllocation = false;
+  assert(fake::files.at("/config.records")->size() > 48000);
+  assert(encoded(config) == encoded(source));
+  assert(saveWifiConfig("{\"ssid\":\"large-config\",\"password\":\"\"}", error));
+  assert(loadConfig(error));
+  assert(config.chains[27].count == MAX_ACTIONS && config.chains[27].actions[7].stringValue[63] == 1);
+  std::cout << "PASS maximum 224 long OSC Actions / >48KB snapshot / bounded save-load / Wi-Fi preservation\n";
+}
 int main() {
-  configTests(); wifiSaveTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests();
+  configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests();
   std::cout << "All firmware host tests passed.\n";
 }

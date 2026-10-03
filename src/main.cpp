@@ -67,18 +67,43 @@ void setupWeb() {
     JsonDocument doc; encodeCapabilities(doc); jsonResponse(200, doc);
   });
   web.on("/api/config", HTTP_GET, [] {
-    JsonDocument doc; encodeConfig(config, doc); jsonResponse(200, doc);
+    // Stream one record at a time; never construct the full JSON in device RAM.
+    web.sendHeader("Cache-Control", "no-store");
+    web.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    web.send(200, "application/json; charset=utf-8", "");
+    JsonDocument doc; String part;
+    encodeNetwork(config, doc); serializeJson(doc, part);
+    web.sendContent("{\"schemaVersion\":1,\"network\":"); web.sendContent(part);
+    web.sendContent(",\"chains\":[");
+    for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
+      encodeChain(config.chains[i], i, doc); part = ""; serializeJson(doc, part);
+      if (i) web.sendContent(",");
+      web.sendContent(part);
+    }
+    web.sendContent("]}"); web.sendContent("");
   });
-  web.on("/api/config", HTTP_PUT, [] {
+  web.on("/api/config/begin", HTTP_POST, [] {
+    String error; auto token = beginConfigSave(web.arg("plain"), error);
+    if (!token) { result(400, error); return; }
+    JsonDocument doc; doc["token"] = token; jsonResponse(200, doc);
+  });
+  web.on("/api/config/chain", HTTP_PUT, [] {
+    int id = web.arg("input").toInt();
     String error;
-    if (!saveConfig(web.arg("plain"), error)) { result(400, error); return; }
+    if (!web.hasArg("input") || id < 0 || id >= INPUT_COUNT ||
+        !stageConfigChain(web.arg("token").toInt(), id, web.arg("plain"), error)) { result(400, error); return; }
+    result(200, "Staged");
+  });
+  web.on("/api/config/commit", HTTP_POST, [] {
+    String error;
+    if (!commitConfigSave(web.arg("token").toInt(), error)) { result(400, error); return; }
     panic();
     result(200, "Saved and applied. Wi-Fi credential changes require Restart.");
   });
   web.on("/api/status", HTTP_GET, [] {
     JsonDocument doc;
     auto s = backendStatus();
-    doc["name"] = "ChainPad"; doc["version"] = "0.2.1-chimera";
+    doc["name"] = "ChainPad"; doc["version"] = "0.3.0-chimera";
     doc["hardware"] = HARDWARE_NAME;
     doc["usbMidiSupported"] = HAS_USB_MIDI; doc["usbKeyboardSupported"] = HAS_USB_KEYBOARD;
     doc["keyCount"] = 12; doc["encoder"] = true; doc["encoderPush"] = true; doc["led"] = true;
@@ -97,6 +122,7 @@ void setupWeb() {
     doc["inputsReady"] = inputReady; doc["bootMessage"] = bootMessage;
     doc["restartRequired"] = strcmp(config.ssid, bootSsid) != 0 || strcmp(config.password, bootPassword) != 0;
     doc["freeHeap"] = ESP.getFreeHeap(); doc["uptimeMs"] = millis();
+    doc["largestFreeBlock"] = ESP.getMaxAllocHeap(); doc["minFreeHeap"] = ESP.getMinFreeHeap();
     jsonResponse(200, doc);
   });
   web.on("/api/trigger", HTTP_POST, [] {

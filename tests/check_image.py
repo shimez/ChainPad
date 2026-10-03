@@ -5,10 +5,10 @@ import struct
 from pathlib import Path
 
 LAYOUTS = {
-    "xiao_esp32s3": (8, 0x600000, 0x610000),
-    "xiao_esp32c3": (4, 0x300000, 0x310000),
-    "xiao_esp32c6": (4, 0x300000, 0x310000),
-    "xiao_esp32c5": (8, 0x600000, 0x610000),
+    "xiao_esp32s3": (8, 0x600000, 0x630000),
+    "xiao_esp32c3": (4, 0x300000, 0x330000),
+    "xiao_esp32c6": (4, 0x300000, 0x330000),
+    "xiao_esp32c5": (8, 0x600000, 0x630000),
 }
 
 
@@ -24,7 +24,8 @@ def check(environment):
         _, kind, subtype, offset, size, label, _ = struct.unpack_from("<HBBII16sI", partitions, index)
         entries[label.rstrip(b"\0").decode()] = (kind, subtype, offset, size)
     assert entries["factory"] == (0, 0, 0x10000, app_size), entries
-    assert entries["config_nvs"] == (1, 2, config_offset, 0x20000), entries
+    assert entries["settings"] == (1, 0x82, config_offset, flash_mb * 1024 * 1024 - config_offset), entries
+    assert "config_nvs" not in entries
     ranges = sorted((item[2], item[2] + item[3]) for item in entries.values())
     for previous, following in zip(ranges, ranges[1:]):
         assert previous[1] <= following[0], "Partition overlap"

@@ -2,7 +2,16 @@
 
 対象: XIAO ESP32S3 / ESP32C3 / ESP32C6 / ESP32C5、現行ChainOSCPad PCB、Windows PC。PoC2のC6での確認結果とは別に記録します。以下のUSB検証はS3のみ対象です。
 
-## APキャプティブポータル確認（全機種）
+## 0.3.0 LittleFS保存（C6を優先し4機種で確認）
+
+1. partition table込みで書き込む。旧設定が読み込まれずSetup APで起動すること。Wi-Fiを再設定する。
+2. 通常ConfiguratorでOSC/MIDI/HIDを含むPress/Releaseを保存→再読み込み→電源再投入。OSC送信先・Wi-Fi・Action順序・Transportが保持されること。
+3. 28 Events × 8 Actions、長いOSC Address/Stringを含む設定を保存し再起動。`/api/status` の `freeHeap`, `largestFreeBlock`, `minFreeHeap` を記録する。
+4. 通常保存のstage途中でブラウザ切断／本体の電源切断。再起動後は以前の確定済み設定が完全な状態で読み込まれること。commit付近での電源切断では旧・新いずれかの完全な設定であること。
+5. Wi-Fiだけを変更し、他のOSC/Action設定が保持されること。繰り返し保存してLittleFSの容量・断片化による失敗がないこと。
+6. 初回の消去済み領域だけがフォーマットされること。非消去・破損領域のmount失敗時は自動消去せずエラーになること。
+
+## APキャプティブポータル確認
 
 1. `ChainPad-Setup` に接続し、Android/iOS/Windowsのログイン通知からWi-Fi専用画面が開くことを確認。SSID・パスワード・保存して再起動ボタンのみが表示されること。
 2. 自動表示されない場合は `http://192.168.4.1/` を開く。SSID/Passwordを入力して「保存して再起動」を実行。再接続してWi-Fi接続状態と設定保持を確認。OSC送信先とAction Chainsも保持されること。通常の設定画面はSTA IPのルート、またはAP IPの `/configurator` から開く。

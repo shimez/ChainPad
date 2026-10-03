@@ -70,7 +70,20 @@ async function status(){try{const s=await api('status');$('connections').replace
 function run(fn){return async()=>{try{await fn();}catch(e){message(e.message,true);}};}
 $('event').onchange=()=>{selected=Number($('event').value);renderActions();};
 $('add').onclick=()=>{current().push(defaults('osc'));changed();renderActions();};
-$('save').onclick=run(async()=>{for(const id of ['ssid','password','oscHost','oscPort'])config.network[id]=id==='oscPort'?Number($(id).value):$(id).value;const r=await api('config','PUT',config);dirty=false;$('dirty').textContent='保存済み';message(r.message);});
+$('save').onclick=run(async()=>{
+  if(!config)return;
+  for(const id of ['ssid','password','oscHost','oscPort'])config.network[id]=id==='oscPort'?Number($(id).value):$(id).value;
+  // Snapshot in the browser; the device receives just one chain per request.
+  const snapshot=JSON.parse(JSON.stringify(config));
+  const controls=[...document.querySelectorAll('button,input,select')].map(el=>[el,el.disabled]);
+  controls.forEach(([el])=>el.disabled=true);
+  try{
+    const {token}=await api('config/begin','POST',snapshot.network);
+    for(const chain of snapshot.chains){message(`保存準備中… ${chain.input+1}/${snapshot.chains.length}`);await api(`config/chain?token=${token}&input=${chain.input}`,'PUT',chain);}
+    const r=await api(`config/commit?token=${token}`,'POST');
+    dirty=false;$('dirty').textContent='保存済み';message(r.message);
+  }finally{controls.forEach(([el,disabled])=>el.disabled=disabled);}
+});
 $('reload').onclick=run(async()=>{if(!dirty||confirm('未保存の変更を破棄しますか？'))await load();});
 $('trigger').onclick=run(async()=>{if(dirty){message('テストの前に変更を保存してください。',true);return;}message((await api('trigger','POST',{input:selected})).message);});
 $('panic').onclick=run(async()=>message((await api('panic','POST')).message));

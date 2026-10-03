@@ -88,15 +88,21 @@ MIDI `transport`: `usb`, `ble`, `both`。S3の新規Actionと設定例の既定�
 
 Keyboard `message`: `keyDown`, `keyUp`, `releaseAll`。`usage` はKeyboard Usage Pageの4–115（F13=104）。`modifiers` はbit 0–7 = Left Ctrl, Shift, Alt, GUI, Right Ctrl, Shift, Alt, GUI。KeyUpでは保存済みの該当Usageの修飾キーが解放されます。Release Allでもスキーマ上usage/modifiersを保持しますが実行時には無視します。
 
-Delayは予約フィールド `delayMs: 0`。Phase 1では非ゼロを拒否します。将来のDelay Action追加時はProtocol enum/dispatchとConfigurator、必要ならschema migrationを拡張します。
+Delayは予約フィールド `delayMs: 0`。Phase 1では非ゼロを拒否します。
 
 ### 検証と永続化
 
-リクエスト上限48000 bytes。型、範囲、Protocol/Transportの組み合わせ、IPv4、重複Input、Action数を検証します。未知schemaVersionは拒否します。String長はUTF-8のbyte数です。全OSC Action共通の送信先はDNS待ちを避けるため数値IPv4です。
+内部保存は **LittleFSのみ**。`settings` partitionの `/config.records` に、storageVersion 1とNetworkを含むヘッダー1行＋入力ID順の28個のChain JSON行を保存します。外部GETのschemaVersion 1 JSONとは独立した内部形式です。旧形式の読み込み・移行・fallbackはありません。
 
-検証後に正規化JSONを作り、専用128 KiB `config_nvs` の1つのNVS blobへ書き込みます。NVS stringの約4 KiB制限を避けています。保存成功後だけruntime Configへ適用します。保存失敗時は以前のruntime設定を維持します。起動時に読み込み/検証が失敗すると、空Chainの既定設定で起動しbootMessageに理由を表示します。
+ブラウザ側で設定をsnapshotし、Network（最大2048 bytes）をbegin、各EventのChain（最大16384 bytes）を順にstage、最後にcommitします。FirmwareはNetworkまたは1 Chain分だけを検証・正規化して `/pending.records` へ追記します。Config全体の複製も全体JSONのRAM展開もありません。String長はUTF-8のbyte数で、Protocol/Transport、IPv4、入力ID順序、Action数、型・範囲を検証します。新しいbeginは以前のtokenを無効化し、途中失敗した保存は次のbeginからやり直します。
 
-S3/C5は8MB Flash内のapplication 6MB＋config_nvs（0x610000）、C3/C6は4MB Flash内のapplication 3MB＋config_nvs（0x310000）です。いずれもapplication offsetは0x10000。
+commitは全レコードを逐次再検証した後、LittleFSのrename-over-existingで一括確定します。通信中断・書き込み失敗・再起動の途中ファイルはactiveとして読まれません。検証・rename失敗までは以前のディスク設定とruntimeを維持します。確定後も1 Chainずつ適用します。確定後の読み出し自体に失敗した場合は空Chainへ戻してエラーを返します。保存・適用中にEngineを並行実行しません。
+
+起動時も検証パス→適用パスで逐次読み込みます。activeがない場合は既定値、破損の場合は空Chainで起動しbootMessageに理由を表示します。初期フォーマットはpartition全体が消去状態の場合だけ行い、mountできない非消去領域を自動消去しません。
+
+`GET /api/config` はNetworkと各ChainをHTTP chunkで順次返します。Wi-Fi専用保存も同じレコード形式・トランザクションを使い、変更対象以外を1 Chainずつ転記します。48KBの設定全体サイズ上限はなくなり、一時RAMは全体サイズではなく1 Chainのサイズで制限されます。今後Event数を増やしても保存時の一時RAMは増えません。Action数を増やす場合は1 Chainの上限と実行用Configの静的RAMも評価が必要です。
+
+S3/C5はapplication 6MiB＋LittleFS 1856KiB（0x630000）、C3/C6はapplication 3MiB＋LittleFS 832KiB（0x330000）。application offsetは0x10000です。新しいpartition tableを必ず書き込みます。
 
 ### API
 
@@ -105,7 +111,9 @@ S3/C5は8MB Flash内のapplication 6MB＋config_nvs（0x610000）、C3/C6は4MB 
 | GET | `/` | 埋め込みConfigurator |
 | GET | `/api/capabilities` | ボード名、USB MIDI/HID可否、Transport選択肢・既定値 |
 | GET | `/api/config` | 完全な設定（資格情報を含む） |
-| PUT | `/api/config` | 検証→保存→適用→Panic。SSID/Password変更は再起動で反映 |
+| POST | `/api/config/begin` | Network JSONを検証し保存tokenを返す |
+| PUT | `/api/config/chain?token=…&input=…` | Event ID順に1 Chainを検証して仮保存 |
+| POST | `/api/config/commit?token=…` | 全件再検証→LittleFS rename→適用→Panic。Wi-Fi変更は再起動で反映 |
 | GET | `/api/status` | 接続、静的ハードウェア情報、実行/失敗/overflow/retry、最終Action |
 | POST | `/api/trigger` | `{"input":0}`：保存済みChainを実行 |
 | POST | `/api/panic` | MIDI/HID状態リセット、入力キュー破棄 |

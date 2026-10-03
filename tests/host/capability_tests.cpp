@@ -1,4 +1,5 @@
 #include "model.h"
+#include "save_helper.h"
 #include "engine.h"
 #include "backend_internal.h"
 #include <cassert>
@@ -76,7 +77,7 @@ int main() {
 
   encodeConfig(source, doc);
   String json; serializeJson(doc, json);
-  assert(saveConfig(json, error));
+  assert(saveSource(source, error));
   assert(loadConfig(error));
   encodeConfig(config, doc);
   assert(doc["chains"][0]["actions"][0]["transport"] == "ble");
