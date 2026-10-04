@@ -1,3 +1,18 @@
+function oscTextControl(label,value,onchange,limit){
+  const wrap=control(label,value,null,onchange),input=wrap.lastChild;
+  input.maxLength=limit;
+  const counter=document.createElement('small');counter.className='hint';
+  wrap.append(counter);
+  function update(){
+    const bytes=new TextEncoder().encode(input.value).length,over=bytes>limit;
+    counter.textContent=`${bytes} / ${limit} bytes（UTF-8）${over?'：上限を超えています':''}`;
+    counter.className=over?'danger':'hint';
+    input.setCustomValidity(over?`${label}はUTF-8で${limit} bytes以内にしてください。`:'');
+    input.setAttribute('aria-invalid',String(over));
+  }
+  input.oninput=()=>{update();onchange(input.value);changed();};
+  update();return wrap;
+}
 function actionSlots(){
   if(selected>=26)return {used:current().length,limit:8,label:'このEvent'};
   const base=selected-selected%2;

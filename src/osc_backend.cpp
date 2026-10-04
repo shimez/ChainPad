@@ -7,7 +7,8 @@ SendResult oscDispatch(const Action& a) {
   // AP clients can also receive OSC, even when station Wi-Fi is unavailable.
   if (WiFi.status() != WL_CONNECTED && WiFi.softAPgetStationNum() == 0) return SendResult::Unavailable;
   static WiFiUDP udp;
-  uint8_t packet[176]{};
+  // Padded address + padded type tags + largest (string) argument.
+  uint8_t packet[((MAX_OSC_ADDRESS_BYTES + 4) & ~size_t(3)) + 4 + ((MAX_OSC_STRING_BYTES + 4) & ~size_t(3))]{};
   size_t offset = 0;
   auto string = [&](const char* s) {
     size_t length = strlen(s) + 1;

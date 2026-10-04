@@ -12,8 +12,10 @@
 
 using namespace chimera;
 bool rejectConfigAllocation = false;
+bool rejectChainAllocation = false;
 void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
   if (rejectConfigAllocation && size >= sizeof(Config)) return nullptr;
+  if (rejectChainAllocation && size == sizeof(Chain)) return nullptr;
   try { return ::operator new(size); } catch (...) { return nullptr; }
 }
 namespace fake {
@@ -86,7 +88,7 @@ void configTests() {
   // Exercise every available Action slot using bounded records.
   for (auto& chain : source.chains) {
     chain.count = 8;
-    for (auto& action : chain.actions) action = on;
+    for (unsigned i = 0; i < chain.count; ++i) chain.actions[i] = on;
   }
   assert(encoded(source).length() > 4096);
   rejectConfigAllocation = true;
@@ -108,6 +110,15 @@ void oscTests() {
   oscDispatch(a); assert(fake::osc.size() == 8 && fake::osc[5] == 'T');
   a.oscType = OscType::String; strcpy(a.stringValue, "abcde");
   oscDispatch(a); assert(fake::osc.size() == 16 && fake::osc[12] == 'e' && fake::osc[15] == 0);
+  memset(a.address, 'x', MAX_OSC_ADDRESS_BYTES); a.address[0]='/'; a.address[MAX_OSC_ADDRESS_BYTES]=0;
+  memset(a.stringValue, 'y', MAX_OSC_STRING_BYTES); a.stringValue[MAX_OSC_STRING_BYTES]=0;
+  assert(oscDispatch(a)==SendResult::Accepted);
+  assert(fake::osc.size()==332 && fake::osc[191]=='x' && fake::osc[192]==0);
+  assert(fake::osc[196]==',' && fake::osc[197]=='s' && fake::osc[200]=='y' && fake::osc[327]=='y' && fake::osc[331]==0);
+  Chain chain, decoded; chain.count=1;chain.actions[0]=a;JsonDocument doc;String error;
+  encodeChain(chain,0,doc);assert(decodeChain(doc.as<JsonVariantConst>(),0,decoded,error));
+  doc["actions"][0]["address"]=std::string("/")+std::string(192,'x');assert(!decodeChain(doc.as<JsonVariantConst>(),0,decoded,error));
+  encodeChain(chain,0,doc);doc["actions"][0]["value"]=std::string(129,'y');assert(!decodeChain(doc.as<JsonVariantConst>(),0,decoded,error));
   std::cout << "PASS OSC int/float/bool/string wire encoding\n";
 }
 void midiTests() {
@@ -271,12 +282,12 @@ void transactionTests() {
 void settingsScaleTests() {
   Config source;
   Action action; action.oscType = OscType::String;
-  memset(action.address, 'x', 96); action.address[0] = '/'; action.address[96] = 0;
-  memset(action.stringValue, 1, 64); action.stringValue[64] = 0;
+  memset(action.address, '"', MAX_OSC_ADDRESS_BYTES); action.address[0] = '/'; action.address[MAX_OSC_ADDRESS_BYTES] = 0;
+  memset(action.stringValue, 1, MAX_OSC_STRING_BYTES); action.stringValue[MAX_OSC_STRING_BYTES] = 0;
   for (uint8_t id=0;id<INPUT_COUNT;++id) {
     auto& chain=source.chains[id];
     chain.count = id>=26?8:id%2?0:16;
-    for (auto& a : chain.actions) a = action;
+    for (unsigned i = 0; i < chain.count; ++i) chain.actions[i] = action;
   }
   String error;
   rejectConfigAllocation = true;
@@ -287,8 +298,8 @@ void settingsScaleTests() {
   assert(encoded(config) == encoded(source));
   assert(saveWifiConfig("{\"ssid\":\"large-config\",\"password\":\"\"}", error));
   assert(loadConfig(error));
-  assert(config.chains[0].count == 16 && config.chains[0].actions[15].stringValue[63] == 1);
-  assert(config.chains[27].count == 8 && config.chains[27].actions[7].stringValue[63] == 1);
+  assert(config.chains[0].count == 16 && config.chains[0].actions[15].stringValue[127] == 1);
+  assert(config.chains[27].count == 8 && config.chains[27].actions[7].stringValue[127] == 1);
   std::cout << "PASS maximum 224 long OSC Actions / >48KB snapshot / bounded save-load / Wi-Fi preservation\n";
 }
 void waitTests() {
@@ -383,12 +394,23 @@ void allNotesTests() {
 }
 void sharedSlotsTests() {
   String error; Config source, decoded;
+  static_assert(sizeof(Config) < sizeof(Action) * MAX_TOTAL_ACTIONS + 1024, "Config must own only 224 Action slots");
+  for(unsigned key=0;key<13;++key)for(unsigned i=0;i<16;++i)
+    assert(&source.chains[key*2].actions[i]==&source.chains[key*2+1].actions[15-i]);
+  assert(&source.chains[26].actions[7]+1==&source.chains[27].actions[0]);
   Action note; note.protocol=Protocol::Midi; note.transport=Transport::Usb;
-  for(unsigned i=0;i<16;++i){note.number=i;source.chains[0].actions[i]=note;source.chains[1].actions[i]=note;}
   const unsigned counts[][2]={{16,0},{14,2},{8,8},{1,15},{0,16}};
   for(const auto& pair:counts){
     source.chains[0].count=pair[0];source.chains[1].count=pair[1];
+    for(unsigned event=0;event<2;++event)for(unsigned i=0;i<pair[event];++i){note.number=i;source.chains[event].actions[i]=note;}
     JsonDocument doc;encodeConfig(source,doc);assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+    Config copy=source;assert(encoded(copy)==encoded(source));
+    decoded=copy;copy.chains[pair[0]?0:1].actions[0].number=100;
+    assert(encoded(decoded)==encoded(source)); // Copies must rebind views to their own pools.
+    auto array=doc["chains"].as<JsonArray>();JsonDocument reverse;encodeNetwork(source,reverse);
+    JsonDocument reordered;reordered["schemaVersion"]=1;reordered["network"]=reverse;
+    auto reversed=reordered["chains"].to<JsonArray>();for(int i=27;i>=0;--i)reversed.add(array[i]);
+    assert(decodeConfig(reordered.as<JsonVariantConst>(),decoded,error)&&encoded(decoded)==encoded(source));
     assert(saveSource(source,error));assert(loadConfig(error));
     assert(config.chains[0].count==pair[0]&&config.chains[1].count==pair[1]);
     reset();Engine e;assert(e.trigger({0,0}));assert(e.trigger({1,0}));settle();assert(fake::midi.size()==16);
@@ -396,6 +418,11 @@ void sharedSlotsTests() {
     for(unsigned i=0;i<pair[1];++i)assert(fake::midi[pair[0]+i].a==i);
   }
   const String previous=encoded(config);
+  const auto savedDisk=*fake::files.at("/config.records");
+  rejectChainAllocation=true;
+  assert(!saveSource(source,error));assert(encoded(config)==previous);
+  assert(*fake::files.at("/config.records")==savedDisk);
+  rejectChainAllocation=false;
   source.chains[0].count=10;source.chains[1].count=7;
   JsonDocument doc;encodeConfig(source,doc);assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
   assert(!saveSource(source,error));assert(encoded(config)==previous);assert(loadConfig(error)&&encoded(config)==previous);
@@ -409,7 +436,8 @@ void sharedSlotsTests() {
   source.chains[0].count=source.chains[1].count=0;source.chains[24].count=16;source.chains[25].count=0;
   assert(saveSource(source,error));source.chains[25].count=1;assert(!saveSource(source,error));
   source.chains[25].count=0;source.chains[26].count=9;assert(!saveSource(source,error));
-  std::cout<<"PASS shared 16 slots distributions / order / save-load / invalid staging and disk / encoder limits\n";
+  std::cout<<"PASS shared 16-slot physical pool / independent copies / shuffled Events / order / save-load / allocation failure / encoder limits\n";
+  std::cout<<"Resource sizes: Action="<<sizeof(Action)<<" Chain="<<sizeof(Chain)<<" Config="<<sizeof(Config)<<"\n";
 }
 int main() {
   configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests(); sharedSlotsTests();

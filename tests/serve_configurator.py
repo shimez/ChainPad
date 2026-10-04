@@ -24,7 +24,14 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_GET(self):
-        if self.path == "/api/config":
+        if self.path == "/favicon.svg":
+            payload = (ROOT / "site/favicon.svg").read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "image/svg+xml")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+        elif self.path == "/api/config":
             self.reply(CONFIG)
         elif self.path in ("/presets.js", "/action-ui.js"):
             payload = (ROOT / "web" / self.path.lstrip("/")).read_bytes()

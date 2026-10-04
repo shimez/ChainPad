@@ -13,6 +13,12 @@
 
 C3/C6/C5もWeb UIのTransport欄を表示し、**「BLE（固定）」＋「この機種はBLEのみ対応」**として選択不可にします。USB接続は書き込み/コンソール用で、USB MIDI/HIDにはなりません。上部のUSB状態も「非対応」と表示します。
 
+OSC Addressは最大192 bytes、String値は最大128 bytes（UTF-8、ChainOSCPadと同じ）です。編集欄に使用量を表示します。日本語・絵文字は1文字で複数byteを使用し、上限超過時は保存・Importできません。
+
+## リソース診断
+
+115200 baudのシリアルモニターで `m` を送るとLittleFS使用量・設定ファイルサイズ・内部RAM/PSRAM・スタック余裕・Action数を表示します。`d` で5秒間隔と保存時のログをON/OFFできます（起動時OFF）。詳細と上限評価手順は[リソース診断](docs/resource-diagnostics.md)を参照してください。
+
 ## 実装範囲
 
 | 機能 | Phase 2 |

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84">
+  <title>ChainPad</title>
+  <style>
+    .links{stroke:#172333}
+    @media(prefers-color-scheme:dark){.links{stroke:#f3f6f8}}
+  </style>
+  <g class="links" fill="none" stroke-width="5.5" transform="translate(0 22)">
+    <rect x="9.5" y="11.5" width="27" height="17" rx="8.5" transform="rotate(-18 23 20)"/>
+    <rect x="28.5" y="11.5" width="27" height="17" rx="8.5" transform="rotate(18 42 20)"/>
+    <rect x="47.5" y="11.5" width="27" height="17" rx="8.5" transform="rotate(-18 61 20)"/>
+  </g>
+</svg>

@@ -15,8 +15,10 @@ const Presets = (() => {
     }
     if (a.delayMs !== 0) fail('待機にはWait Actionを使用してください。');
     if (a.protocol === 'osc') {
-      if (a.transport !== 'wifi' || !text(a.address, 96) || !a.address.startsWith('/') || /[\x00-\x20]/.test(a.address)) fail('OSC Address / Transportが不正です。');
-      const valid = a.type === 'int' ? int(a.value,-2147483648,2147483647) : a.type === 'float' ? typeof a.value === 'number' && Number.isFinite(a.value) && Math.abs(a.value) <= 3.4028234663852886e38 : a.type === 'bool' ? typeof a.value === 'boolean' : a.type === 'string' && text(a.value,64);
+      if (!text(a.address,192)) fail('OSC AddressはUTF-8で192 bytes以内（NUL不可）にしてください。');
+      if (a.type==='string' && !text(a.value,128)) fail('OSC String値はUTF-8で128 bytes以内（NUL不可）にしてください。');
+      if (a.transport !== 'wifi' || !a.address.startsWith('/') || /[\x00-\x20]/.test(a.address)) fail('OSC Address / Transportが不正です。');
+      const valid = a.type === 'int' ? int(a.value,-2147483648,2147483647) : a.type === 'float' ? typeof a.value === 'number' && Number.isFinite(a.value) && Math.abs(a.value) <= 3.4028234663852886e38 : a.type === 'bool' ? typeof a.value === 'boolean' : a.type === 'string' && text(a.value,128);
       if (!valid) fail('OSCの型または値が不正です。');
     } else if (a.protocol === 'midi') {
       if (['allNotesOn','allNotesOff'].includes(a.message)) {

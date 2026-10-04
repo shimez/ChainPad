@@ -45,7 +45,7 @@ HTTP処理中もスキャンは継続しますが、dispatchはHTTP処理後に�
 
 ## Backend
 
-- OSC: 最大97-byte Address領域（終端含む）、65-byte String領域。4-byte alignmentとbig-endian。型タグ `i/f/T/F/s`。各Actionは1個の引数。
+- OSC: Address最大192 bytes、String最大128 bytes（UTF-8）。終端を含む固定領域は193/129 bytes。4-byte alignmentとbig-endian。型タグ `i/f/T/F/s`。各Actionは1個の引数。最大送信packetは332 bytes。
 - MIDI: USB/BLEごとにFIFO。Note On/Off/CCの3-byte Channel Voice。ユーザー表示はChannel 1–16、wireは0–15。送信失敗時はFIFOの先頭を保持。
 - HID: USB/BLEごとの押下Usage集合と修飾キー集合。最大6キー。KeyUpは該当Usageのみ解放、Release AllはTransport内の全キー解放。状態遷移ごとの8-byte reportをFIFOに記録するため、短いPress/Releaseも最終状態だけに潰しません。
 - Shared transport: `transports.cpp` だけがUSB/NimBLEを初期化。BLEは1つのserver、MIDI serviceとHID serviceの2種類。Phase 1は同一PC/centralとの利用を想定します。
@@ -104,7 +104,13 @@ Engineは最大32個の独立した実行状態（入力ID・次のAction位置�
 
 内部保存は **LittleFSのみ**。`settings` partitionの `/config.records` に、storageVersion 1とNetworkを含むヘッダー1行＋入力ID順の28個のChain JSON行を保存します。外部GETのschemaVersion 1 JSONとは独立した内部形式です。旧形式の読み込み・移行・fallbackはありません。
 
-ブラウザ側で設定をsnapshotし、Network（最大2048 bytes）をbegin、各EventのChain（最大16384 bytes）を順にstage、最後にcommitします。FirmwareはNetworkまたは1 Chain分だけを検証・正規化して `/pending.records` へ追記します。Config全体の複製も全体JSONのRAM展開もありません。String長はUTF-8のbyte数で、Protocol/Transport、IPv4、入力ID順序、Action数、型・範囲を検証します。新しいbeginは以前のtokenを無効化し、途中失敗した保存は次のbeginからやり直します。
+ブラウザ側で設定をsnapshotし、Network（最大2048 bytes）をbegin、各EventのChain（最大24576 bytes）を順にstage、最後にcommitします。192-byte Addressと128-byte Stringを持つ16 ActionsのJSONエスケープ膨張を含めた上限です。FirmwareはNetworkまたは1 Chain分だけを検証・正規化して `/pending.records` へ追記します。Config全体の複製も全体JSONのRAM展開もありません。String長はUTF-8のbyte数で、Protocol/Transport、IPv4、入力ID順序、Action数、型・範囲を検証します。新しいbeginは以前のtokenを無効化し、途中失敗した保存は次のbeginからやり直します。
+
+### RAM上の共有枠
+
+Configは13組（12キー＋Encoder Push）×16枠と、Encoder CW/CCW各8枠の計224 Actionsだけを所有します。Pressは共有領域の先頭から、Releaseは末尾から使用します。ChainViewの論理添字によりReleaseも設定順に読み書きでき、実行・JSONの順序は変更しません。Press/Release合計検証後にのみ領域へ反映します。Configコピー時は参照先をコピー先自身の領域に保持します。
+
+保存・読み込み用の一時Chainは最大16件のままですが、OSC領域拡大によるloopスタック圧迫を避けるため、1 Chain分だけをヒープに確保・解放します。確保失敗はエラーとして処理します。保存形式は従来と同じ28 Eventレコードで、既存LittleFS設定もそのまま読み込めます。
 
 commitは全レコードを逐次再検証した後、LittleFSのrename-over-existingで一括確定します。通信中断・書き込み失敗・再起動の途中ファイルはactiveとして読まれません。検証・rename失敗までは以前のディスク設定とruntimeを維持します。確定後も1 Chainずつ適用します。確定後の読み出し自体に失敗した場合は空Chainへ戻してエラーを返します。保存・適用中にEngineを並行実行しません。
 

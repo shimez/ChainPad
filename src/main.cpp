@@ -10,6 +10,7 @@
 #include "engine.h"
 #include "inputs.h"
 #include "backends.h"
+#include "diagnostics.h"
 #include "web_assets.h"
 
 using namespace chimera;
@@ -29,6 +30,11 @@ USBCDC console; // Explicit CDC: USB is started once, after setting descriptors.
 auto& console = Serial; // C3/C6/C5: USB Serial/JTAG console only.
 #endif
 String bootMessage;
+bool diagnosticsEnabled = false;
+uint32_t lastDiagnostics = 0;
+void diagnosticCheckpoint(const char* reason) {
+  if (diagnosticsEnabled) printDiagnostics(console, reason);
+}
 bool inputReady = false;
 uint32_t restartAt = 0, lastActivity = 0;
 char bootSsid[33]{}, bootPassword[65]{};
@@ -58,8 +64,10 @@ void setupWeb() {
     jsonResponse(200, doc);
   });
   web.on("/api/wifi", HTTP_PUT, [] {
+    diagnosticCheckpoint("wifi-save-before");
     String error;
-    if (!saveWifiConfig(web.arg("plain"), error)) { result(400, error); return; }
+    if (!saveWifiConfig(web.arg("plain"), error)) { diagnosticCheckpoint("wifi-save-failed"); result(400, error); return; }
+    diagnosticCheckpoint("wifi-save-after");
     panic(); restartAt = millis() + 750;
     result(200, "Saved. Restarting.");
   });
@@ -81,9 +89,11 @@ void setupWeb() {
       web.sendContent(part);
     }
     web.sendContent("]}"); web.sendContent("");
+    diagnosticCheckpoint("config-get-after");
   });
   web.on("/api/config/begin", HTTP_POST, [] {
     String error; auto token = beginConfigSave(web.arg("plain"), error);
+    diagnosticCheckpoint(token ? "save-begin" : "save-begin-failed");
     if (!token) { result(400, error); return; }
     JsonDocument doc; doc["token"] = token; jsonResponse(200, doc);
   });
@@ -91,12 +101,15 @@ void setupWeb() {
     int id = web.arg("input").toInt();
     String error;
     if (!web.hasArg("input") || id < 0 || id >= INPUT_COUNT ||
-        !stageConfigChain(web.arg("token").toInt(), id, web.arg("plain"), error)) { result(400, error); return; }
+         !stageConfigChain(web.arg("token").toInt(), id, web.arg("plain"), error)) { diagnosticCheckpoint("save-stage-failed"); result(400, error); return; }
+    diagnosticCheckpoint("save-stage");
     result(200, "Staged");
   });
   web.on("/api/config/commit", HTTP_POST, [] {
+    diagnosticCheckpoint("save-commit-before");
     String error;
-    if (!commitConfigSave(web.arg("token").toInt(), error)) { result(400, error); return; }
+    if (!commitConfigSave(web.arg("token").toInt(), error)) { diagnosticCheckpoint("save-commit-failed"); result(400, error); return; }
+    diagnosticCheckpoint("save-commit-after");
     panic();
     result(200, "Saved and applied. Wi-Fi credential changes require Restart.");
   });
@@ -169,11 +182,21 @@ void setup() {
   inputReady = inputsBegin();
    console.println("ChainPad / Project Chimera Phase 2"); console.println(bootMessage);
   console.println("Setup: ChainPad-Setup / http://192.168.4.1");
+  console.println("Diagnostics: m=snapshot, d=toggle 5s + save logging, ?=help (115200 baud)");
 }
 void loop() {
   static uint32_t observedOverflows = 0;
   web.handleClient();
-  for (unsigned i = 0; i < 64 && console.available() > 0; ++i) console.read();
+  // At most one command per loop, so pasted input cannot monopolize execution.
+  if (console.available() > 0) {
+    const int command = console.read();
+    if (command == 'm') printDiagnostics(console, "manual");
+    else if (command == 'd') {
+      diagnosticsEnabled = !diagnosticsEnabled; lastDiagnostics = millis();
+      console.println(diagnosticsEnabled ? "Diagnostics ON" : "Diagnostics OFF");
+      if (diagnosticsEnabled) printDiagnostics(console, "enabled");
+    } else if (command == '?') console.println("m=snapshot; d=toggle 5s + save logging (default OFF); bytes; file -1=absent -2=open failed");
+  }
   uint32_t now = millis();
   backendsTick(now);
   uint32_t overflows = inputOverflows();
@@ -189,5 +212,8 @@ void loop() {
   } else if (static_cast<int32_t>(now - restartAt) >= 0) ESP.restart();
   bool led = WiFi.status() == WL_CONNECTED ? now - lastActivity > 50 : now % 1000 < 500;
   setStatusLed(inputReady && led);
+  if (diagnosticsEnabled && now - lastDiagnostics >= 5000) {
+    lastDiagnostics = now; printDiagnostics(console, "periodic");
+  }
   delay(1);
 }

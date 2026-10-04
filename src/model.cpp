@@ -1,6 +1,8 @@
 #include "model.h"
 #include <IPAddress.h>
 #include <cmath>
+#include <memory>
+#include <new>
 
 namespace chimera {
 Config config;
@@ -87,17 +89,27 @@ bool decodeConfig(JsonVariantConst root, Config& out, String& error) {
   error = "Expected exactly 28 uniquely identified input chains";
   if (chains.size() != INPUT_COUNT) return false;
   bool seen[INPUT_COUNT] = {};
+  uint8_t counts[INPUT_COUNT] = {};
+  // Validate all pair budgets before any write to the shared Action pools.
   for (auto j : chains) {
     if (!integer(j["input"], 0, INPUT_COUNT - 1)) return false;
     uint8_t id = j["input"];
     if (seen[id]) return false;
     seen[id] = true;
-    if (!decodeChain(j, id, out.chains[id], error)) return false;
+    if (!j["actions"].is<JsonArrayConst>() || j["actions"].size() > eventActionLimit(id)) return false;
+    counts[id] = j["actions"].size();
   }
   for (uint8_t id = 0; id < 26; id += 2) {
-    if (out.chains[id].count + out.chains[id + 1].count > MAX_KEY_ACTIONS) {
+    if (counts[id] + counts[id + 1] > MAX_KEY_ACTIONS) {
       error = "Press / Release total exceeds 16 Actions at " + inputName(id); return false;
     }
+  }
+  std::unique_ptr<Chain> chain(new (std::nothrow) Chain);
+  if (!chain) { error = "Not enough RAM for chain decode"; return false; }
+  for (auto j : chains) {
+    uint8_t id = j["input"];
+    if (!decodeChain(j, id, *chain, error)) return false;
+    out.chains[id].assign(*chain);
   }
   error = "";
   return true;
@@ -155,7 +167,7 @@ void encodeNetwork(const NetworkSettings& source, JsonDocument& doc) {
   n["ssid"] = source.ssid; n["password"] = source.password;
   n["oscHost"] = source.oscHost; n["oscPort"] = source.oscPort;
 }
-void encodeChain(const Chain& source, uint8_t id, JsonDocument& doc) {
+template<typename T> void encodeChainImpl(const T& source, uint8_t id, JsonDocument& doc) {
     doc.clear(); auto c = doc.to<JsonObject>(); c["input"] = id;
     auto actions = c["actions"].to<JsonArray>();
     for (uint8_t k = 0; k < source.count; ++k) {
@@ -187,4 +199,6 @@ void encodeChain(const Chain& source, uint8_t id, JsonDocument& doc) {
       }
     }
 }
+void encodeChain(const Chain& source, uint8_t id, JsonDocument& doc) { encodeChainImpl(source, id, doc); }
+void encodeChain(const ChainView& source, uint8_t id, JsonDocument& doc) { encodeChainImpl(source, id, doc); }
 } // namespace chimera

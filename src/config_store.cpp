@@ -1,5 +1,7 @@
 #include "model.h"
 #include <LittleFS.h>
+#include <memory>
+#include <new>
 #ifndef CHAINPAD_HOST_TEST
 #include <esp_partition.h>
 #endif
@@ -65,7 +67,9 @@ bool scan(const char* path, bool apply, String& error) {
   if (!decodeNetwork(doc["network"], network, error)) return false;
   // Validation pass completes before any runtime setting is changed.
   if (apply) static_cast<NetworkSettings&>(config) = network;
-  Chain chain; uint8_t pressCount = 0;
+  std::unique_ptr<Chain> scratch(new (std::nothrow) Chain);
+  if (!scratch) { error = "Not enough RAM for chain read"; return false; }
+  auto& chain = *scratch; uint8_t pressCount = 0;
   for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
     if (!readRecord(file, doc)) { error = "Invalid LittleFS chain record"; return false; }
     if (!decodeChain(doc.as<JsonVariantConst>(), i, chain, error)) return false;
@@ -73,7 +77,7 @@ bool scan(const char* path, bool apply, String& error) {
       if (!(i % 2)) pressCount = chain.count;
       else if (pressCount + chain.count > MAX_KEY_ACTIONS) { error = "Press / Release total exceeds 16 Actions"; return false; }
     }
-    if (apply) config.chains[i] = chain;
+    if (apply) config.chains[i].assign(chain);
   }
   if (file.read() != -1) { error = "Trailing settings data"; return false; }
   error = ""; return true;
@@ -83,6 +87,7 @@ void defaults() {
   for (auto& chain : config.chains) chain.count = 0;
 }
 }
+bool configStorageMounted() { return mounted; }
 uint32_t beginConfigSave(const String& json, String& error) {
   if (!mount(error)) return 0;
   if (json.length() > 2048) { error = "Network request too large"; return 0; }
@@ -101,7 +106,10 @@ bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& er
   error = "Invalid or expired configuration transaction";
   if (!transaction || token != transaction || id != nextChain || id >= INPUT_COUNT) return false;
   if (json.length() > MAX_RECORD_BYTES) { error = "Chain request too large"; transaction = 0; return false; }
-  JsonDocument doc; Chain chain;
+  JsonDocument doc;
+  std::unique_ptr<Chain> scratch(new (std::nothrow) Chain);
+  if (!scratch) { error = "Not enough RAM for chain stage"; transaction = 0; return false; }
+  auto& chain = *scratch;
   if (deserializeJson(doc, json)) { error = "Invalid chain JSON"; transaction = 0; return false; }
   if (!decodeChain(doc.as<JsonVariantConst>(), id, chain, error)) { transaction = 0; return false; }
   if (id < 26) {

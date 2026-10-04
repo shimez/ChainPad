@@ -11,6 +11,12 @@ config.chains[1].actions=[{protocol:'keyboard',transport:'usb',delayMs:0,message
 config.chains[27].actions=[{protocol:'osc',transport:'wifi',delayMs:0,address:'/test',type:'string',value:'hello'}];
 const normalized=v=>JSON.parse(JSON.stringify(v));
 const full=P.full(config);
+for(const [address,value] of [['/'+'a'.repeat(191),'b'.repeat(128)],['/'+'あ'.repeat(63)+'ab','あ'.repeat(42)+'ab'],['/'+'😀'.repeat(47)+'abc','😀'.repeat(32)]]){
+  const file=P.full(config);file.chains[27].actions[0].address=address;file.chains[27].actions[0].value=value;
+  assert.doesNotThrow(()=>P.read(file,'full',usb));
+  file.chains[27].actions[0].address+='x';assert.throws(()=>P.read(file,'full',usb),/192 bytes/);
+  file.chains[27].actions[0].address=address;file.chains[27].actions[0].value+='x';assert.throws(()=>P.read(file,'full',usb),/128 bytes/);
+}
 const bulkFull=P.full(config);
 bulkFull.chains[2].actions=[{protocol:'midi',message:'allNotesOn',delayMs:0,value:88},{protocol:'midi',message:'allNotesOff',delayMs:0}];
 assert.deepEqual(normalized(P.read(bulkFull,'full',ble).config.chains[2]),normalized(bulkFull.chains[2]));

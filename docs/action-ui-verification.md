@@ -22,7 +22,7 @@
 
 - キーとEncoder Pushは両Event合計16件。16/0、14/2、8/8、1/15、0/16を許可し、10/7は拒否します。Encoder回転は各8件です。
 - Firmwareは全体JSON検証、分割stage、commit時のディスク検証、起動時検証で共有上限を確認します。Key/Full Presetも同じ制約で検証します。
-- 実行用の固定Chain配列は各側16要素に拡張しました。保存時は従来どおり1 Eventずつ処理し、Config全体を複製しません。最大総Action数は224件のままです。
+- 実行用のAction領域もPress/Releaseで16要素を共有し、Encoder回転は各8要素です。保存時は従来どおり1 Eventずつ処理し、Config全体を複製しません。最大総Action数は224件です。
 - ホストコアテスト：各配分の保存・再読み込み・16件の実行順、不正stage時の旧設定保持、不正ディスク検出、Encoder制限を確認しPASS。16件の長いOSC Actionを含む最大構成の保存とWi-Fi保存もPASS。
 - Nodeテスト：Key/Full Presetの共有上限と往復を確認しPASS。
 - ブラウザfixture：各配分で両側の追加ボタンが無効になること、削除した1枠を反対側で使用できること、Preset適用後の上限表示、不正Import時の編集保持、16件の並べ替え→保存→再読み込みを確認しPASS。
