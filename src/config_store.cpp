@@ -11,6 +11,7 @@ constexpr char STAGED[] = "/pending.records";
 bool mounted = false;
 uint32_t generation = 0, transaction = 0;
 uint8_t nextChain = 0;
+uint8_t stagedPressCount = 0;
 
 bool mount(String& error) {
   if (mounted) return true;
@@ -64,10 +65,14 @@ bool scan(const char* path, bool apply, String& error) {
   if (!decodeNetwork(doc["network"], network, error)) return false;
   // Validation pass completes before any runtime setting is changed.
   if (apply) static_cast<NetworkSettings&>(config) = network;
-  Chain chain;
+  Chain chain; uint8_t pressCount = 0;
   for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
     if (!readRecord(file, doc)) { error = "Invalid LittleFS chain record"; return false; }
     if (!decodeChain(doc.as<JsonVariantConst>(), i, chain, error)) return false;
+    if (i < 26) {
+      if (!(i % 2)) pressCount = chain.count;
+      else if (pressCount + chain.count > MAX_KEY_ACTIONS) { error = "Press / Release total exceeds 16 Actions"; return false; }
+    }
     if (apply) config.chains[i] = chain;
   }
   if (file.read() != -1) { error = "Trailing settings data"; return false; }
@@ -85,7 +90,7 @@ uint32_t beginConfigSave(const String& json, String& error) {
   if (deserializeJson(doc, json)) { error = "Invalid network JSON"; return 0; }
   if (!decodeNetwork(doc.as<JsonVariantConst>(), network, error)) return 0;
   // A new begin invalidates any abandoned transaction; its active file is untouched.
-  transaction = 0; nextChain = 0;
+  transaction = 0; nextChain = 0; stagedPressCount = 0;
   encodeNetwork(network, doc);
   JsonDocument header; header["storageVersion"] = 1; header["network"] = doc;
   if (!writeRecord(header, "w", error)) return 0;
@@ -99,6 +104,12 @@ bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& er
   JsonDocument doc; Chain chain;
   if (deserializeJson(doc, json)) { error = "Invalid chain JSON"; transaction = 0; return false; }
   if (!decodeChain(doc.as<JsonVariantConst>(), id, chain, error)) { transaction = 0; return false; }
+  if (id < 26) {
+    if (!(id % 2)) stagedPressCount = chain.count;
+    else if (stagedPressCount + chain.count > MAX_KEY_ACTIONS) {
+      error = "Press / Release total exceeds 16 Actions"; transaction = 0; return false;
+    }
+  }
   encodeChain(chain, id, doc);
   if (!writeRecord(doc, "a", error)) { transaction = 0; return false; }
   ++nextChain; error = ""; return true;

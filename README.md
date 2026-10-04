@@ -18,7 +18,7 @@ C3/C6/C5もWeb UIのTransport欄を表示し、**「BLE（固定）」＋「こ�
 | 機能 | Phase 2 |
 |---|---|
 | Input | 12キーのPress/Release、Encoder CW/CCW、Encoder Push Press/Release |
-| Action Chain | Eventごとに最大8 Actions、登録順にdispatch |
+| Action Chain | 1キーのPress / Release合計で最大16 Actions（Encoder Pushも同様）。Encoder回転は各Event最大8 Actions。登録順にdispatch |
 | OSC | Wi-Fi / int32、float32、bool、string、送信先IPv4/Portは共通 |
 | MIDI | USB / BLE / Both（USB + BLE）、Note On、Note Off、Control Change |
 | Keyboard HID | USB / BLE、KeyDown、KeyUp、Release All、修飾キー、F13–F24 |

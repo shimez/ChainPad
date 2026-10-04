@@ -35,12 +35,14 @@ const Presets = (() => {
     if (!Array.isArray(raw) || raw.length !== count) fail(`Chainは${count}個必要です。`);
     const seen = new Set();
     const result = raw.map(c => {
-      if (!object(c) || !int(c.input,0,count-1) || seen.has(c.input) || !Array.isArray(c.actions) || c.actions.length>8) fail('ChainのID・重複・Action数が不正です。');
+      if (!object(c) || !int(c.input,0,count-1) || seen.has(c.input) || !Array.isArray(c.actions) || c.actions.length>(c.input<26?16:8)) fail('ChainのID・重複・Action数が不正です。');
       seen.add(c.input);
       return {input:c.input, actions:c.actions.map(a=>action(a,capabilities,changes))};
     });
     // Only locate Event IDs; the order of Actions is never altered.
-    return Array.from({length:count},(_,input)=>result.find(c=>c.input===input));
+    const ordered=Array.from({length:count},(_,input)=>result.find(c=>c.input===input));
+    for(let i=0;i<Math.min(count,26);i+=2)if(ordered[i].actions.length+ordered[i+1].actions.length>16)fail('Press / Release合計は最大16 Actionsです。');
+    return ordered;
   }
   function network(n) {
     if (!object(n) || !text(n.ssid,32) || !text(n.password,64) || !int(n.oscPort,1,65535) || !text(n.oscHost,15) || !/^\d{1,3}(\.\d{1,3}){3}$/.test(n.oscHost) || n.oscHost.split('.').some(v=>Number(v)>255)) fail('通信設定が不正です。');

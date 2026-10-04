@@ -29,7 +29,7 @@ input scannerは `ARDUINO_RUNNING_CORE` を利用し、C3/C6/C5の単一コア�
 | 24, 25 | Encoder Push Press, Release |
 | 26, 27 | Encoder CW, CCW |
 
-Phase 1では設定は28個のChainを持ち、各Chainに最大8 Actions。ハードウェアのないキーを省くMetadataはまだ導入していません。将来もEngineへROW/COLを持ち込む必要はありません。
+設定は28個のChainを持ち、キーとEncoder PushのPress / Releaseは合計16 Actionsを共有します。各側は0〜16件、Encoder CW/CCWは各8件です。全体最大224件は変わりません。ハードウェアのないキーを省くMetadataはまだ導入していません。将来もEngineへROW/COLを持ち込む必要はありません。
 
 ## 実行・スレッド
 

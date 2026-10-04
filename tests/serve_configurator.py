@@ -26,8 +26,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/api/config":
             self.reply(CONFIG)
-        elif self.path == "/presets.js":
-            payload = (ROOT / "web/presets.js").read_bytes()
+        elif self.path in ("/presets.js", "/action-ui.js"):
+            payload = (ROOT / "web" / self.path.lstrip("/")).read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/javascript; charset=utf-8")
             self.send_header("Content-Length", str(len(payload)))

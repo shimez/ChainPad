@@ -3,7 +3,7 @@
 namespace chimera {
 namespace {
 struct Message { uint8_t status, data1, data2; };
-constexpr unsigned MIDI_CAPACITY = INPUT_COUNT * MAX_ACTIONS + 64;
+constexpr unsigned MIDI_CAPACITY = MAX_TOTAL_ACTIONS + 64;
 struct State {
   Outbox<Message, MIDI_CAPACITY> outbox;
   uint32_t epoch = 0;

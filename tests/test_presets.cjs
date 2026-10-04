@@ -36,7 +36,18 @@ invalid(v=>v.chains[0].actions[0].delayMs=86400001);
 invalid(v=>v.chains[0].actions[0].delayMs=1.5);
 invalid(v=>v.chains[0].actions[1].value=0);
 invalid(v=>v.chains[0].actions[1].delayMs=10);
-invalid(v=>v.chains[0].actions=Array(9).fill({protocol:'wait',delayMs:1}));
+invalid(v=>v.chains[0].actions=Array(17).fill({protocol:'wait',delayMs:1}));
+for(const [press,release] of [[16,0],[14,2],[8,8],[1,15],[0,16]]){
+  const shared=P.full(config);
+  shared.chains[0].actions=Array(press).fill({protocol:'wait',delayMs:1});
+  shared.chains[1].actions=Array(release).fill({protocol:'wait',delayMs:1});
+  const restored=P.read(shared,'full',usb).config;
+  assert.equal(restored.chains[0].actions.length,press);
+  assert.equal(P.read(P.key(restored,0),'key',usb).chains[1].actions.length,release);
+}
+invalid(v=>{v.chains[0].actions=Array(10).fill({protocol:'wait',delayMs:1});v.chains[1].actions=Array(7).fill({protocol:'wait',delayMs:1});});
+invalid(v=>v.chains[26].actions=Array(9).fill({protocol:'wait',delayMs:1}));
+const badKey=P.key(config,0);badKey.chains[0].actions=Array(10).fill({protocol:'wait',delayMs:1});badKey.chains[1].actions=Array(7).fill({protocol:'wait',delayMs:1});assert.throws(()=>P.read(badKey,'key',usb));
 invalid(v=>v.chains[1].actions[0].transport='both');
 invalid(v=>v.network.ssid='あ'.repeat(11));
 invalid(v=>v.network.password='a\0b');

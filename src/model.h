@@ -5,7 +5,10 @@
 
 namespace chimera {
 constexpr uint8_t INPUT_COUNT = 28;
-constexpr uint8_t MAX_ACTIONS = 8;
+constexpr uint8_t MAX_ACTIONS = 16;
+constexpr uint8_t MAX_KEY_ACTIONS = 16;
+constexpr uint16_t MAX_TOTAL_ACTIONS = 224;
+constexpr uint8_t eventActionLimit(uint8_t id) { return id < 26 ? MAX_ACTIONS : 8; }
 constexpr size_t MAX_RECORD_BYTES = 16384;
 constexpr uint32_t MAX_WAIT_MS = 86400000; // 24 hours; safely below half the millis() range.
 enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait };

@@ -94,6 +94,11 @@ bool decodeConfig(JsonVariantConst root, Config& out, String& error) {
     seen[id] = true;
     if (!decodeChain(j, id, out.chains[id], error)) return false;
   }
+  for (uint8_t id = 0; id < 26; id += 2) {
+    if (out.chains[id].count + out.chains[id + 1].count > MAX_KEY_ACTIONS) {
+      error = "Press / Release total exceeds 16 Actions at " + inputName(id); return false;
+    }
+  }
   error = "";
   return true;
 }
@@ -112,7 +117,7 @@ bool decodeChain(JsonVariantConst j, uint8_t id, Chain& out, String& error) {
     if (!integer(j["input"], id, id)) return false;
     auto actions = j["actions"].as<JsonArrayConst>();
     error = "Invalid action list at " + inputName(id);
-    if (!j["actions"].is<JsonArrayConst>() || actions.size() > MAX_ACTIONS) return false;
+    if (!j["actions"].is<JsonArrayConst>() || actions.size() > eventActionLimit(id)) return false;
     out.count = 0;
     for (auto action : actions) {
       Action a;

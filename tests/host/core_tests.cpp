@@ -85,7 +85,7 @@ void configTests() {
   assert(loadConfig(error)); assert(config.chains[0].count == 1);
   // Exercise every available Action slot using bounded records.
   for (auto& chain : source.chains) {
-    chain.count = MAX_ACTIONS;
+    chain.count = 8;
     for (auto& action : chain.actions) action = on;
   }
   assert(encoded(source).length() > 4096);
@@ -93,9 +93,9 @@ void configTests() {
   assert(saveSource(source, error));
   rejectConfigAllocation = false;
   config.chains[27].count = 0;
-  assert(loadConfig(error)); assert(config.chains[27].count == MAX_ACTIONS);
+  assert(loadConfig(error)); assert(config.chains[27].count == 8);
   assert(!beginConfigSave(String(std::string(MAX_RECORD_BYTES + 1, ' ')), error));
-  assert(config.chains[27].count == MAX_ACTIONS);
+  assert(config.chains[27].count == 8);
   std::cout << "PASS schema validation / save failure atomicity / reload\n";
 }
 void oscTests() {
@@ -125,7 +125,7 @@ void midiTests() {
   assert(fake::midi.empty());
   // Overflow drops the backlog without synthesizing MIDI messages.
   fake::writable = false;
-  for (int i = 0; i < INPUT_COUNT * MAX_ACTIONS + 64; ++i) assert(midiDispatch(a) == SendResult::Accepted);
+  for (int i = 0; i < MAX_TOTAL_ACTIONS + 64; ++i) assert(midiDispatch(a) == SendResult::Accepted);
   assert(midiDispatch(a) == SendResult::Failed);
   fake::midi.clear(); fake::writable = true; settle();
   assert(fake::midi.empty());
@@ -181,7 +181,7 @@ void midiBothTests() {
   // Saturating USB must not prevent BLE delivery or duplicate it on retry.
   reset(); fake::writable = false;
   Action usb = a; usb.transport = Transport::Usb;
-  for (int i = 0; i < INPUT_COUNT * MAX_ACTIONS + 64; ++i) midiDispatch(usb);
+  for (int i = 0; i < MAX_TOTAL_ACTIONS + 64; ++i) midiDispatch(usb);
   assert(midiDispatch(a) == SendResult::Accepted);
   fake::writable = true; settle();
   unsigned bleCount = 0;
@@ -273,8 +273,9 @@ void settingsScaleTests() {
   Action action; action.oscType = OscType::String;
   memset(action.address, 'x', 96); action.address[0] = '/'; action.address[96] = 0;
   memset(action.stringValue, 1, 64); action.stringValue[64] = 0;
-  for (auto& chain : source.chains) {
-    chain.count = MAX_ACTIONS;
+  for (uint8_t id=0;id<INPUT_COUNT;++id) {
+    auto& chain=source.chains[id];
+    chain.count = id>=26?8:id%2?0:16;
     for (auto& a : chain.actions) a = action;
   }
   String error;
@@ -286,7 +287,8 @@ void settingsScaleTests() {
   assert(encoded(config) == encoded(source));
   assert(saveWifiConfig("{\"ssid\":\"large-config\",\"password\":\"\"}", error));
   assert(loadConfig(error));
-  assert(config.chains[27].count == MAX_ACTIONS && config.chains[27].actions[7].stringValue[63] == 1);
+  assert(config.chains[0].count == 16 && config.chains[0].actions[15].stringValue[63] == 1);
+  assert(config.chains[27].count == 8 && config.chains[27].actions[7].stringValue[63] == 1);
   std::cout << "PASS maximum 224 long OSC Actions / >48KB snapshot / bounded save-load / Wi-Fi preservation\n";
 }
 void waitTests() {
@@ -361,7 +363,7 @@ void allNotesTests() {
   assert(fake::midi.size()==1 && fake::midi[0].status==0x80 && fake::midi[0].b==0);
   // Maximum-sized target set under backpressure, followed by an ordinary Action.
   reset(); config=Config{}; unsigned n=0;
-  for(auto& c:config.chains){c.count=MAX_ACTIONS; for(auto& a:c.actions){a.protocol=Protocol::Midi;a.transport=Transport::Usb;a.channel=n/128+1;a.number=n%128;++n;}}
+  for(auto& c:config.chains){c.count=8; for(unsigned k=0;k<c.count;++k){auto& a=c.actions[k];a.protocol=Protocol::Midi;a.transport=Transport::Usb;a.channel=n/128+1;a.number=n%128;++n;}}
   fake::writable=false; assert(midiDispatch(bulk)==SendResult::Accepted);
   assert(midiDispatch(bulk)==SendResult::Failed); // no partial second batch
   note.message=MidiMessage::NoteOn;note.number=127;note.channel=16;note.value=99;
@@ -379,7 +381,37 @@ void allNotesTests() {
   hostMillis=1234;config=Config{};fake::midi.clear();assert(midiDispatch(bulk)==SendResult::Accepted);assert(fake::midi.empty());
   std::cout << "PASS All Notes dedup / routing / explicit messages / maximum batch retry-order / Wait / persistence / empty targets\n";
 }
+void sharedSlotsTests() {
+  String error; Config source, decoded;
+  Action note; note.protocol=Protocol::Midi; note.transport=Transport::Usb;
+  for(unsigned i=0;i<16;++i){note.number=i;source.chains[0].actions[i]=note;source.chains[1].actions[i]=note;}
+  const unsigned counts[][2]={{16,0},{14,2},{8,8},{1,15},{0,16}};
+  for(const auto& pair:counts){
+    source.chains[0].count=pair[0];source.chains[1].count=pair[1];
+    JsonDocument doc;encodeConfig(source,doc);assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+    assert(saveSource(source,error));assert(loadConfig(error));
+    assert(config.chains[0].count==pair[0]&&config.chains[1].count==pair[1]);
+    reset();Engine e;assert(e.trigger({0,0}));assert(e.trigger({1,0}));settle();assert(fake::midi.size()==16);
+    for(unsigned i=0;i<pair[0];++i)assert(fake::midi[i].a==i);
+    for(unsigned i=0;i<pair[1];++i)assert(fake::midi[pair[0]+i].a==i);
+  }
+  const String previous=encoded(config);
+  source.chains[0].count=10;source.chains[1].count=7;
+  JsonDocument doc;encodeConfig(source,doc);assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  assert(!saveSource(source,error));assert(encoded(config)==previous);assert(loadConfig(error)&&encoded(config)==previous);
+  // Storage validation must also reject an over-budget snapshot independently of staging.
+  JsonDocument header;encodeNetwork(source,doc);header["storageVersion"]=1;header["network"]=doc;
+  String corrupt;serializeJson(header,corrupt);corrupt.concat("\n");
+  for(uint8_t i=0;i<INPUT_COUNT;++i){encodeChain(source.chains[i],i,doc);serializeJson(doc,corrupt);corrupt.concat("\n");}
+  const auto original=*fake::files.at("/config.records");*fake::files.at("/config.records")=corrupt.c_str();
+  assert(!loadConfig(error));for(const auto& c:config.chains)assert(c.count==0);
+  *fake::files.at("/config.records")=original;assert(loadConfig(error));
+  source.chains[0].count=source.chains[1].count=0;source.chains[24].count=16;source.chains[25].count=0;
+  assert(saveSource(source,error));source.chains[25].count=1;assert(!saveSource(source,error));
+  source.chains[25].count=0;source.chains[26].count=9;assert(!saveSource(source,error));
+  std::cout<<"PASS shared 16 slots distributions / order / save-load / invalid staging and disk / encoder limits\n";
+}
 int main() {
-  configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests();
+  configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests(); sharedSlotsTests();
   std::cout << "All firmware host tests passed.\n";
 }
