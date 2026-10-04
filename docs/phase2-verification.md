@@ -14,4 +14,4 @@
 3. 同じキーをWait中に複数回押し、それぞれのChainが独立して完了することを確認する。
 4. 長いWait中に保存・Panic・Restartを行い、待機後のActionが出力されないことを確認する。
 5. Key PresetをExportし別キーへファイルImport。Press/Release、WaitとAction順が保存・再起動後も一致することを確認する。
-6. 全体設定をExportし別個体へImport。全キー・Encoder・OSC・Wi-Fiの復元を確認する。S3→C系列はBLE適応表示も確認する。
+6. 全体設定をExportし別個体へImport。全キー・Encoder・OSCの復元と、SSID・パスワードがファイルに含まれずImport先のWi-Fi設定を保持することを確認する。S3→C系列はBLE適応表示も確認する。

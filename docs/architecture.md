@@ -98,7 +98,7 @@ Engineは最大32個の独立した実行状態（入力ID・次のAction位置�
 
 共通Action/Chain構造を `web/presets.js` で検証します。Key Presetはformat=`chainpad-key-preset`, version=1, chains=[{input:0,actions:[…]},{input:1,actions:[…]}]。0/1は対象キーのPress/Releaseへ対応します。
 
-全体ファイルはformat=`chainpad-configuration`, version=1とschemaVersion/network/chainsを持ちます。全28 EventsとWi-Fiパスワードを含みます。Importはブラウザ上で全件検証してから編集へ一括反映します。1 MiBのファイル上限があります。Firmwareへは既存のEvent単位保存APIで送信し、全体JSONをデバイスRAMへ持ち込みません。Action順は保持し、Event IDのみ所定の位置へ対応づけます。
+全体ファイルはformat=`chainpad-configuration`, version=1とschemaVersion/network/chainsを持ちます。全28 EventsとOSC送信先を含み、networkにはoscHost/oscPortのみ出力します。SSID・パスワードはExportに含めず、Import時は現在の編集画面のWi-Fi設定を保持します。以前のファイルにWi-Fi設定が含まれていても無視します。Importはブラウザ上で全件検証してから編集へ一括反映します。1 MiBのファイル上限があります。Firmwareへは既存のEvent単位保存APIで送信し、全体JSONをデバイスRAMへ持ち込みません。Action順は保持し、Event IDのみ所定の位置へ対応づけます。
 
 ### 検証と永続化
 

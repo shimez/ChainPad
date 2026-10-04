@@ -45,8 +45,8 @@ const Presets = (() => {
     return ordered;
   }
   function network(n) {
-    if (!object(n) || !text(n.ssid,32) || !text(n.password,64) || !int(n.oscPort,1,65535) || !text(n.oscHost,15) || !/^\d{1,3}(\.\d{1,3}){3}$/.test(n.oscHost) || n.oscHost.split('.').some(v=>Number(v)>255)) fail('通信設定が不正です。');
-    return {ssid:n.ssid,password:n.password,oscHost:n.oscHost,oscPort:n.oscPort};
+    if (!object(n) || !int(n.oscPort,1,65535) || !text(n.oscHost,15) || !/^\d{1,3}(\.\d{1,3}){3}$/.test(n.oscHost) || n.oscHost.split('.').some(v=>Number(v)>255)) fail('通信設定が不正です。');
+    return {oscHost:n.oscHost,oscPort:n.oscPort};
   }
   function read(raw, kind, capabilities) {
     const format = kind==='key' ? 'chainpad-key-preset' : 'chainpad-configuration';
@@ -57,7 +57,7 @@ const Presets = (() => {
     const result={schemaVersion:1,network:network(raw.network),chains:chains(raw.chains,28,capabilities,changes)};
     return {config:result,converted:changes.count};
   }
-  function full(config) { return {format:'chainpad-configuration',version:1,...clone(config)}; }
+  function full(config) { return {format:'chainpad-configuration',version:1,schemaVersion:config.schemaVersion,network:network(config.network),chains:clone(config.chains)}; }
   function key(config, group) {
     if (!int(group,0,12)) fail('Key PresetはキーまたはEncoder Pushで使用してください。');
     return {format:'chainpad-key-preset',version:1,chains:[0,1].map(input=>({input,actions:clone(config.chains.find(c=>c.input===group*2+input).actions)}))};

@@ -41,7 +41,7 @@ Wait ActionとKey Preset / Full ConfigurationのJSON Import・Exportに対応し
 - 同時に待機できる実行は32個です。上限時は新しい待機付きChain全体を拒否し、画面の「Chain受付失敗」に記録します。WaitなしのRelease等は引き続き実行できます。
 - 保存・適用、実行中止・HID解除、Restartでは待機中のChainを中止します。Waitは最小待機時間であり、HTTP処理等による遅延が加わる場合があります。
 - **Key Preset Export / Import** は選択キーのPress / Release両方を扱います。別キーへImport可能です。Encoder Pushにも対応し、Encoder回転は全体設定で扱います。
-- **全体設定 Export / Import** は全28 Events、OSC送信先、Wi-Fi資格情報を含みます。ファイルにWi-Fiパスワードが含まれます。Exportには未保存の編集も含みます。
+- **全体設定 Export / Import** は全28 EventsとOSC送信先を扱います。Wi-Fi設定（SSID・パスワード）はExportに含めず、Import時も現在の設定を保持します。Exportには未保存の編集も含みます。
 - Importは検証後に編集画面へ反映され、**保存・適用**で確定します。不正ファイルは現在の編集を変更しません。C3/C5/C6へのImportではUSB TransportをBLEへ適応し、その変更を表示します。
 - 0.3.0のLittleFS保存設定はそのまま利用できます。旧NVS形式の読み込み・移行処理はありません。
 

@@ -15,7 +15,12 @@ const bulkFull=P.full(config);
 bulkFull.chains[2].actions=[{protocol:'midi',message:'allNotesOn',delayMs:0,value:88},{protocol:'midi',message:'allNotesOff',delayMs:0}];
 assert.deepEqual(normalized(P.read(bulkFull,'full',ble).config.chains[2]),normalized(bulkFull.chains[2]));
 bulkFull.chains[2].actions[0].value=0;assert.throws(()=>P.read(bulkFull,'full',ble));
-assert.deepEqual(normalized(P.read(full,'full',usb).config),config);
+const portable={...config,network:{oscHost:config.network.oscHost,oscPort:config.network.oscPort}};
+assert.deepEqual(normalized(P.read(full,'full',usb).config),portable);
+assert.deepEqual(normalized(full.network),portable.network);
+const oldFile=normalized(full);oldFile.network.ssid='other';oldFile.network.password='other-secret';
+assert.deepEqual(normalized(P.read(oldFile,'full',usb).config),portable);
+assert.equal(config.network.password,'secret');
 const converted=P.read(full,'full',ble);
 assert.equal(converted.converted,2);
 assert.equal(converted.config.chains[0].actions[1].transport,'ble');
@@ -49,11 +54,21 @@ invalid(v=>{v.chains[0].actions=Array(10).fill({protocol:'wait',delayMs:1});v.ch
 invalid(v=>v.chains[26].actions=Array(9).fill({protocol:'wait',delayMs:1}));
 const badKey=P.key(config,0);badKey.chains[0].actions=Array(10).fill({protocol:'wait',delayMs:1});badKey.chains[1].actions=Array(7).fill({protocol:'wait',delayMs:1});assert.throws(()=>P.read(badKey,'key',usb));
 invalid(v=>v.chains[1].actions[0].transport='both');
-invalid(v=>v.network.ssid='あ'.repeat(11));
-invalid(v=>v.network.password='a\0b');
 invalid(v=>v.network.oscHost='256.1.2.3');
 invalid(v=>v.network.oscPort=0);
 // Action order and file source are not mutated; full export owns an independent copy.
 assert.deepEqual(normalized(full.chains[0].actions.map(a=>a.protocol)),['wait','midi']);
-full.network.ssid='changed';assert.equal(config.network.ssid,'test');
-console.log('PASS Key/Full round-trip, Wait order, encoder/network preservation, BLE adaptation, invalid imports, no source mutation');
+full.network.oscHost='10.0.0.1';assert.equal(config.network.oscHost,'192.168.1.2');
+// Exercise the actual UI import handler, including unsaved Wi-Fi field values.
+const fields={ssid:{value:'current-edit'},password:{value:'current-secret'},oscHost:{value:'10.0.0.9'},oscPort:{value:8000}};
+const ui=vm.createContext({Presets:P,config:normalized(config),capabilities:usb,saving:false,selected:0,$:id=>fields[id],selectInput:()=>{},changed:()=>{},renderActions:()=>{},message:()=>{}});
+const html=fs.readFileSync(path.join(__dirname,'../web/index.html'),'utf8');
+vm.runInContext(html.split('\n').find(line=>line.startsWith('function applyImport(')),ui);
+for(const file of [P.full(config),oldFile]){
+  ui.raw=file;vm.runInContext("applyImport(raw,{kind:'full'})",ui);
+  assert.deepEqual(normalized(ui.config.network),{ssid:'current-edit',password:'current-secret',...portable.network});
+  assert.equal(fields.ssid.value,'current-edit');assert.equal(fields.password.value,'current-secret');
+  assert.equal(fields.oscHost.value,portable.network.oscHost);
+  assert.deepEqual(normalized(ui.config.chains),config.chains);
+}
+console.log('PASS Key/Full round-trip, Wi-Fi exclusion and UI import preservation, Wait order, encoder/OSC preservation, BLE adaptation, invalid imports, no source mutation');
