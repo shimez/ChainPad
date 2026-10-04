@@ -17,6 +17,7 @@ def main():
     version = re.search(r'doc\["version"\] = "([^"]+)"', source).group(1)
     OUTPUT.mkdir(exist_ok=True)
     shutil.copyfile(ROOT / "site/index.html", OUTPUT / "index.html")
+    shutil.copyfile(ROOT / "site/favicon.svg", OUTPUT / "favicon.svg")
     (OUTPUT / "firmware").mkdir(exist_ok=True)
     builds, files = [], []
     for chip in CHIPS:
