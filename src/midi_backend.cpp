@@ -3,8 +3,9 @@
 namespace chimera {
 namespace {
 struct Message { uint8_t status, data1, data2; };
+constexpr unsigned MIDI_CAPACITY = INPUT_COUNT * MAX_ACTIONS + 64;
 struct State {
-  Outbox<Message> outbox;
+  Outbox<Message, MIDI_CAPACITY> outbox;
   uint32_t epoch = 0;
   bool connected = false;
 } states[2];
@@ -29,6 +30,36 @@ void flush(unsigned i) {
 }
 }
 SendResult midiDispatch(const Action& a) {
+  if (allNotes(a.message)) {
+    // Snapshot target membership at dispatch, independently for each transport.
+    uint8_t targets[2][16][16]{};
+    unsigned count[2]{};
+    for (const auto& chain : config.chains) for (uint8_t k = 0; k < chain.count; ++k) {
+      const auto& source = chain.actions[k];
+      if (source.protocol != Protocol::Midi || (source.message != MidiMessage::NoteOn && source.message != MidiMessage::NoteOff)) continue;
+      for (unsigned i = 0; i < 2; ++i) {
+        if (source.transport != Transport::Both && source.transport != transportAt(i)) continue;
+        auto& bits = targets[i][source.channel - 1][source.number / 8];
+        const uint8_t mask = 1u << (source.number % 8);
+        if (!(bits & mask)) { bits |= mask; ++count[i]; }
+      }
+    }
+    bool accepted = false, failed = false;
+    for (unsigned i = 0; i < 2; ++i) {
+      sync(i); auto& s = states[i];
+      if (!count[i] || !s.connected) continue;
+      // Reserve the complete batch before appending: never emit a partial prefix.
+      if (s.outbox.size + count[i] > MIDI_CAPACITY) { ++transportOverflows; failed = true; continue; }
+      for (unsigned ch = 0; ch < 16; ++ch) for (unsigned note = 0; note < 128; ++note) {
+        if (targets[i][ch][note / 8] & (1u << (note % 8)))
+          s.outbox.push({static_cast<uint8_t>((a.message == MidiMessage::AllNotesOn ? 0x90 : 0x80) | ch),
+                        static_cast<uint8_t>(note), static_cast<uint8_t>(a.message == MidiMessage::AllNotesOn ? a.value : 0)});
+      }
+      accepted = true; flush(i);
+    }
+    if (accepted || (!count[0] && !count[1])) return SendResult::Accepted;
+    return failed ? SendResult::Failed : SendResult::Unavailable;
+  }
   if (a.transport == Transport::Both) {
     Action routed = a;
     routed.transport = Transport::Usb;

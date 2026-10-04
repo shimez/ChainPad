@@ -32,6 +32,10 @@ Wait ActionとKey Preset / Full ConfigurationのJSON Import・Exportに対応し
 
 ## Phase 2の使い方
 
+- **MIDI → Message → All Notes → Note On / Note Off** は、実行時の保存済み設定にある全Event（Press / Release・Encoderを含む）のNote On / Note Offを収集して個別メッセージを送ります。All Notes自身・CCは収集対象外です。
+- 送信先は元のNote Actionに従い、TransportごとにChannel＋Noteを重複排除します。BothはUSBとBLEへ各1回送信します。Note OnはVelocity 1〜127を指定でき、Note OffはVelocity 0です。対象なしは何も送信しません。
+- 例：All Notes → Note On（Velocity 127）、Wait 1000 ms、All Notes → Note Off。Waitは出力キューへの登録後に開始するため、通信混雑時の受信間隔を保証するものではありません。
+
 - Actionの種類で **Wait** を選び、0〜86400000 ms（24時間）の整数を設定します。Waitも1 Actionとして数えます。
 - Waitはその実行だけを待機させます。Press / Release、別キー、同じキーの再入力は独立して動作し、Action順序を自動補正しません。PressのWait後にNote Onがあると、先にReleaseのNote Offが実行される場合があります。
 - 同時に待機できる実行は32個です。上限時は新しい待機付きChain全体を拒否し、画面の「Chain受付失敗」に記録します。WaitなしのRelease等は引き続き実行できます。
@@ -113,7 +117,7 @@ STA接続後は表示されたIPまたは `http://chainpad.local/` でもアク�
 - MIDIの **Both** はUSB/BLEそれぞれの送信キューへ独立に投入します。片方が未接続でも接続中の側へ送信し、少なくとも片方が受け付ければActionはAcceptedです。両方未接続ならUnavailableです。既存のUSB/BLE設定は読み込み時に維持されます。切り替える場合はNote On/Offの両方を変更してください。
 - C3/C6/C5では、保存済み設定の読み込み・API保存時にMIDIのUSB/BothとKeyboardのUSBをBLEへ正規化します。古い設定やUIを経由しないAPIでもUSB出力が選択されません。S3の既存Transportは維持します。
 - 未接続の出力はskipし、後続Actionを実行します。未接続中のイベントを再接続後に再生しません。
-- MIDI/HIDはTransportごとに64件のFIFOを持ち、接続中の一時的な送信失敗を再試行します。再接続時は過去のキューを破棄し、HIDは空レポートを送ります。MIDIの自動一括CC送信はありません。
+- MIDIはTransportごとに288件、HIDは64件のFIFOを持ち、接続中の一時的な送信失敗を再試行します。All Notesは送信先ごとに全対象分の空きを確認してから登録し、容量不足ならその送信先のバッチ全体を拒否します。再接続時は過去のキューを破棄し、HIDは空レポートを送ります。MIDIの自動一括CC送信はありません。
 - FIFO overflow時は該当Transportのキューを破棄します。HIDは押下状態も解除します。入力キューoverflow、保存・適用、「実行中止・HID解除」では待機中のChainと入力・出力キューを中止し、HID解除を要求します。MIDIメッセージは生成しません。
 - **AcceptedはUDP送信受付またはMIDI/HIDキュー受付**であり、相手アプリでの受信確認ではありません。Receiverと実機で確認します。
 - HTTP処理・設定保存中はdispatchが遅れることがあります。入力スキャンは別タスクですが、Phase 1は厳密なリアルタイム遅延を保証しません。

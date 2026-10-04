@@ -125,7 +125,7 @@ void midiTests() {
   assert(fake::midi.empty());
   // Overflow drops the backlog without synthesizing MIDI messages.
   fake::writable = false;
-  for (int i = 0; i < 64; ++i) assert(midiDispatch(a) == SendResult::Accepted);
+  for (int i = 0; i < INPUT_COUNT * MAX_ACTIONS + 64; ++i) assert(midiDispatch(a) == SendResult::Accepted);
   assert(midiDispatch(a) == SendResult::Failed);
   fake::midi.clear(); fake::writable = true; settle();
   assert(fake::midi.empty());
@@ -181,7 +181,7 @@ void midiBothTests() {
   // Saturating USB must not prevent BLE delivery or duplicate it on retry.
   reset(); fake::writable = false;
   Action usb = a; usb.transport = Transport::Usb;
-  for (int i = 0; i < 64; ++i) midiDispatch(usb);
+  for (int i = 0; i < INPUT_COUNT * MAX_ACTIONS + 64; ++i) midiDispatch(usb);
   assert(midiDispatch(a) == SendResult::Accepted);
   fake::writable = true; settle();
   unsigned bleCount = 0;
@@ -335,7 +335,51 @@ void waitTests() {
   hostMillis=1234;
   std::cout << "PASS Wait independent Press/Release/retrigger / consecutive and zero Wait / wrap / overload / cancellation / persistence\n";
 }
+void allNotesTests() {
+  reset(); config = Config{};
+  Action note; note.protocol=Protocol::Midi; note.transport=Transport::Both; note.number=60;
+  config.chains[0].count=2; config.chains[0].actions[0]=note; config.chains[0].actions[1]=note;
+  note.message=MidiMessage::NoteOff; note.transport=Transport::Ble;
+  config.chains[1].count=1; config.chains[1].actions[0]=note;
+  note.channel=2; note.transport=Transport::Usb;
+  config.chains[27].count=1; config.chains[27].actions[0]=note;
+  Action bulk; bulk.protocol=Protocol::Midi; bulk.message=MidiMessage::AllNotesOn; bulk.value=73;
+  config.chains[2].count=1; config.chains[2].actions[0]=bulk;
+  note.message=MidiMessage::CC; note.number=9;
+  config.chains[3].count=1; config.chains[3].actions[0]=note;
+  assert(midiDispatch(bulk)==SendResult::Accepted); settle();
+  assert(fake::midi.size()==3);
+  for (const auto& m : fake::midi) assert(m.a==60 && m.b==73 && (m.status&0xf0)==0x90);
+  assert(fake::midi[0].transport==Transport::Usb && fake::midi[1].status==0x91 && fake::midi[2].transport==Transport::Ble);
+  String error; Config source=config; assert(saveSource(source,error)); assert(loadConfig(error));
+  assert(config.chains[2].actions[0].message==MidiMessage::AllNotesOn);
+  JsonDocument doc; encodeChain(config.chains[2],2,doc); Chain decoded;
+  doc["actions"][0]["value"]=0; assert(!decodeChain(doc.as<JsonVariantConst>(),2,decoded,error));
+  bulk.message=MidiMessage::AllNotesOff;
+  reset(); fake::connected[0]=false;
+  assert(midiDispatch(bulk)==SendResult::Accepted); settle();
+  assert(fake::midi.size()==1 && fake::midi[0].status==0x80 && fake::midi[0].b==0);
+  // Maximum-sized target set under backpressure, followed by an ordinary Action.
+  reset(); config=Config{}; unsigned n=0;
+  for(auto& c:config.chains){c.count=MAX_ACTIONS; for(auto& a:c.actions){a.protocol=Protocol::Midi;a.transport=Transport::Usb;a.channel=n/128+1;a.number=n%128;++n;}}
+  fake::writable=false; assert(midiDispatch(bulk)==SendResult::Accepted);
+  assert(midiDispatch(bulk)==SendResult::Failed); // no partial second batch
+  note.message=MidiMessage::NoteOn;note.number=127;note.channel=16;note.value=99;
+  assert(midiDispatch(note)==SendResult::Accepted);
+  fake::writable=true; for(int i=0;i<40;++i)backendsTick(0);
+  assert(fake::midi.size()==225);
+  for(unsigned i=0;i<224;++i)assert(fake::midi[i].status==(0x80|i/128)&&fake::midi[i].a==i%128&&fake::midi[i].b==0);
+  assert(fake::midi.back().status==0x9f && fake::midi.back().b==99);
+  // Normal Chain composition with Wait, without collecting All Notes itself.
+  reset(); config=Config{}; config.chains[0].count=1;config.chains[0].actions[0]=note;
+  auto& c=config.chains[1];c.count=3;c.actions[0]=bulk;c.actions[0].message=MidiMessage::AllNotesOn;c.actions[0].value=80;
+  c.actions[1].protocol=Protocol::Wait;c.actions[1].delayMs=1000;c.actions[2]=bulk;
+  Engine scheduler;hostMillis=100;scheduler.trigger({1,100});assert(fake::midi.size()==1&&fake::midi[0].b==80);
+  scheduler.tick(1099);assert(fake::midi.size()==1);scheduler.tick(1100);assert(fake::midi.size()==2&&fake::midi.back().status==0x8f);
+  hostMillis=1234;config=Config{};fake::midi.clear();assert(midiDispatch(bulk)==SendResult::Accepted);assert(fake::midi.empty());
+  std::cout << "PASS All Notes dedup / routing / explicit messages / maximum batch retry-order / Wait / persistence / empty targets\n";
+}
 int main() {
-  configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests();
+  configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests();
   std::cout << "All firmware host tests passed.\n";
 }

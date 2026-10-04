@@ -19,6 +19,10 @@ const Presets = (() => {
       const valid = a.type === 'int' ? int(a.value,-2147483648,2147483647) : a.type === 'float' ? typeof a.value === 'number' && Number.isFinite(a.value) && Math.abs(a.value) <= 3.4028234663852886e38 : a.type === 'bool' ? typeof a.value === 'boolean' : a.type === 'string' && text(a.value,64);
       if (!valid) fail('OSCの型または値が不正です。');
     } else if (a.protocol === 'midi') {
+      if (['allNotesOn','allNotesOff'].includes(a.message)) {
+        if (a.message==='allNotesOn' && !int(a.value,1,127)) fail('All NotesのVelocityは1〜127で指定してください。');
+        return {protocol:'midi',delayMs:0,message:a.message,...(a.message==='allNotesOn'?{value:a.value}:{})};
+      }
       if (!['usb','ble','both'].includes(a.transport) || !['noteOn','noteOff','cc'].includes(a.message) || !int(a.channel,1,16) || !int(a.number,0,127) || !int(a.value,a.message==='noteOn'?1:0,127)) fail('MIDI Actionが不正です。');
       if (!capabilities.usbMidi && a.transport !== 'ble') { a.transport='ble'; changes.count++; }
     } else if (a.protocol === 'keyboard') {

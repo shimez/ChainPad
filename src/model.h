@@ -11,7 +11,8 @@ constexpr uint32_t MAX_WAIT_MS = 86400000; // 24 hours; safely below half the mi
 enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait };
 enum class Transport : uint8_t { Wifi, Usb, Ble, Both };
 enum class OscType : uint8_t { Int, Float, Bool, String };
-enum class MidiMessage : uint8_t { NoteOn, NoteOff, CC };
+enum class MidiMessage : uint8_t { NoteOn, NoteOff, CC, AllNotesOn, AllNotesOff };
+inline bool allNotes(MidiMessage m) { return m == MidiMessage::AllNotesOn || m == MidiMessage::AllNotesOff; }
 enum class KeyMessage : uint8_t { Down, Up, ReleaseAll };
 
 // delayMs is the duration of an explicit Wait Action; other Actions use zero.

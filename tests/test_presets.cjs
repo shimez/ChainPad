@@ -11,6 +11,10 @@ config.chains[1].actions=[{protocol:'keyboard',transport:'usb',delayMs:0,message
 config.chains[27].actions=[{protocol:'osc',transport:'wifi',delayMs:0,address:'/test',type:'string',value:'hello'}];
 const normalized=v=>JSON.parse(JSON.stringify(v));
 const full=P.full(config);
+const bulkFull=P.full(config);
+bulkFull.chains[2].actions=[{protocol:'midi',message:'allNotesOn',delayMs:0,value:88},{protocol:'midi',message:'allNotesOff',delayMs:0}];
+assert.deepEqual(normalized(P.read(bulkFull,'full',ble).config.chains[2]),normalized(bulkFull.chains[2]));
+bulkFull.chains[2].actions[0].value=0;assert.throws(()=>P.read(bulkFull,'full',ble));
 assert.deepEqual(normalized(P.read(full,'full',usb).config),config);
 const converted=P.read(full,'full',ble);
 assert.equal(converted.converted,2);

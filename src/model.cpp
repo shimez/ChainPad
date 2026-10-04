@@ -29,6 +29,13 @@ bool parseAction(JsonVariantConst j, Action& a) {
   }
   if (!integer(j["delayMs"], 0, 0)) return false;
   a.delayMs = 0;
+  if (p == "midi" && (j["message"] == "allNotesOn" || j["message"] == "allNotesOff")) {
+    a.protocol = Protocol::Midi;
+    a.message = j["message"] == "allNotesOn" ? MidiMessage::AllNotesOn : MidiMessage::AllNotesOff;
+    if (a.message == MidiMessage::AllNotesOn && !integer(j["value"], 1, 127)) return false;
+    a.value = a.message == MidiMessage::AllNotesOn ? j["value"].as<uint8_t>() : 0;
+    return true;
+  }
   String t = j["transport"] | "";
   if (p == "midi" && j["transport"].isUnbound()) t = "both";
   if (p == "osc") {
@@ -150,6 +157,12 @@ void encodeChain(const Chain& source, uint8_t id, JsonDocument& doc) {
       const auto& a = source.actions[k]; auto j = actions.add<JsonObject>();
       j["delayMs"] = a.delayMs;
       if (a.protocol == Protocol::Wait) { j["protocol"] = "wait"; continue; }
+      if (a.protocol == Protocol::Midi && allNotes(a.message)) {
+        j["protocol"] = "midi";
+        j["message"] = a.message == MidiMessage::AllNotesOn ? "allNotesOn" : "allNotesOff";
+        if (a.message == MidiMessage::AllNotesOn) j["value"] = a.value;
+        continue;
+      }
       j["transport"] = a.transport == Transport::Wifi ? "wifi" : a.transport == Transport::Usb ? "usb" : a.transport == Transport::Ble ? "ble" : "both";
       if (a.protocol == Protocol::Osc) {
         j["protocol"] = "osc"; j["address"] = a.address;
