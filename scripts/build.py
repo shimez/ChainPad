@@ -5,7 +5,7 @@ from urllib.parse import quote
 Import("env")
 
 root = Path(env.subst("$PROJECT_DIR"))
-favicon = 'data:image/svg+xml,' + quote((root / 'site/favicon.svg').read_text(encoding='utf-8'), safe='')
+favicon = 'data:image/svg+xml,' + quote((root / 'web/favicon.svg').read_text(encoding='utf-8'), safe='')
 asset = '#pragma once\n#include <Arduino.h>\n'
 for filename, symbol in (("index.html", "WEB_UI"), ("wifi.html", "WIFI_UI")):
     html = (root / "web" / filename).read_text(encoding="utf-8")

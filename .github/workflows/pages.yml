@@ -5,15 +5,24 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - 'include/**'
+      - 'lib/**'
+      - 'boards/**'
       - 'web/**'
       - 'site/**'
       - 'scripts/**'
       - 'tests/check_image.py'
       - 'tests/test_presets.cjs'
+      - 'tests/test_build_site.py'
       - 'platformio.ini'
       - 'partitions*.csv'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
+    inputs:
+      force_firmware:
+        description: 'Force all four firmware builds (initial deployment/recovery)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -27,19 +36,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Test Pages packaging
+        run: python -m unittest discover -s tests -p test_build_site.py
+      - name: Select firmware build or reuse
+        id: firmware
+        env:
+          FORCE_FIRMWARE: ${{ inputs.force_firmware || false }}
+        run: |
+          if [ "$FORCE_FIRMWARE" = "true" ]; then
+            echo "rebuild=true" >> "$GITHUB_OUTPUT"
+          else
+            python scripts/build_site.py --prepare https://shimez.github.io/ChainPad/
+          fi
       - name: Install PlatformIO
+        if: steps.firmware.outputs.rebuild == 'true'
         run: pip install platformio==6.1.19
       - name: Validate preset formats
+        if: steps.firmware.outputs.rebuild == 'true'
         run: node tests/test_presets.cjs
       - name: Build all four boards
+        if: steps.firmware.outputs.rebuild == 'true'
         run: pio run
       - name: Validate firmware images
+        if: steps.firmware.outputs.rebuild == 'true'
         run: python tests/check_image.py --env xiao_esp32s3 xiao_esp32c3 xiao_esp32c6 xiao_esp32c5
       - name: Package installer and firmware
+        if: steps.firmware.outputs.rebuild == 'true'
         run: python scripts/build_site.py
+      - name: Update Pages content with existing firmware
+        if: steps.firmware.outputs.rebuild == 'false'
+        run: python scripts/build_site.py --site-only
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

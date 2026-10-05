@@ -86,9 +86,9 @@ pio device monitor --port COM番号 --baud 115200
 
 ## 最初のAction Chain
 
-ブラウザから書き込む場合は **[Web Installer](https://shimez.github.io/ChainPad/)** をPC版Chrome / Edgeで開いてください。S3/C3/C6/C5を自動判別します。
+**[ChainPadポータル](https://shimez.github.io/ChainPad/)** から使い方・設定手順・ダウンロードへ進めます。ブラウザから書き込む場合は **[Web Installer](https://shimez.github.io/ChainPad/installer/)** をPC版Chrome / Edgeで開いてください。S3/C3/C6/C5を自動判別します。
 
-Web Installerは `site/index.html`、公開用manifest・結合Firmwareは `scripts/build_site.py` で生成します。GitHub Actionsの `.github/workflows/pages.yml` がmainのFirmware/UI変更時に4機種をビルド・検査し、GitHub Pagesへまとめて配信します。公開画面にソースのコミットID、ダウンロード欄にSHA256付きビルド情報を表示します。
+ポータルは `site/index.html`、Web Installerは `site/installer/index.html` です。公開用manifest・結合Firmwareは `scripts/build_site.py` で生成します。GitHub Actionsは公開済みFirmwareのコミットと比較し、Firmware／本体Web UIに変更がある場合だけ4機種をビルド・検査します。`site/` のみの変更では公開済みFirmwareをSHA256検証して再利用し、Pagesだけを更新します。InstallerにはFirmwareのコミットIDとSHA256付きビルド情報を表示します。詳細は[Pagesの更新手順](docs/pages-deployment.md)を参照してください。
 
 1. 起動後、Wi-Fi **`ChainPad-Setup`** に接続します。Password: **`chimera-pad`**。
 2. OSの「ネットワークにログイン」通知／自動表示されたWi-Fi専用画面でSSID / Passwordを入力し、**保存して再起動** を押します。自動表示されない場合は **http://192.168.4.1/** を開いてください（HTTPSではなくHTTP）。

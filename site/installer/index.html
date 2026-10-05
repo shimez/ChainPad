@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChainPad Web Installer</title>
+<link rel="icon" type="image/svg+xml" sizes="any" href="../favicon.svg">
+<meta name="description" content="ChainPadをXIAO ESP32S3 / C3 / C6 / C5へブラウザからインストール。">
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+<style>
+:root{color-scheme:light dark;font:16px system-ui,sans-serif;background:#10151d;color:#eef5ff}*{box-sizing:border-box}main{width:min(760px,calc(100% - 32px));margin:48px auto}h1{font-size:40px;margin:0}h2{font-size:23px}p,li{line-height:1.8}small,.muted{color:#a9b8cc}.card{background:#1b2330;border:1px solid #374557;border-radius:14px;padding:24px;margin:24px 0}a{color:#66dbc1}button{font:600 17px system-ui;padding:14px 24px;border:0;border-radius:8px;background:#66dbc1;color:#10231f;cursor:pointer}.install{margin:24px 0}code{overflow-wrap:anywhere}ul,ol{padding-left:24px}.build{font-size:14px;overflow-wrap:anywhere}footer{font-size:14px}#downloads{display:flex;gap:16px;flex-wrap:wrap}@media(prefers-color-scheme:light){:root{background:#f3f6f8;color:#182a38}.card{background:#fff;border-color:#bdcbd5}small,.muted{color:#506275}a{color:#087565}}
+</style>
+</head>
+<body><main>
+<nav aria-label="ナビゲーション"><a href="../">← ChainPad ポータル</a></nav>
+<header><small>PROJECT CHIMERA</small><h1>ChainPad</h1><p>OSC・MIDI・Keyboardを、1つの入力から。<br>XIAO ESP32S3 / ESP32C3 / ESP32C6 / ESP32C5用 Web Installer</p><p id="build" class="build">ビルド情報を読み込み中…</p></header>
+<section class="card"><h2>Firmwareをインストール</h2>
+<p>PCの<strong>Google Chrome / Microsoft Edge</strong>で開き、データ通信対応USBケーブルでXIAOを接続してください。接続したチップに合うFirmwareが自動選択されます。現行ChainOSCPad PCB向けです。</p>
+<div class="install"><esp-web-install-button manifest="../manifest.json"><button slot="activate">ChainPadをインストール</button><span slot="unsupported">このブラウザはWeb Serialに対応していません。PC版ChromeまたはEdgeを使用してください。</span></esp-web-install-button></div>
+<ol><li>ボタンを押し、XIAOのシリアルポートを選択します。</li><li>画面の案内に従って書き込みます。</li><li>完了後、必要に応じてRESETボタンで本体を再起動します。</li></ol>
+<p class="muted">ポートが見つからない場合は、BOOTを押しながらUSBを接続するか、BOOTを押しながらRESETしてダウンロードモードにしてください。シリアルモニターなど、ポートを使用中のアプリは閉じてください。</p>
+<p class="muted">「Erase device」を選ぶと保存設定も消去されます。必要な設定は書き込み前に本体の <code>/api/config</code> から控えてください。</p>
+<p class="muted">0.3.0から設定保存はLittleFSへ変更されました。旧版の設定は引き継がれません。更新後はWi-FiとAction Chainを再設定してください。</p>
+</section>
+<section class="card"><h2>書き込み後のWi-Fi設定</h2><ol><li>Wi-Fi <strong>ChainPad-Setup</strong> に接続します。パスワードは <code>chimera-pad</code> です。</li><li>ログイン通知からWi-Fi設定画面を開きます。自動表示されない場合は <a href="http://192.168.4.1/">http://192.168.4.1/</a> を開きます。</li><li>接続先のSSID・パスワードを入力し「保存して再起動」を押します。</li><li>同じWi-Fiに戻り、<a href="http://chainpad.local/">http://chainpad.local/</a> または本体のIPからAction Chainを設定します。</li></ol><p class="muted">AP接続のまま通常の設定画面を開く場合は <a href="http://192.168.4.1/configurator">/configurator</a> を使用できます。S3はUSB / BLE MIDI・Keyboard、C3 / C6 / C5はBLE MIDI・Keyboardに対応します。</p></section>
+<details class="card"><summary>Firmwareのダウンロード</summary><p>手動書き込み用の結合イメージです。各ファイルの書き込み開始アドレスは <code>0x0</code> です。</p><div id="downloads"></div><p><a href="../build.json">ビルド情報・SHA256</a></p></details>
+<footer><a href="https://github.com/shimez/ChainPad">GitHub / 使い方</a> · <a href="https://github.com/shimez/ChainPad/blob/main/THIRD_PARTY_NOTICES.md">Third-Party Notices</a><p class="muted">mainブランチのビルドを公開しています。実機検証の状況はリポジトリの検証記録を参照してください。</p></footer>
+</main><script>
+fetch('../build.json').then(r=>{if(!r.ok)throw Error(r.status);return r.json();}).then(info=>{document.getElementById('build').textContent=`${info.version} · ${info.commit.slice(0,7)}`;for(const file of info.files){const a=document.createElement('a');a.href='../'+file.path;a.textContent=file.chipFamily;a.download='';document.getElementById('downloads').append(a);}}).catch(()=>{document.getElementById('build').textContent='ビルド情報を取得できませんでした。再読み込みしてください。';});
+</script></body></html>
