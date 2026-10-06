@@ -3,6 +3,7 @@
 #include <cmath>
 #include <memory>
 #include <new>
+#include <cstdio>
 
 namespace chimera {
 Config config;
@@ -83,7 +84,8 @@ bool parseAction(JsonVariantConst j, Action& a) {
 }
 bool decodeConfig(JsonVariantConst root, Config& out, String& error) {
   error = "Invalid schema/network settings";
-  if (!root.is<JsonObjectConst>() || !integer(root["schemaVersion"], 1, 1)) return false;
+  if (!root.is<JsonObjectConst>() || !integer(root["schemaVersion"], 2, 2)) return false;
+  if (!decodeRotation(root["encoderRotation"], out.encoderRotation, error)) return false;
   if (!decodeNetwork(root["network"], out, error)) return false;
   auto chains = root["chains"].as<JsonArrayConst>();
   error = "Expected exactly 28 uniquely identified input chains";
@@ -147,6 +149,10 @@ void encodeCapabilities(JsonDocument& doc) {
   doc["usbKeyboard"] = HAS_USB_KEYBOARD;
   doc["defaultMidiTransport"] = HAS_USB_MIDI ? "both" : "ble";
   doc["maxWaitMs"] = MAX_WAIT_MS;
+  doc["schemaVersion"] = 2;
+  doc["rotationOutputCapacity"] = ROTATION_OUTPUT_CAPACITY;
+  doc["rotationRuntimeSupported"] = true;
+  doc["rotationOutputSendingSupported"] = false; // Latest-State transport belongs to Phase D.
   auto midi = doc["midiTransports"].to<JsonArray>();
   if (HAS_USB_MIDI) { midi.add("both"); midi.add("usb"); }
   midi.add("ble");
@@ -155,8 +161,9 @@ void encodeCapabilities(JsonDocument& doc) {
   keyboard.add("ble");
 }
 void encodeConfig(const Config& source, JsonDocument& doc) {
-  doc.clear(); doc["schemaVersion"] = 1;
+  doc.clear(); doc["schemaVersion"] = 2;
   JsonDocument part; encodeNetwork(source, part); doc["network"] = part;
+  encodeRotation(source.encoderRotation, part); doc["encoderRotation"] = part;
   auto chains = doc["chains"].to<JsonArray>();
   for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
     encodeChain(source.chains[i], i, part); chains.add(part.as<JsonObjectConst>());
@@ -201,4 +208,86 @@ template<typename T> void encodeChainImpl(const T& source, uint8_t id, JsonDocum
 }
 void encodeChain(const Chain& source, uint8_t id, JsonDocument& doc) { encodeChainImpl(source, id, doc); }
 void encodeChain(const ChainView& source, uint8_t id, JsonDocument& doc) { encodeChainImpl(source, id, doc); }
+bool decodeRotation(JsonVariantConst root, EncoderRotationSettings& out, String& error) {
+  error = "Invalid encoder rotation settings";
+  if (!root.is<JsonObjectConst>()) return false;
+  const bool chainMode = root["mode"] == "actionChain";
+  if (!chainMode && root["mode"] != "rotationValue") return false;
+  auto value = root["rotationValue"];
+  if (!value.is<JsonObjectConst>() || !integer(value["rangeSteps"], 1, MAX_RANGE_STEPS) ||
+      !integer(value["initialPosition"], 0, value["rangeSteps"].as<uint32_t>())) return false;
+  if (value["boundary"] != "stop" && value["boundary"] != "wrap") return false;
+  if (!value["outputs"].is<JsonArrayConst>() || value["outputs"].size() > ROTATION_OUTPUT_CAPACITY) return false;
+  // Callers use scratch settings, never an active Config during a transaction.
+  out.mode = chainMode ? RotationMode::ActionChain : RotationMode::RotationValue;
+  out.axis = {value["rangeSteps"].as<uint32_t>(), value["initialPosition"].as<uint32_t>(),
+    value["boundary"] == "stop" ? RotationBoundary::Stop : RotationBoundary::Wrap};
+  out.outputCount = 0;
+  for (auto j : value["outputs"].as<JsonArrayConst>()) {
+    RotationOutput output;
+    if (!j.is<JsonObjectConst>()) return false;
+    if (j["protocol"] == "osc") {
+      if (j["transport"] != "wifi" || !text(j["address"], output.address, sizeof(output.address))) return false;
+      if (j["type"] == "int") {
+        if (!integer(j["start"], INT32_MIN, INT32_MAX) || !integer(j["end"], INT32_MIN, INT32_MAX)) return false;
+        output.range.integer = {j["start"].as<int32_t>(), j["end"].as<int32_t>()};
+      } else if (j["type"] == "float") {
+        if (!j["start"].is<double>() || !j["end"].is<double>()) return false;
+        RotationFloatRange range;
+        if (!normalizeRotationFloat(j["start"].as<double>(), range.start) ||
+            !normalizeRotationFloat(j["end"].as<double>(), range.end)) return false;
+        output.kind = RotationOutputKind::OscFloat; output.range.floating = range;
+      } else return false;
+    } else if (j["protocol"] == "midi" && j["message"] == "cc") {
+      if (j["transport"] != "usb" && j["transport"] != "ble" && j["transport"] != "both") return false;
+      if (!integer(j["channel"], 1, 16) || !integer(j["number"], 0, 127) ||
+          !integer(j["start"], 0, 127) || !integer(j["end"], 0, 127)) return false;
+      output.kind = RotationOutputKind::MidiCC;
+      output.transport = !HAS_USB_MIDI || j["transport"] == "ble" ? Transport::Ble :
+        j["transport"] == "usb" ? Transport::Usb : Transport::Both;
+      output.channel = j["channel"]; output.number = j["number"];
+      output.range.integer = {j["start"].as<int32_t>(), j["end"].as<int32_t>()};
+    } else return false;
+    if (!validRotationOutput(output)) return false;
+    out.outputs[out.outputCount++] = output;
+  }
+  error = ""; return true;
+}
+void encodeRotation(const EncoderRotationSettings& source, JsonDocument& doc, bool losslessWire) {
+  doc.clear();
+  doc["mode"] = source.mode == RotationMode::ActionChain ? "actionChain" : "rotationValue";
+  auto value = doc["rotationValue"].to<JsonObject>();
+  value["rangeSteps"] = source.axis.rangeSteps;
+  value["initialPosition"] = source.axis.initialPosition;
+  value["boundary"] = source.axis.boundary == RotationBoundary::Stop ? "stop" : "wrap";
+  auto outputs = value["outputs"].to<JsonArray>();
+  for (uint32_t i = 0; i < source.outputCount; ++i) {
+    const auto& output = source.outputs[i]; auto j = outputs.add<JsonObject>();
+    if (output.kind == RotationOutputKind::MidiCC) {
+      j["protocol"] = "midi"; j["message"] = "cc";
+      j["transport"] = output.transport == Transport::Usb ? "usb" : output.transport == Transport::Ble ? "ble" : "both";
+      j["channel"] = output.channel; j["number"] = output.number;
+    } else {
+      j["protocol"] = "osc"; j["transport"] = "wifi"; j["address"] = output.address;
+      j["type"] = output.kind == RotationOutputKind::OscFloat ? "float" : "int";
+    }
+    if (output.kind == RotationOutputKind::OscFloat) {
+      if (losslessWire) {
+        // ArduinoJson compresses exact doubles back to float and serializes only
+        // 7 significant digits. Seventeen digits preserve the promoted float32
+        // value without emitting a decimal above FLT_MAX (e.g. %.9g would).
+        char start[32], end[32];
+        snprintf(start, sizeof(start), "%.17g", double(output.range.floating.start));
+        snprintf(end, sizeof(end), "%.17g", double(output.range.floating.end));
+        if (output.range.floating.start == 0 && std::signbit(output.range.floating.start)) strcpy(start, "-0.0");
+        if (output.range.floating.end == 0 && std::signbit(output.range.floating.end)) strcpy(end, "-0.0");
+        j["start"] = serialized(String(start)); j["end"] = serialized(String(end));
+      } else {
+        j["start"] = output.range.floating.start; j["end"] = output.range.floating.end;
+      }
+    } else {
+      j["start"] = output.range.integer.start; j["end"] = output.range.integer.end;
+    }
+  }
+}
 } // namespace chimera

@@ -1,4 +1,5 @@
 #include "model.h"
+#include "rotation_runtime.h"
 #include "engine.h"
 #include "backend_internal.h"
 #include "LittleFS.h"
@@ -13,9 +14,14 @@
 using namespace chimera;
 bool rejectConfigAllocation = false;
 bool rejectChainAllocation = false;
+int rotationAllocationsUntilFailure = -1;
 void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
   if (rejectConfigAllocation && size >= sizeof(Config)) return nullptr;
   if (rejectChainAllocation && size == sizeof(Chain)) return nullptr;
+  if (size == sizeof(EncoderRotationSettings)) {
+    if (rotationAllocationsUntilFailure == 0) return nullptr;
+    if (rotationAllocationsUntilFailure > 0) --rotationAllocationsUntilFailure;
+  }
   try { return ::operator new(size); } catch (...) { return nullptr; }
 }
 namespace fake {
@@ -242,7 +248,8 @@ void transactionTests() {
   String error; const String original = encoded(config);
   const std::string disk = *fake::files.at("/config.records");
   JsonDocument doc; encodeNetwork(config, doc); doc["oscPort"] = 9012;
-  String network; serializeJson(doc, network);
+  JsonDocument request; request["schemaVersion"]=2; request["network"]=doc;
+  String network; serializeJson(request, network);
   auto first = beginConfigSave(network, error);
   assert(first && !commitConfigSave(first, error));
   auto second = beginConfigSave(network, error);
@@ -267,6 +274,8 @@ void transactionTests() {
     encodeChain(source.chains[i], i, doc); chain = ""; serializeJson(doc, chain);
     assert(stageConfigChain(token, i, chain, error));
   }
+  encodeRotation(source.encoderRotation, doc); chain=""; serializeJson(doc,chain);
+  assert(stageConfigRotation(token, chain, error));
   fake::files.at("/pending.records")->pop_back();
   assert(!commitConfigSave(token, error));
   assert(encoded(config) == original && *fake::files.at("/config.records") == disk);
@@ -394,7 +403,7 @@ void allNotesTests() {
 }
 void sharedSlotsTests() {
   String error; Config source, decoded;
-  static_assert(sizeof(Config) < sizeof(Action) * MAX_TOTAL_ACTIONS + 1024, "Config must own only 224 Action slots");
+  static_assert(sizeof(Config) < sizeof(Action) * MAX_TOTAL_ACTIONS + sizeof(EncoderRotationSettings) + 1024, "Config must own only 224 Action slots plus rotation settings");
   for(unsigned key=0;key<13;++key)for(unsigned i=0;i<16;++i)
     assert(&source.chains[key*2].actions[i]==&source.chains[key*2+1].actions[15-i]);
   assert(&source.chains[26].actions[7]+1==&source.chains[27].actions[0]);
@@ -408,7 +417,8 @@ void sharedSlotsTests() {
     decoded=copy;copy.chains[pair[0]?0:1].actions[0].number=100;
     assert(encoded(decoded)==encoded(source)); // Copies must rebind views to their own pools.
     auto array=doc["chains"].as<JsonArray>();JsonDocument reverse;encodeNetwork(source,reverse);
-    JsonDocument reordered;reordered["schemaVersion"]=1;reordered["network"]=reverse;
+    JsonDocument reordered;reordered["schemaVersion"]=2;reordered["network"]=reverse;
+    reordered["encoderRotation"]=doc["encoderRotation"];
     auto reversed=reordered["chains"].to<JsonArray>();for(int i=27;i>=0;--i)reversed.add(array[i]);
     assert(decodeConfig(reordered.as<JsonVariantConst>(),decoded,error)&&encoded(decoded)==encoded(source));
     assert(saveSource(source,error));assert(loadConfig(error));
@@ -427,7 +437,7 @@ void sharedSlotsTests() {
   JsonDocument doc;encodeConfig(source,doc);assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
   assert(!saveSource(source,error));assert(encoded(config)==previous);assert(loadConfig(error)&&encoded(config)==previous);
   // Storage validation must also reject an over-budget snapshot independently of staging.
-  JsonDocument header;encodeNetwork(source,doc);header["storageVersion"]=1;header["network"]=doc;
+  JsonDocument header;encodeNetwork(source,doc);header["storageVersion"]=2;header["network"]=doc;
   String corrupt;serializeJson(header,corrupt);corrupt.concat("\n");
   for(uint8_t i=0;i<INPUT_COUNT;++i){encodeChain(source.chains[i],i,doc);serializeJson(doc,corrupt);corrupt.concat("\n");}
   const auto original=*fake::files.at("/config.records");*fake::files.at("/config.records")=corrupt.c_str();
@@ -439,7 +449,68 @@ void sharedSlotsTests() {
   std::cout<<"PASS shared 16-slot physical pool / independent copies / shuffled Events / order / save-load / allocation failure / encoder limits\n";
   std::cout<<"Resource sizes: Action="<<sizeof(Action)<<" Chain="<<sizeof(Chain)<<" Config="<<sizeof(Config)<<"\n";
 }
+void rotationTests();
+void rotationStorageTests();
+void rotationRuntimeTests() {
+  Config source; String error; Engine e;
+  auto& r=source.encoderRotation;
+  r.mode=RotationMode::RotationValue;r.axis={100,73,RotationBoundary::Stop};
+  assert(saveSource(source,error));assert(rotationRuntime.active()&&rotationRuntime.position()==73);
+  reset();assert(e.trigger({26,0})&&rotationRuntime.position()==74);
+  assert(e.trigger({27,0})&&rotationRuntime.position()==73);
+  assert(fake::midi.empty()&&fake::hid.empty());
+  // Apply each independent edit while retaining Position, even with no Outputs.
+  source.chains[0].count=1;source.chains[0].actions[0].protocol=Protocol::Wait;
+  assert(saveSource(source,error)&&rotationRuntime.position()==73);
+  source.chains[24].count=1;source.chains[24].actions[0].protocol=Protocol::Wait;
+  assert(saveSource(source,error)&&rotationRuntime.position()==73);
+  r.outputCount=1;r.outputs[0].kind=RotationOutputKind::MidiCC;r.outputs[0].transport=Transport::Both;
+  assert(saveSource(source,error)&&rotationRuntime.position()==73);
+  r.axis.initialPosition=50;assert(saveSource(source,error)&&rotationRuntime.position()==73);
+  r.axis.boundary=RotationBoundary::Wrap;assert(saveSource(source,error)&&rotationRuntime.position()==73);
+  r.axis.rangeSteps=0;assert(!saveSource(source,error)&&rotationRuntime.position()==73);
+  r.axis.rangeSteps=100;
+  e.cancelAll();backendsPanic();assert(rotationRuntime.position()==73);
+  ++fake::epoch[0];++fake::epoch[1];settle();assert(rotationRuntime.position()==73);
+  assert(fake::midi.empty());
+  r.axis.rangeSteps=65535;r.axis.initialPosition=65535;
+  assert(saveSource(source,error)&&rotationRuntime.position()==65535);
+  assert(e.trigger({26,0})&&rotationRuntime.position()==0);
+  assert(e.trigger({27,0})&&rotationRuntime.position()==65535);
+  r.axis.boundary=RotationBoundary::Stop;assert(saveSource(source,error));
+  assert(e.trigger({26,0})&&rotationRuntime.position()==65535);
+  r.axis.rangeSteps=1;r.axis.initialPosition=0;
+  assert(saveSource(source,error)&&rotationRuntime.position()==0);
+  assert(e.trigger({27,0})&&rotationRuntime.position()==0);
+  assert(e.trigger({26,0})&&rotationRuntime.position()==1);
+  assert(e.trigger({26,0})&&rotationRuntime.position()==1);
+  r.axis.boundary=RotationBoundary::Wrap;assert(saveSource(source,error));
+  assert(e.trigger({26,0})&&rotationRuntime.position()==0);
+  assert(e.trigger({27,0})&&rotationRuntime.position()==1);
+  assert(loadConfig(error)&&rotationRuntime.position()==0);
+  r.mode=RotationMode::ActionChain;assert(saveSource(source,error)&&!rotationRuntime.active());
+  r.axis.initialPosition=1;r.mode=RotationMode::RotationValue;
+  assert(saveSource(source,error)&&rotationRuntime.position()==1);
+  assert(fake::midi.empty());
+  // All Notes sees Key and Push, but excludes inactive rotation chains.
+  for(uint8_t id : {uint8_t(0),uint8_t(24),uint8_t(26),uint8_t(27)}){
+    source.chains[id].count=1;auto& a=source.chains[id].actions[0];a=Action{};
+    a.protocol=Protocol::Midi;a.transport=Transport::Usb;a.number=40+id;
+  }
+  assert(saveSource(source,error));reset();
+  Action bulk;bulk.protocol=Protocol::Midi;bulk.message=MidiMessage::AllNotesOff;
+  midiDispatch(bulk);settle();assert(fake::midi.size()==2);
+  assert(fake::midi[0].a==40&&fake::midi[1].a==64);
+  reset();assert(e.trigger({26,0}));settle();assert(fake::midi.empty());
+  r.mode=RotationMode::ActionChain;assert(saveSource(source,error));reset();
+  assert(e.trigger({26,0})&&e.trigger({27,0}));settle();assert(fake::midi.size()==2);
+  reset();midiDispatch(bulk);settle();assert(fake::midi.size()==4);
+  std::cout<<"PASS Rotation runtime / mode routing / apply-retain-reset / Stop Wrap 1+65535 / zero outputs / no Rotation sends / active-only All Notes; Runtime="<<sizeof(RotationRuntime)<<"\n";
+}
 int main() {
+  rotationTests();
   configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests(); sharedSlotsTests();
+  rotationStorageTests();
+  rotationRuntimeTests();
   std::cout << "All firmware host tests passed.\n";
 }

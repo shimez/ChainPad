@@ -6,9 +6,10 @@ from pathlib import Path
 from urllib.parse import urlsplit, parse_qs
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = {"schemaVersion": 1,
+CONFIG = {"schemaVersion": 2,
           "network": {"ssid": "", "password": "", "oscHost": "192.168.1.100", "oscPort": 9000},
-          "chains": [{"input": i, "actions": []} for i in range(28)]}
+          "chains": [{"input": i, "actions": []} for i in range(28)],
+          "encoderRotation": {"mode": "actionChain", "rotationValue": {"rangeSteps": 20, "initialPosition": 0, "boundary": "stop", "outputs": []}}}
 BOARD = "s3"
 PENDING = None
 TOKEN = 0
@@ -56,6 +57,7 @@ class Handler(BaseHTTPRequestHandler):
                         "events": 0, "accepted": 0, "skipped": 0, "lastInput": "key1.press",
                         "lastAction": 1, "lastResult": "accepted", "inputOverflows": 0,
                         "transportOverflows": 0, "transportRetries": 0,
+                        "storageState": "ready", "configOutputsAllowed": True,
                         "bootMessage": "UI TEST FIXTURE — no hardware connected", "inputsReady": True})
         elif self.path.split("?", 1)[0] in ("/", "/configurator"):
             page = "wifi.html" if self.path == "/?setup=wifi" else "index.html"
@@ -80,6 +82,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_error(409)
                 return
             PENDING["chains"].append(data)
+        elif urlsplit(self.path).path == "/api/config/rotation":
+            query = parse_qs(urlsplit(self.path).query)
+            if not PENDING or int(query["token"][0]) != TOKEN or len(PENDING["chains"]) != 28:
+                self.send_error(409)
+                return
+            PENDING["encoderRotation"] = data
         else:
             self.send_error(404)
             return
@@ -91,12 +99,16 @@ class Handler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path == "/api/config/begin":
             TOKEN += 1
-            PENDING = {"schemaVersion": 1, "network": json.loads(body), "chains": []}
+            request = json.loads(body)
+            if request.get("schemaVersion") != 2:
+                self.send_error(400)
+                return
+            PENDING = {"schemaVersion": 2, "network": request["network"], "chains": []}
             self.reply({"token": TOKEN})
             return
         if path == "/api/config/commit":
             query = parse_qs(urlsplit(self.path).query)
-            if not PENDING or int(query["token"][0]) != TOKEN or len(PENDING["chains"]) != 28:
+            if not PENDING or int(query["token"][0]) != TOKEN or len(PENDING["chains"]) != 28 or "encoderRotation" not in PENDING:
                 self.send_error(409)
                 return
             CONFIG = PENDING

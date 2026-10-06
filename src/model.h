@@ -2,19 +2,18 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include "capabilities.h"
+#include "rotation.h"
 
 namespace chimera {
 constexpr uint8_t INPUT_COUNT = 28;
 constexpr uint8_t MAX_ACTIONS = 16;
 constexpr uint8_t MAX_KEY_ACTIONS = 16;
 constexpr uint16_t MAX_TOTAL_ACTIONS = 224;
-constexpr size_t MAX_OSC_ADDRESS_BYTES = 192;
 constexpr size_t MAX_OSC_STRING_BYTES = 128;
 constexpr uint8_t eventActionLimit(uint8_t id) { return id < 26 ? MAX_ACTIONS : 8; }
 constexpr size_t MAX_RECORD_BYTES = 24576; // 16 maximum OSC Actions, including JSON escaping.
 constexpr uint32_t MAX_WAIT_MS = 86400000; // 24 hours; safely below half the millis() range.
 enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait };
-enum class Transport : uint8_t { Wifi, Usb, Ble, Both };
 enum class OscType : uint8_t { Int, Float, Bool, String };
 enum class MidiMessage : uint8_t { NoteOn, NoteOff, CC, AllNotesOn, AllNotesOff };
 inline bool allNotes(MidiMessage m) { return m == MidiMessage::AllNotesOn || m == MidiMessage::AllNotesOff; }
@@ -68,6 +67,7 @@ struct NetworkSettings {
 };
 struct Config : NetworkSettings {
   ChainView chains[INPUT_COUNT];
+  EncoderRotationSettings encoderRotation;
   Config() {
     for (uint8_t i = 0; i < 26; ++i)
       chains[i].actions = {slots + (i / 2) * MAX_KEY_ACTIONS + (i % 2 ? MAX_KEY_ACTIONS - 1 : 0), int8_t(i % 2 ? -1 : 1)};
@@ -78,6 +78,7 @@ struct Config : NetworkSettings {
   Config& operator=(const Config& source) {
     if (this == &source) return *this;
     static_cast<NetworkSettings&>(*this) = source;
+    encoderRotation = source.encoderRotation;
     for (size_t i = 0; i < MAX_TOTAL_ACTIONS; ++i) slots[i] = source.slots[i];
     for (uint8_t i = 0; i < INPUT_COUNT; ++i) chains[i].count = source.chains[i].count;
     return *this;
@@ -92,6 +93,14 @@ void encodeCapabilities(JsonDocument& doc);
 bool decodeConfig(JsonVariantConst root, Config& out, String& error);
 bool loadConfig(String& message);
 bool configStorageMounted();
+enum class ConfigStorageState : uint8_t { Missing, Ready, UnsupportedVersion, Corrupt, IoError };
+ConfigStorageState configStorageState();
+const char* configStorageStateName();
+bool configOutputsAllowed();
+bool decodeRotation(JsonVariantConst root, EncoderRotationSettings& out, String& error);
+// losslessWire emits exact numeric JSON literals for float32 endpoints. Use it
+// when serializing; false keeps variants numeric for in-memory validation.
+void encodeRotation(const EncoderRotationSettings& source, JsonDocument& doc, bool losslessWire = false);
 bool saveWifiConfig(const String& json, String& error);
 bool decodeNetwork(JsonVariantConst root, NetworkSettings& out, String& error);
 bool decodeChain(JsonVariantConst root, uint8_t id, Chain& out, String& error);
@@ -100,5 +109,6 @@ void encodeChain(const Chain& source, uint8_t id, JsonDocument& doc);
 void encodeChain(const ChainView& source, uint8_t id, JsonDocument& doc);
 uint32_t beginConfigSave(const String& network, String& error);
 bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& error);
+bool stageConfigRotation(uint32_t token, const String& json, String& error);
 bool commitConfigSave(uint32_t token, String& error);
 } // namespace chimera

@@ -4,6 +4,8 @@
 #include <ESPmDNS.h>
 #include <DNSServer.h>
 #include "model.h"
+#include "json_wire.h"
+#include "rotation_runtime.h"
 #if CHAINPAD_HAS_USB
 #include <USBCDC.h>
 #endif
@@ -39,7 +41,7 @@ bool inputReady = false;
 uint32_t restartAt = 0, lastActivity = 0;
 char bootSsid[33]{}, bootPassword[65]{};
 void jsonResponse(int status, JsonDocument& doc) {
-  String body; serializeJson(doc, body);
+  String body; serializeSettingsJson(doc, body);
   web.sendHeader("Cache-Control", "no-store");
   web.send(status, "application/json; charset=utf-8", body);
 }
@@ -80,15 +82,17 @@ void setupWeb() {
     web.setContentLength(CONTENT_LENGTH_UNKNOWN);
     web.send(200, "application/json; charset=utf-8", "");
     JsonDocument doc; String part;
-    encodeNetwork(config, doc); serializeJson(doc, part);
-    web.sendContent("{\"schemaVersion\":1,\"network\":"); web.sendContent(part);
+    encodeNetwork(config, doc); serializeSettingsJson(doc, part);
+    web.sendContent("{\"schemaVersion\":2,\"network\":"); web.sendContent(part);
     web.sendContent(",\"chains\":[");
     for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
-      encodeChain(config.chains[i], i, doc); part = ""; serializeJson(doc, part);
+      encodeChain(config.chains[i], i, doc); part = ""; serializeSettingsJson(doc, part);
       if (i) web.sendContent(",");
       web.sendContent(part);
     }
-    web.sendContent("]}"); web.sendContent("");
+    web.sendContent("],\"encoderRotation\":");
+    encodeRotation(config.encoderRotation, doc, true); part = ""; serializeSettingsJson(doc, part); web.sendContent(part);
+    web.sendContent("}"); web.sendContent("");
     diagnosticCheckpoint("config-get-after");
   });
   web.on("/api/config/begin", HTTP_POST, [] {
@@ -105,12 +109,20 @@ void setupWeb() {
     diagnosticCheckpoint("save-stage");
     result(200, "Staged");
   });
+  web.on("/api/config/rotation", HTTP_PUT, [] {
+    String error;
+    diagnosticCheckpoint("rotation-stage-before");
+    if (!stageConfigRotation(web.arg("token").toInt(), web.arg("plain"), error)) { result(400, error); return; }
+    diagnosticCheckpoint("rotation-stage-after");
+    result(200, "Rotation staged");
+  });
   web.on("/api/config/commit", HTTP_POST, [] {
     diagnosticCheckpoint("save-commit-before");
     String error;
-    if (!commitConfigSave(web.arg("token").toInt(), error)) { diagnosticCheckpoint("save-commit-failed"); result(400, error); return; }
+    if (!commitConfigSave(web.arg("token").toInt(), error)) { if (!configOutputsAllowed()) panic(); diagnosticCheckpoint("save-commit-failed"); result(400, error); return; }
     diagnosticCheckpoint("save-commit-after");
     panic();
+    bootMessage = "v2 settings saved and applied";
     result(200, "Saved and applied. Wi-Fi credential changes require Restart.");
   });
   web.on("/api/status", HTTP_GET, [] {
@@ -135,15 +147,27 @@ void setupWeb() {
     doc["transportRetries"] = s.retries; doc["transportOverflows"] = s.overflows;
     doc["inputOverflows"] = inputOverflows(); doc["pressedMask"] = pressedInputs();
     doc["inputsReady"] = inputReady; doc["bootMessage"] = bootMessage;
+    doc["storageState"] = configStorageStateName(); doc["configOutputsAllowed"] = configOutputsAllowed();
+    auto rotation = doc["encoderRotation"].to<JsonObject>();
+    rotation["mode"] = config.encoderRotation.mode == RotationMode::ActionChain ? "actionChain" : "rotationValue";
+    rotation["rangeSteps"] = config.encoderRotation.axis.rangeSteps;
+    rotation["runtimeActive"] = rotationRuntime.active();
+    if (rotationRuntime.active()) rotation["currentPosition"] = rotationRuntime.position();
+    else rotation["currentPosition"] = nullptr;
+    rotation["outputSendingSupported"] = false;
     doc["restartRequired"] = strcmp(config.ssid, bootSsid) != 0 || strcmp(config.password, bootPassword) != 0;
     doc["freeHeap"] = ESP.getFreeHeap(); doc["uptimeMs"] = millis();
     doc["largestFreeBlock"] = ESP.getMaxAllocHeap(); doc["minFreeHeap"] = ESP.getMinFreeHeap();
     jsonResponse(200, doc);
   });
   web.on("/api/trigger", HTTP_POST, [] {
+    if (!configOutputsAllowed()) { result(409, "Settings unavailable; outputs disabled"); return; }
     JsonDocument doc;
     if (deserializeJson(doc, web.arg("plain")) || !doc["input"].is<unsigned>() || doc["input"].as<unsigned>() >= INPUT_COUNT) {
       result(400, "input must be 0..27"); return;
+    }
+    if (doc["input"].as<unsigned>() >= 26 && config.encoderRotation.mode == RotationMode::RotationValue) {
+      result(409, "CW/CCW Action Chains are inactive in Rotation Value mode; API does not change Position"); return;
     }
     if (!engine.trigger({doc["input"].as<uint8_t>(), millis()})) { result(409, "Wait scheduler full (32 running chains)"); return; }
     lastActivity = millis();
@@ -204,10 +228,11 @@ void loop() {
     observedOverflows = overflows; panic(); // Cancel pending work and release HID; no generated MIDI.
   }
   if (!restartAt) {
-    engine.tick(now);
+    if (configOutputsAllowed()) engine.tick(now);
     InputEvent event;
     for (unsigned budget = 0; budget < 16 && nextInput(event); ++budget) {
-      engine.trigger(event); lastActivity = now;
+      if (configOutputsAllowed()) engine.trigger(event);
+      lastActivity = now;
     }
   } else if (static_cast<int32_t>(now - restartAt) >= 0) ESP.restart();
   bool led = WiFi.status() == WL_CONNECTED ? now - lastActivity > 50 : now % 1000 < 500;

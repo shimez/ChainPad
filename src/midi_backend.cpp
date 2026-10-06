@@ -34,14 +34,18 @@ SendResult midiDispatch(const Action& a) {
     // Snapshot target membership at dispatch, independently for each transport.
     uint8_t targets[2][16][16]{};
     unsigned count[2]{};
-    for (const auto& chain : config.chains) for (uint8_t k = 0; k < chain.count; ++k) {
-      const auto& source = chain.actions[k];
-      if (source.protocol != Protocol::Midi || (source.message != MidiMessage::NoteOn && source.message != MidiMessage::NoteOff)) continue;
-      for (unsigned i = 0; i < 2; ++i) {
-        if (source.transport != Transport::Both && source.transport != transportAt(i)) continue;
-        auto& bits = targets[i][source.channel - 1][source.number / 8];
-        const uint8_t mask = 1u << (source.number % 8);
-        if (!(bits & mask)) { bits |= mask; ++count[i]; }
+    for (uint8_t input = 0; input < INPUT_COUNT; ++input) {
+      if (input >= 26 && config.encoderRotation.mode != RotationMode::ActionChain) continue;
+      const auto& chain = config.chains[input];
+      for (uint8_t k = 0; k < chain.count; ++k) {
+        const auto& source = chain.actions[k];
+        if (source.protocol != Protocol::Midi || (source.message != MidiMessage::NoteOn && source.message != MidiMessage::NoteOff)) continue;
+        for (unsigned i = 0; i < 2; ++i) {
+          if (source.transport != Transport::Both && source.transport != transportAt(i)) continue;
+          auto& bits = targets[i][source.channel - 1][source.number / 8];
+          const uint8_t mask = 1u << (source.number % 8);
+          if (!(bits & mask)) { bits |= mask; ++count[i]; }
+        }
       }
     }
     bool accepted = false, failed = false;

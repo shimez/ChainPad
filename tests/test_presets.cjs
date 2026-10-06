@@ -5,7 +5,7 @@ const path = require('node:path');
 const context = vm.createContext({TextEncoder});
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../web/presets.js'),'utf8')+'\nglobalThis.presets = Presets;',context);
 const P=context.presets, usb={usbMidi:true,usbKeyboard:true}, ble={usbMidi:false,usbKeyboard:false};
-const config={schemaVersion:1,network:{ssid:'test',password:'secret',oscHost:'192.168.1.2',oscPort:9000},chains:Array.from({length:28},(_,input)=>({input,actions:[]}))};
+const config={schemaVersion:2,network:{ssid:'test',password:'secret',oscHost:'192.168.1.2',oscPort:9000},chains:Array.from({length:28},(_,input)=>({input,actions:[]})),encoderRotation:{mode:'actionChain',rotationValue:{rangeSteps:20,initialPosition:0,boundary:'stop',outputs:[]}}};
 config.chains[0].actions=[{protocol:'wait',delayMs:123},{protocol:'midi',transport:'both',delayMs:0,message:'noteOn',channel:1,number:48,value:127}];
 config.chains[1].actions=[{protocol:'keyboard',transport:'usb',delayMs:0,message:'keyUp',usage:104,modifiers:0}];
 config.chains[27].actions=[{protocol:'osc',transport:'wifi',delayMs:0,address:'/test',type:'string',value:'hello'}];
@@ -67,7 +67,7 @@ assert.deepEqual(normalized(full.chains[0].actions.map(a=>a.protocol)),['wait','
 full.network.oscHost='10.0.0.1';assert.equal(config.network.oscHost,'192.168.1.2');
 // Exercise the actual UI import handler, including unsaved Wi-Fi field values.
 const fields={ssid:{value:'current-edit'},password:{value:'current-secret'},oscHost:{value:'10.0.0.9'},oscPort:{value:8000}};
-const ui=vm.createContext({Presets:P,config:normalized(config),capabilities:usb,saving:false,selected:0,$:id=>fields[id],selectInput:()=>{},changed:()=>{},renderActions:()=>{},message:()=>{}});
+const ui=vm.createContext({Presets:P,config:normalized(config),capabilities:usb,saving:false,selected:0,$:id=>fields[id],selectInput:()=>{},changed:()=>{},renderActions:()=>{},rotationSummary:()=>{},message:()=>{}});
 const html=fs.readFileSync(path.join(__dirname,'../web/index.html'),'utf8');
 vm.runInContext(html.split('\n').find(line=>line.startsWith('function applyImport(')),ui);
 for(const file of [P.full(config),oldFile]){
@@ -78,3 +78,32 @@ for(const file of [P.full(config),oldFile]){
   assert.deepEqual(normalized(ui.config.chains),config.chains);
 }
 console.log('PASS Key/Full round-trip, Wi-Fi exclusion and UI import preservation, Wait order, encoder/OSC preservation, BLE adaptation, invalid imports, no source mutation');
+assert.equal(full.version,2);assert.equal(key.version,1);
+assert.throws(()=>P.read({...P.full(config),version:1},'full',usb),/Unsupported Version/);
+assert.throws(()=>P.read({...P.full(config),schemaVersion:1},'full',usb),/Unsupported schemaVersion/);
+const rotationFile=P.full(config);
+const cc={protocol:'midi',message:'cc',transport:'both',channel:1,number:7,start:127,end:0};
+rotationFile.encoderRotation.rotationValue.outputs=[cc,{...cc,transport:'usb'},
+  {protocol:'osc',transport:'wifi',address:'/x',type:'float',start:0.1,end:1e-100}];
+let parsed=P.read(rotationFile,'full',ble);
+assert.equal(parsed.converted,4); // Two existing Actions plus two Outputs.
+assert.equal(parsed.duplicates.length,1);
+assert.equal(parsed.config.encoderRotation.rotationValue.outputs[2].start,Math.fround(0.1));
+assert.equal(parsed.config.encoderRotation.rotationValue.outputs[2].end,0);
+parsed.config.currentPosition=100;parsed.config.encoderRotation.currentPosition=100;
+const clean=P.full(parsed.config);
+assert(!JSON.stringify(clean).includes('currentPosition'));
+assert.equal(P.read(P.key(parsed.config,0),'key',ble).chains.length,2);
+for(const v of [0,65536,1.5,'20',null]){
+  const f=normalized(rotationFile);f.encoderRotation.rotationValue.rangeSteps=v;assert.throws(()=>P.read(f,'full',usb));
+}
+for(const field of ['channel','number','start','end']){
+  const f=normalized(rotationFile);f.encoderRotation.rotationValue.outputs[0][field]=1.5;assert.throws(()=>P.read(f,'full',usb));
+}
+const many=normalized(rotationFile);many.encoderRotation.rotationValue.outputs=Array(16).fill(cc);
+assert.equal(P.read(many,'full',usb).config.encoderRotation.rotationValue.outputs.length,16);
+many.encoderRotation.rotationValue.outputs.push(cc);assert.throws(()=>P.read(many,'full',usb));
+const invalidInactive=normalized(rotationFile);invalidInactive.encoderRotation.rotationValue.outputs[2].start=Infinity;
+assert.throws(()=>P.read(invalidInactive,'full',usb));
+const absent=normalized(rotationFile);delete absent.encoderRotation;assert.throws(()=>P.read(absent,'full',usb));
+console.log('PASS Rotation v2 / Key v1 / legacy rejection / inactive validation / normalized duplicates / float32 / runtime exclusion / provisional 16');

@@ -42,6 +42,9 @@ int main() {
   assert(String(HARDWARE_NAME) == "XIAO ESP32C5 / ChainOSCPad PCB");
 #endif
   Config source, decoded;
+  source.encoderRotation.outputCount = 1;
+  source.encoderRotation.outputs[0].kind = RotationOutputKind::MidiCC;
+  source.encoderRotation.outputs[0].transport = Transport::Both;
   source.chains[0].count = source.chains[1].count = 3;
   Action midi; midi.protocol = Protocol::Midi; midi.transport = Transport::Both;
   Action hid; hid.protocol = Protocol::Keyboard; hid.transport = Transport::Usb;
@@ -56,6 +59,7 @@ int main() {
   JsonDocument doc; String error;
   encodeConfig(source, doc);
   assert(decodeConfig(doc.as<JsonVariantConst>(), decoded, error));
+  assert(decoded.encoderRotation.outputs[0].transport == Transport::Ble);
   for (int i = 0; i < 2; ++i) {
     assert(decoded.chains[i].actions[0].transport == Transport::Ble);
     assert(decoded.chains[i].actions[1].transport == Transport::Ble);
@@ -79,6 +83,7 @@ int main() {
   String json; serializeJson(doc, json);
   assert(saveSource(source, error));
   assert(loadConfig(error));
+  assert(config.encoderRotation.outputCount == 1 && config.encoderRotation.outputs[0].transport == Transport::Ble);
   encodeConfig(config, doc);
   assert(doc["chains"][0]["actions"][0]["transport"] == "ble");
   assert(doc["chains"][0]["actions"][1]["transport"] == "ble");

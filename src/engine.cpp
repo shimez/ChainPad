@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "rotation_runtime.h"
 
 namespace chimera {
 Engine engine;
@@ -18,6 +19,8 @@ bool Engine::advance(Invocation& job, uint32_t now) {
 bool Engine::trigger(const InputEvent& event) {
   if (event.input >= INPUT_COUNT) return false;
   ++stats.events;
+  if (event.input >= 26 && config.encoderRotation.mode == RotationMode::RotationValue)
+    return rotationRuntime.step(event.input == 26);
   const auto& chain = config.chains[event.input];
   bool needsSlot = false;
   for (uint8_t i = 0; i < chain.count; ++i)

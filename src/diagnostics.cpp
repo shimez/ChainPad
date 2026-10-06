@@ -1,5 +1,6 @@
 #include "diagnostics.h"
 #include "model.h"
+#include "rotation_runtime.h"
 #include "engine.h"
 #include "backends.h"
 #include "inputs.h"
@@ -39,6 +40,14 @@ void printDiagnostics(Print& out, const char* reason) {
     unsigned(psram.total_free_bytes), unsigned(psram.minimum_free_bytes), unsigned(psram.largest_free_block), unsigned(psram.total_allocated_bytes));
   out.printf("Static sizes: Action=%u Chain=%u Config=%u Engine=%u; recordLimit=%u\n",
     unsigned(sizeof(Action)), unsigned(sizeof(Chain)), unsigned(sizeof(Config)), unsigned(sizeof(Engine)), unsigned(MAX_RECORD_BYTES));
+  out.printf("Rotation storage: Output=%u Settings=%u count=%u/%u state=%s\n",
+    unsigned(sizeof(RotationOutput)), unsigned(sizeof(EncoderRotationSettings)), unsigned(config.encoderRotation.outputCount),
+    unsigned(ROTATION_OUTPUT_CAPACITY), configStorageStateName());
+  out.printf("Rotation runtime: bytes=%u active=%u range=%lu position=", unsigned(sizeof(RotationRuntime)),
+    unsigned(rotationRuntime.active()), (unsigned long)config.encoderRotation.axis.rangeSteps);
+  if (rotationRuntime.active()) out.printf("%lu", (unsigned long)rotationRuntime.position());
+  else out.print("n/a");
+  out.println(" (Phase C: no Rotation output sending)");
   out.printf("Actions: total=%u/%u maxKey=%u/%u maxEvent=%u; running=%u rejected=%lu\n",
     actions, unsigned(MAX_TOTAL_ACTIONS), maxKey, unsigned(MAX_KEY_ACTIONS), maxEvent,
     unsigned(engine.activeCount()), engine.stats.rejectedChains);
