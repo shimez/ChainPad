@@ -12,11 +12,11 @@ ChainPadは、複数の操作を組み合わせて実行できる、12キー＋�
 
 ## ChainPadでできること
 
-| 機能 | 用途の例 |
-|---|---|
-| **OSC** | Wi-FiでOSCメッセージを送信。VRChatのアバターパラメーターなど、OSCに対応する機能を操作 |
-| **MIDI** | Note On／Off・Control Changeで、音楽ソフトやMIDI対応ワールドを操作 |
-| **Keyboard HID** | キーボード入力・ショートカットで、OBSのシーン切り替えやマイクのミュートなどを操作 |
+| 機能             | 用途の例                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| **OSC**          | Wi-FiでOSCメッセージを送信。VRChatのアバターパラメーターなど、OSCに対応する機能を操作 |
+| **MIDI**         | Note On／Off・Control Changeで、音楽ソフトやVRChatのMIDI対応ワールドを操作            |
+| **Keyboard HID** | キーボード入力・ショートカットで、OBSのシーン切り替えやマイクのミュートなどを操作     |
 
 利用するアプリ・ワールド側でも、受信設定や機能の対応が必要です。
 
@@ -53,18 +53,18 @@ Press／Releaseは独立した設定です。Note OffやKeyUpは自動追加さ�
 
 現行ChainOSCPad PCBの**12キー・ロータリーエンコーダー・Push・LED**構成に対応しています。
 
-| ボード | OSC | MIDI／Keyboard HID |
-|---|---|---|
-| XIAO ESP32S3 | Wi-Fi | USB／Bluetooth LE |
-| XIAO ESP32C3 | Wi-Fi | Bluetooth LE |
-| XIAO ESP32C6 | Wi-Fi | Bluetooth LE |
-| XIAO ESP32C5 | Wi-Fi | Bluetooth LE |
+| ボード       | OSC   | MIDI／Keyboard HID |
+| ------------ | ----- | ------------------ |
+| XIAO ESP32S3 | Wi-Fi | USB／Bluetooth LE  |
+| XIAO ESP32C3 | Wi-Fi | Bluetooth LE       |
+| XIAO ESP32C6 | Wi-Fi | Bluetooth LE       |
+| XIAO ESP32C5 | Wi-Fi | Bluetooth LE       |
 
 C3／C6／C5のUSBは書き込み・コンソール用で、USB MIDI／HIDには対応しません。
 
 ### 自作する方へ
 
-配線ガイドは**準備中**です。自作する場合は、Firmwareが想定する配線に合わせる必要があります。現在のピン定義は[`src/hardware.h`](src/hardware.h)にありますが、部品選定や回路図を含む組み立てガイドではありません。
+配線ガイドは[ChainOSCPad](https://github.com/shimez/ChainOSCPad#%E9%85%8D%E7%B7%9A)を参照してください。自作する場合は、Firmwareが想定する配線に合わせる必要があります。現在のピン定義は[`src/hardware.h`](src/hardware.h)にありますが、部品選定や回路図を含む組み立てガイドではありません。
 
 ## はじめ方
 
@@ -73,13 +73,13 @@ C3／C6／C5のUSBは書き込み・コンソール用で、USB MIDI／HIDには
 
 ## 詳細情報・開発
 
-| 資料 | 内容 |
-|---|---|
-| [ChainPadReceiver](tools/ChainPadReceiver/README.md) | OSC・MIDI・キーボード入力を確認するPC側検証ツール。通常利用に必須ではありません |
-| [リソース診断](docs/resource-diagnostics.md) | シリアルからメモリ・保存領域などを確認する方法 |
-| [開発・検証資料](docs/) | 設計資料と各段階の検証記録。過去の仕様を含むため、すべてが現行仕様を示すものではありません |
-| [ビルド設定](platformio.ini) | PlatformIOの対応環境・依存ライブラリ。ソースからビルドする方向け |
-| [不具合報告・相談](https://github.com/shimez/ChainPad/issues) | GitHub Issues |
-| [Third-Party Notices](THIRD_PARTY_NOTICES.md) | 参考実装・依存ライブラリの情報 |
+| 資料                                                          | 内容                                                                                       |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [ChainPadReceiver](tools/ChainPadReceiver/README.md)          | OSC・MIDI・キーボード入力を確認するPC側検証ツール。通常利用に必須ではありません            |
+| [リソース診断](docs/resource-diagnostics.md)                  | シリアルからメモリ・保存領域などを確認する方法                                             |
+| [開発・検証資料](docs/)                                       | 設計資料と各段階の検証記録。過去の仕様を含むため、すべてが現行仕様を示すものではありません |
+| [ビルド設定](platformio.ini)                                  | PlatformIOの対応環境・依存ライブラリ。ソースからビルドする方向け                           |
+| [不具合報告・相談](https://github.com/shimez/ChainPad/issues) | GitHub Issues                                                                              |
+| [Third-Party Notices](THIRD_PARTY_NOTICES.md)                 | 参考実装・依存ライブラリの情報                                                             |
 
 Encoderの回転量に応じて値を扱う**Rotation Valueは開発中**です。現在はPosition更新まで対応しており、OSC／MIDIへの値の送信と専用編集UIは未実装です。
