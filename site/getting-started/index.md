@@ -18,7 +18,10 @@ ChainPadでは、使用する機能によって必要な接続が異なります
 
 OSC送信機能を利用するには、VRChatを利用しているPCと同じLANにChainPadを接続する必要があります。
 
-ChainPadにUSBケーブルを接続して電源を供給すると（PC接続もしくはACアダプタ接続）、ChainPadのエンコーダーのLEDがゆっくりと点滅します。
+> ChainPadは2.4 GHz帯のWi-Fiアクセスポイントに接続できます。<br>
+> XIAO ESP32C5を使用している場合は、5 GHz帯のWi-Fiにも接続できます。
+
+ChainPadにUSBケーブルを接続して電源を供給すると（PC接続もしくはACアダプタ接続）、ChainPadのエンコーダーのLEDがゆっくりと点滅します。<br>
 この状態のChainPadは自身が無線APとして起動しています。
 スマホやPCなどをChainPadに接続してください。
 
@@ -38,10 +41,8 @@ MIDI送信機能、HID送信機能を利用するにはBluetoothのペアリン�
 
 Bluetoothで『ChainPad Chimera』とペアリングしてください。
 
-※1 XIAO ESP32S3の場合はMIDI/HIDをUSB接続で利用することも可能です
-
-※2 「すべてのデバイスを表示」を押さないと『ChainPad Chimera』が表示されない場合があります
-
+※1 XIAO ESP32S3の場合はMIDI/HIDをUSB接続で利用することも可能です<br>
+※2 「すべてのデバイスを表示」を押さないと『ChainPad Chimera』が表示されない場合があります<br>
 ※3 「すべてのデバイスを表示」を押しても『ChainPad Chimera』が表示されない場合、ChainPadに接続しているUSBケーブルを抜き差ししてください
 
 ## 4. ブラウザで設定画面を表示する
@@ -55,8 +56,7 @@ Windowsの場合 chainpad.local でのアクセスができない場合があり
 2. 起動したPowerShellで「Resolve-DnsName chainpad.local」コマンドを投入する
 3. 表示された IPAddress を確認する
 
-上記手順でChainPadのアドレスが確認できない場合は、スマホで<http://chainpad.local>にアクセスし
-一番上のカード（枠）に表示されているIPアドレスを確認してください。
+上記手順でChainPadのアドレスが確認できない場合はスマートフォンで<http://chainpad.local>にアクセスし、一番上のカード（枠）に表示されているIPアドレスを確認してください。
 
 ## 5. 設定を行う
 
@@ -82,7 +82,8 @@ Actionで「MIDI」を選ぶと、MIDIメッセージを送信する設定が可
 
 メッセージの種類（Note On/OffやControl Changeなど）、Channel、Note、Velocityなどを設定してください。
 
-「All Notes → Note On」と「All Notes → Note Off」では、ChainPadの設定内の有効なMIDI NoteをまとめてOn/Offできます。Noteが意図せずOnのままになった場合の緊急回避ボタンなどに利用できます。
+「All Notes → Note On」と「All Notes → Note Off」では、ChainPadの設定内の有効なMIDI NoteをまとめてOn/Offできます。<br>
+Noteが意図せずOnのままになった場合の緊急回避ボタンなどに利用できます。
 
 #### (3)HID
 
@@ -98,7 +99,7 @@ Messageで「KeyDown（キーを押す）」「KeyUp（キーを離す）」な�
 
 回転方向モードは回した方向に応じてアクションを行うモードです。回転量は考慮されません。
 
-回転方向モードでは、時計回り・反時計回りそれぞれに8件のアクションを登録可能です。
+回転方向モードでは、時計回り・反時計回りそれぞれに8件のアクションを登録可能です。<br>
 アクションに登録できる内容はKeyと共通です。
 
 #### (2)回転量モード
@@ -122,8 +123,8 @@ VRChatでOSCを利用するには設定の有効化が必要です。
 
 ### 6-2. MIDI設定
 
-VRChatでは、MIDI対応ワールドでPCに接続されているMIDIデバイスのうち1台が利用可能です。
-PCに複数のMIDIデバイスを接続している場合はVRChatの起動オプションを設定することでChainPadが利用可能となります。
+VRChatでは、MIDI対応ワールドでPCに接続されているMIDIデバイスのうち1台が利用可能です。<br>
+PCに複数のMIDIデバイスを接続している場合は、VRChatの起動オプションを設定することでChainPadが利用可能となります。
 
 1. Steamのライブラリ画面でVRChatを選択
 2. 歯車マークをクリックして「プロパティ」を選択
@@ -139,12 +140,13 @@ OBS側に設定したホットキーと同じキーをChainPadで設定するこ
 
 ## 7. ファームウェアを書き換える（必要な場合のみ）
 
-ChainPadのアップデートがあった場合はファームウェアの更新が可能です。
+ChainPadのアップデートがあった場合やはファームウェアの更新が可能です。<br>
+また、ChainPadと共通の基板を利用するChainOSCPadシリーズのファームウェアへの書き換えも可能です。
 
 1. Web Installerのページにアクセスし、「Connect」や「Install」のボタンを押す
 2. シリアルポートの一覧が表示されるため、「USB JTAG/serial debug unit」と書かれたポートを選択する
-3. ファームウェア書き換え後はBluetooth接続が不安定になる場合があります。PCのBluetooth設定で『ChainPad Chimera』を一旦削除し、改めて接続しなおしてください。
+3. 画面の指示に従い、ファームウェアを書き込む
+4. ファームウェア書き換え後はBluetooth接続が不安定になる場合があります。PCのBluetooth設定で『ChainPad Chimera』を一旦削除し、改めて接続しなおしてください。
 
-※1「USB JTAG/serial debug unit」と書かれたシリアルポートが複数ある場合、ChainPadを抜き差しし、抜いている間表示が消えたポートを選択してください
-
+※1「USB JTAG/serial debug unit」と書かれたシリアルポートが複数ある場合、ChainPadを抜き差しし、抜いている間表示が消えたポートを選択してください<br>
 ※2「USB JTAG/serial debug unit」と書かれたシリアルポートがない場合や、書き込みに失敗した場合は、XIAOのBOOTボタンを押しながらUSBケーブルを接続してください。
