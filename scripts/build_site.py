@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import subprocess
+import markdown
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -71,7 +72,13 @@ def prepare(base):
 
 
 def copy_site():
-    shutil.copytree(ROOT / "site", OUTPUT, dirs_exist_ok=True)
+    shutil.copytree(ROOT / "site", OUTPUT, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md", ".gitkeep"))
+    source = ROOT / "site/getting-started/index.md"
+    template = (ROOT / "scripts/templates/getting-started.html").read_text(encoding="utf-8")
+    content = markdown.markdown(source.read_text(encoding="utf-8"), extensions=["fenced_code", "tables", "toc", "sane_lists"], output_format="html")
+    destination = OUTPUT / "getting-started/index.html"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(template.replace("<!-- DOCUMENT_CONTENT -->", content), encoding="utf-8")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     (OUTPUT / "site-build.json").write_text(json.dumps({"commit": commit}) + "\n", encoding="utf-8")
 
@@ -109,9 +116,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prepare", metavar="PUBLISHED_URL", help="Decide whether a build is needed; verify and reuse unchanged published firmware")
     parser.add_argument("--site-only", action="store_true", help="Overlay site content onto the verified firmware prepared earlier")
+    parser.add_argument("--preview", action="store_true", help="Generate local site preview without requiring firmware artifacts")
     args = parser.parse_args()
     if args.prepare:
         prepare(args.prepare)
+    elif args.preview:
+        copy_site()
     elif args.site_only:
         if not (OUTPUT / "build.json").is_file() or not (OUTPUT / "manifest.json").is_file():
             raise RuntimeError("Run --prepare before --site-only")

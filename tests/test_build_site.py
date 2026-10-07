@@ -48,6 +48,31 @@ class PagesTests(unittest.TestCase):
         self.assertIn('manifest="../manifest.json"', installer)
         self.assertIn("fetch('../build.json')", installer)
         self.assertTrue((self.output / "favicon.svg").is_file())
+        guide = (self.output / "getting-started/index.html").read_text(encoding="utf-8")
+        self.assertIn("<h1", guide)
+        self.assertIn("Getting Started", guide)
+        self.assertIn('href="../favicon.svg"', guide)
+        self.assertIn('href="../installer/"', guide)
+        self.assertIn('href="getting-started/"', portal)
+        self.assertNotIn("<!-- DOCUMENT_CONTENT -->", guide)
+        self.assertFalse((self.output / "getting-started/index.md").exists())
+
+    def test_guide_renders_markdown_and_copies_images(self):
+        root = Path(self.temp.name) / "source"
+        guide = root / "site/getting-started"
+        (guide / "images").mkdir(parents=True)
+        (guide / "images/sample.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
+        (guide / "index.md").write_text('# Getting Started\n\n[TOC]\n\n## 接続\n\n![画像](images/sample.svg)\n\n```text\n<x>\n```\n\n| 項目 | 値 |\n| --- | --- |\n| A | B |\n', encoding="utf-8")
+        (root / "scripts/templates").mkdir(parents=True)
+        (root / "scripts/templates/getting-started.html").write_text('<main><!-- DOCUMENT_CONTENT --></main>')
+        with patch.object(site, "ROOT", root), patch.object(site, "OUTPUT", self.output), patch.object(site.subprocess, "check_output", return_value="a" * 40):
+            site.copy_site()
+        html = (self.output / "getting-started/index.html").read_text(encoding="utf-8")
+        self.assertIn('<div class="toc">', html)
+        self.assertIn("<table>", html)
+        self.assertIn("&lt;x&gt;", html)
+        self.assertIn('src="images/sample.svg"', html)
+        self.assertTrue((self.output / "getting-started/images/sample.svg").is_file())
 
     def test_corrupt_binary_rejected(self):
         self.payloads[self.info["files"][0]["path"]] = b"corrupt"

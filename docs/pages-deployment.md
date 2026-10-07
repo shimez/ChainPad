@@ -2,6 +2,7 @@
 
 - `/`：ChainPadポータル（`site/index.html`）
 - `/installer/`：Web Installer（`site/installer/index.html`）
+- `/getting-started/`：Markdownから生成するガイド（本文：`site/getting-started/index.md`）。[執筆方法](getting-started-authoring.md)
 - `/manifest.json`、`/build.json`、`/firmware/`：Firmware配布データ。既存URLを維持します。
 - `/site-build.json`：PagesコンテンツのコミットID。`build.json`のコミットIDはFirmwareのものです。
 
@@ -28,6 +29,7 @@ Actionsの **Build firmware and deploy Web Installer** → **Run workflow** で�
 ## ローカル確認
 
 ```powershell
+.\.venv\Scripts\python.exe -m pip install -r scripts/requirements-pages.txt
 .\.venv\Scripts\python.exe -m unittest discover -s tests -p test_build_site.py
 .\.venv\Scripts\python.exe scripts/build_site.py
 .\.venv\Scripts\python.exe -m http.server 8770 --directory _site
