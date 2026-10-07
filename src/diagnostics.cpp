@@ -1,6 +1,7 @@
 #include "diagnostics.h"
 #include "model.h"
 #include "rotation_runtime.h"
+#include "rotation_sender.h"
 #include "engine.h"
 #include "backends.h"
 #include "inputs.h"
@@ -47,7 +48,14 @@ void printDiagnostics(Print& out, const char* reason) {
     unsigned(rotationRuntime.active()), (unsigned long)config.encoderRotation.axis.rangeSteps);
   if (rotationRuntime.active()) out.printf("%lu", (unsigned long)rotationRuntime.position());
   else out.print("n/a");
-  out.println(" (Phase C: no Rotation output sending)");
+  out.println();
+  out.printf("Rotation sender: bytes=%u pendingBytes=%u pending=%u budget=%u generation=%lu snapshot=%lu overwrite=%lu discard=%lu unavailable=%lu\n",
+    unsigned(rotationSenderBytes()), unsigned(rotationPendingBytes()), rotationPendingCount(), ROTATION_SEND_BUDGET,
+    rotationSendStats.generation, rotationSendStats.snapshot, rotationSendStats.overwritten,
+    rotationSendStats.discarded, rotationSendStats.unavailable);
+  out.printf("Rotation OSC/USB/BLE accepted=%lu/%lu/%lu failed=%lu/%lu/%lu\n",
+    rotationSendStats.accepted[0], rotationSendStats.accepted[1], rotationSendStats.accepted[2],
+    rotationSendStats.failed[0], rotationSendStats.failed[1], rotationSendStats.failed[2]);
   out.printf("Actions: total=%u/%u maxKey=%u/%u maxEvent=%u; running=%u rejected=%lu\n",
     actions, unsigned(MAX_TOTAL_ACTIONS), maxKey, unsigned(MAX_KEY_ACTIONS), maxEvent,
     unsigned(engine.activeCount()), engine.stats.rejectedChains);

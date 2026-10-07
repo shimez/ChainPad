@@ -12,9 +12,9 @@ LAYOUTS = {
 }
 
 
-def check(environment):
+def check(environment, build_dir=None, rotation_probe=False):
     flash_mb, app_size, config_offset = LAYOUTS[environment]
-    build = Path(__file__).resolve().parents[1] / ".pio/build" / environment
+    build = (Path(build_dir) if build_dir else Path(__file__).resolve().parents[1] / ".pio/build") / environment
     partitions = (build / "partitions.bin").read_bytes()
     entries = {}
     for index in range(0, len(partitions), 32):
@@ -39,6 +39,7 @@ def check(environment):
     chip = environment.removeprefix("xiao_").upper()
     assert f"XIAO {chip} / ChainOSCPad PCB".encode() in app, "Wrong board identity in firmware"
     assert (b"ChainPad MIDI\0" in app) == (environment == "xiao_esp32s3"), "Unexpected USB MIDI descriptor"
+    assert (b"/api/rotation-test/hold\0" in app) == rotation_probe, "Rotation test hook must not appear in production images"
     print(f"PASS {environment}: partitions / image placement / {flash_mb}MB header / board identity / USB descriptor gating")
     print("firmware.bin SHA256", hashlib.sha256(app).hexdigest())
 
@@ -46,5 +47,8 @@ def check(environment):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", nargs="+", choices=LAYOUTS, default=["xiao_esp32s3"])
-    for environment in parser.parse_args().env:
-        check(environment)
+    parser.add_argument("--build-dir", help="Alternate PlatformIO build directory")
+    parser.add_argument("--rotation-probe", action="store_true", help="Explicitly check a hardware test-only image; never distribute it")
+    args = parser.parse_args()
+    for environment in args.env:
+        check(environment, args.build_dir, args.rotation_probe)

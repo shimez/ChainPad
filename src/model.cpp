@@ -152,7 +152,7 @@ void encodeCapabilities(JsonDocument& doc) {
   doc["schemaVersion"] = 2;
   doc["rotationOutputCapacity"] = ROTATION_OUTPUT_CAPACITY;
   doc["rotationRuntimeSupported"] = true;
-  doc["rotationOutputSendingSupported"] = false; // Latest-State transport belongs to Phase D.
+  doc["rotationOutputSendingSupported"] = true;
   auto midi = doc["midiTransports"].to<JsonArray>();
   if (HAS_USB_MIDI) { midi.add("both"); midi.add("usb"); }
   midi.add("ble");

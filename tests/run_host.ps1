@@ -11,6 +11,7 @@ $sources = @('tests\host\core_tests.cpp','tests\host\rotation_tests.cpp','tests\
 $args = @('/nologo','/std:c++17','/EHsc','/utf-8','/D_CRT_SECURE_NO_WARNINGS','/DCHAINPAD_HAS_USB=1',"/I`"$root\tests\host`"", "/I`"$root\src`"", "/I`"$json`"", "/Fe:`"$build\core_tests.exe`"", "/Fo`"$build\\`"")
 $args += '/DCHAINPAD_HOST_TEST=1'
 $sources += 'src\rotation_runtime.cpp'
+$sources += 'src\rotation_sender.cpp'
 $args += $sources | ForEach-Object { "`"$root\$_`"" }
 $command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($args -join ' ') + " && `"$build\core_tests.exe`""
 & cmd.exe /d /c $command
@@ -18,6 +19,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Firmware host tests failed' }
 
 $bleSources = @('tests\host\capability_tests.cpp','src\rotation.cpp','src\model.cpp','src\config_store.cpp','src\engine.cpp','src\backends.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
 $bleSources += 'src\rotation_runtime.cpp'
+$bleSources += 'src\rotation_sender.cpp'
 foreach ($chip in @('C3','C6','C5')) {
     $arguments = @('/nologo','/std:c++17','/EHsc','/utf-8','/D_CRT_SECURE_NO_WARNINGS',"/DCONFIG_IDF_TARGET_ESP32${chip}=1", "/I`"$root\tests\host`"", "/I`"$root\src`"", "/I`"$json`"", "/Fe:`"$build\capabilities_$chip.exe`"", "/Fo`"$build\\`"")
     $arguments += '/DCHAINPAD_HOST_TEST=1'

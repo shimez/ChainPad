@@ -1,5 +1,6 @@
 #include "model.h"
 #include "rotation_runtime.h"
+#include "rotation_sender.h"
 #include "engine.h"
 #include "backend_internal.h"
 #include "LittleFS.h"
@@ -507,10 +508,100 @@ void rotationRuntimeTests() {
   reset();midiDispatch(bulk);settle();assert(fake::midi.size()==4);
   std::cout<<"PASS Rotation runtime / mode routing / apply-retain-reset / Stop Wrap 1+65535 / zero outputs / no Rotation sends / active-only All Notes; Runtime="<<sizeof(RotationRuntime)<<"\n";
 }
+void rotationSenderTests() {
+  Config source; String error; Engine e;
+  auto& r = source.encoderRotation;
+  r.mode = RotationMode::RotationValue; r.axis = {100, 0, RotationBoundary::Stop};
+  r.outputCount = 3;
+  r.outputs[0].range.integer = {-100, 100};
+  r.outputs[1].kind = RotationOutputKind::OscFloat; r.outputs[1].range.floating = {1, -1};
+  r.outputs[2].kind = RotationOutputKind::MidiCC; r.outputs[2].transport = Transport::Both;
+  r.outputs[2].range.integer = {0, 1}; r.outputs[2].channel = 16; r.outputs[2].number = 127;
+  assert(saveSource(source, error)); reset(); fake::wifi=true; fake::packets.clear();
+  rotationSendStats = {};
+  assert(e.trigger({26,0})); assert(rotationSendStats.generation == 1 && rotationPendingCount() == 4);
+  assert(e.trigger({26,0})); assert(rotationSendStats.overwritten == 4 && rotationSendStats.snapshot == 2);
+  assert(fake::midi.empty() && fake::packets.empty()); // Publish never writes.
+  rotationSendTick();
+  assert(rotationPendingCount() == 0 && fake::packets.size() == 2 && fake::midi.size() == 2);
+  const auto& integerPacket = fake::packets[0];
+  assert(integerPacket[integerPacket.size()-1] == 160); // -96 as big-endian int32.
+  const auto& floatPacket = fake::packets[1]; uint32_t bits=0;
+  for (size_t i=floatPacket.size()-4;i<floatPacket.size();++i) bits=(bits<<8)|floatPacket[i];
+  float f; memcpy(&f,&bits,4); assert(f == float(.96));
+  for (const auto& m : fake::midi) assert(m.status == 0xbf && m.a == 127 && m.b == 0);
+  assert(e.trigger({26,0})); rotationSendTick(); assert(fake::midi.size() == 4); // Same rounded CC, new generation.
+  // Backlog overwrites, ordinary MIDI FIFO has strict priority; OSC still progresses.
+  fake::writable=false;
+  Action note; note.protocol=Protocol::Midi; note.transport=Transport::Both;
+  assert(midiDispatch(note)==SendResult::Accepted);
+  for(int i=0;i<20;++i) assert(e.trigger({26,0}));
+  rotationSendTick(); assert(rotationPendingCount()==2);
+  fake::writable=true; midiTick();
+  const auto before=fake::midi.size(); assert(before==6);
+  rotationSendTick(); assert(fake::midi.size()==before+2 && rotationPendingCount()==0);
+  // Failed API writes discarded once, never retried; one route failure does not stop others.
+  fake::udpWritable=false; fake::writable=false;
+  e.trigger({26,0}); rotationSendTick();
+  assert(rotationPendingCount()==0 && rotationSendStats.failed[0]==2 && rotationSendStats.failed[1]==1 && rotationSendStats.failed[2]==1);
+  fake::udpWritable=true; fake::writable=true; auto count=fake::midi.size(); rotationSendTick(); assert(fake::midi.size()==count);
+  // Disconnect and brief reconnect epochs discard per transport independently.
+  e.trigger({26,0}); ++fake::epoch[1]; rotationSendTick();
+  assert(rotationPendingCount()==0 && fake::midi.size()==count+1); // USB only.
+  count=fake::midi.size(); rotationSendTick(); assert(fake::midi.size()==count);
+  e.trigger({26,0}); rotationWifiChanged(); auto packets=fake::packets.size(); rotationSendTick(); assert(fake::packets.size()==packets);
+  fake::connected[0]=fake::connected[1]=false; fake::wifi=false;
+  e.trigger({26,0}); assert(rotationPendingCount()==0);
+  fake::connected[0]=fake::connected[1]=true; fake::wifi=true;
+  count=fake::midi.size(); rotationSendTick(); assert(fake::midi.size()==count);
+  // Failed save retains pending; successful save/panic discards without regenerating.
+  e.trigger({26,0}); auto position=rotationRuntime.position();
+  r.axis.rangeSteps=0; assert(!saveSource(source,error) && rotationPendingCount()==4);
+  r.axis.rangeSteps=100; assert(saveSource(source,error) && rotationPendingCount()==0 && rotationRuntime.position()==position);
+  e.trigger({26,0}); position=rotationRuntime.position(); backendsPanic();
+  assert(rotationPendingCount()==0 && rotationRuntime.position()==position);
+  // Stop unchanged leaves existing pending intact. Wrap creates another generation.
+  r.axis={1,0,RotationBoundary::Stop}; assert(saveSource(source,error));
+  e.trigger({26,0}); const auto generation=rotationSendStats.generation;
+  e.trigger({26,0}); assert(rotationSendStats.generation==generation && rotationPendingCount()==4);
+  r.axis.boundary=RotationBoundary::Wrap; assert(saveSource(source,error));
+  e.trigger({26,0}); assert(rotationRuntime.position()==0 && rotationSendStats.generation==generation+1);
+  // All 16 duplicate destinations stay independent, round-robin drains in bounded ticks.
+  r.outputCount=16; for(auto& output:r.outputs) { output=RotationOutput{}; output.kind=RotationOutputKind::MidiCC; output.transport=Transport::Both; }
+  assert(saveSource(source,error)); reset(); e.trigger({26,0}); assert(rotationPendingCount()==32);
+  for(unsigned tick=0;tick<8;++tick) {
+    const auto size=fake::midi.size(); rotationSendTick(); assert(fake::midi.size()==size+ROTATION_SEND_BUDGET);
+  }
+  assert(rotationPendingCount()==0 && fake::midi.size()==32);
+  // Sustained generation replacement still services every Output, while ordinary
+  // Note Actions dispatch first and never share Rotation storage.
+  for(unsigned i=0;i<16;++i) r.outputs[i].number=uint8_t(i);
+  assert(saveSource(source,error)); reset();
+  for(unsigned tick=0;tick<16;++tick) {
+    e.trigger({26,0}); const auto size=fake::midi.size();
+    assert(midiDispatch(note)==SendResult::Accepted);
+    assert(fake::midi.size()==size+2 && (fake::midi[size].status&0xf0)==0x90);
+    rotationSendTick(); assert(fake::midi.size()==size+6);
+  }
+  bool seen[2][16]{};
+  for(const auto& m:fake::midi) if((m.status&0xf0)==0xb0) seen[transportIndex(m.transport)][m.a]=true;
+  for(const auto& route:seen) for(bool value:route) assert(value);
+  // A Wi-Fi API failure cannot stop BLE; generation zero remains a valid slot.
+  r.outputCount=2; r.outputs[0]=RotationOutput{}; r.outputs[1]=r.outputs[15];
+  assert(saveSource(source,error)); reset(); fake::udpWritable=false;
+  rotationSendStats.generation=UINT32_MAX; e.trigger({26,0});
+  assert(rotationSendStats.generation==0 && rotationPendingCount()==3);
+  rotationSendTick(); assert(fake::midi.size()==2 && rotationPendingCount()==0);
+  fake::udpWritable=true;
+  r.outputCount=0; assert(saveSource(source,error)); auto g=rotationSendStats.generation;
+  e.trigger({26,0}); assert(rotationSendStats.generation==g+1 && rotationPendingCount()==0);
+  std::cout<<"PASS Rotation Latest-State snapshots / overwrite / equal values / API discard / no reconnect replay / lifecycle / FIFO priority / budget fairness / duplicates; pending="<<rotationPendingBytes()<<" sender="<<rotationSenderBytes()<<"\n";
+}
 int main() {
   rotationTests();
   configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests(); sharedSlotsTests();
   rotationStorageTests();
   rotationRuntimeTests();
+  rotationSenderTests();
   std::cout << "All firmware host tests passed.\n";
 }

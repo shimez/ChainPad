@@ -90,5 +90,6 @@ SendResult midiDispatch(const Action& a) {
   return SendResult::Accepted;
 }
 void midiTick() { flush(0); flush(1); }
+bool midiQueued(Transport t) { unsigned i = transportIndex(t); sync(i); return states[i].outbox.size != 0; }
 void midiPanic() { for (auto& s : states) s.outbox.clear(); }
 }

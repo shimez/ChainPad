@@ -1,11 +1,12 @@
 #include "backend_internal.h"
+#include "rotation_sender.h"
 #include <WiFi.h>
 
 namespace chimera {
 uint32_t transportRetries = 0, transportOverflows = 0;
-void backendsBegin() { transportsBegin(); }
+void backendsBegin() { transportsBegin(); rotationSenderBegin(); }
 void backendsTick(uint32_t) { transportsTick(); midiTick(); keyboardTick(); }
-void backendsPanic() { midiPanic(); keyboardPanic(); }
+void backendsPanic() { midiPanic(); keyboardPanic(); rotationDiscard(); }
 SendResult dispatch(const Action& a, uint32_t) {
   switch (a.protocol) {
     case Protocol::Osc: return oscDispatch(a);

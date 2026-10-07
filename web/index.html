@@ -32,7 +32,7 @@ try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme
 <main>
 <section class="status panel"><div id="connections">接続中…</div><div id="stats"></div></section>
 <section class="status panel" id="storageRecovery" hidden><p>旧形式の設定が存在しますが、このFirmwareでは読み込めません。旧ファイルは保持され、設定出力は停止しています。置換すると旧設定は上書きされます。</p><button id="replaceUnsupported" class="danger">旧設定を置き換えてv2設定を保存</button></section>
-<section class="status panel"><p class="hint">Rotation Phase C：実機回転によるPosition更新に対応。Rotation ValueのOSC / MIDI送信・専用編集UIは未実装です。</p><p id="rotationRuntime" class="hint"></p><p id="rotationSummary" class="hint"></p><p id="rotationDuplicates" class="danger"></p></section>
+<section class="status panel"><p class="hint">Rotation Phase D：Position更新とOSC / MIDI CCのLatest-State送信に対応。専用編集UIは未実装です。</p><p id="rotationRuntime" class="hint"></p><p id="rotationSummary" class="hint"></p><p id="rotationDuplicates" class="danger"></p></section>
 <section class="network panel" id="oscDestination"><h2>OSC送信先</h2><div class="fields">
 <label>OSC IPv4<input id="oscHost" placeholder="192.168.1.100"></label>
 <label>OSC Port<input id="oscPort" type="number" min="1" max="65535"></label>

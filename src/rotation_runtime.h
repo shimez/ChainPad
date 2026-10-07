@@ -2,7 +2,7 @@
 #include "rotation.h"
 
 namespace chimera {
-// Runtime only: never serialized. No transport, queue or Output dispatch in Phase C.
+// Runtime only: never serialized. Actual changes publish to the separate Latest-State sender.
 class RotationRuntime {
 public:
   void restart(const EncoderRotationSettings& settings, bool available = true);

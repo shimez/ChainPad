@@ -6,6 +6,7 @@
 #include "model.h"
 #include "json_wire.h"
 #include "rotation_runtime.h"
+#include "rotation_sender.h"
 #if CHAINPAD_HAS_USB
 #include <USBCDC.h>
 #endif
@@ -50,6 +51,12 @@ void result(int status, const String& message) {
 }
 void panic() { engine.cancelAll(); backendsPanic(); discardInputs(); }
 void setupWeb() {
+#ifdef CHAINPAD_ROTATION_TEST
+  web.on("/api/rotation-test/hold", HTTP_POST, [] {
+    rotationTestHeld = web.arg("enabled") == "1";
+    result(200, rotationTestHeld ? "Rotation test hold enabled" : "Rotation test hold disabled");
+  });
+#endif
   web.on("/", HTTP_GET, [] {
     if (apRequest() && (!web.hasArg("setup") || web.hostHeader() != WiFi.softAPIP().toString())) {
       redirectToSetup(); return;
@@ -154,7 +161,20 @@ void setupWeb() {
     rotation["runtimeActive"] = rotationRuntime.active();
     if (rotationRuntime.active()) rotation["currentPosition"] = rotationRuntime.position();
     else rotation["currentPosition"] = nullptr;
-    rotation["outputSendingSupported"] = false;
+    rotation["outputSendingSupported"] = true;
+    rotation["generation"] = rotationSendStats.generation;
+    rotation["snapshot"] = rotationSendStats.snapshot;
+    rotation["pending"] = rotationPendingCount();
+    rotation["pendingBytes"] = rotationPendingBytes();
+    rotation["senderBytes"] = rotationSenderBytes();
+    rotation["overwritten"] = rotationSendStats.overwritten;
+    rotation["discarded"] = rotationSendStats.discarded;
+    rotation["unavailable"] = rotationSendStats.unavailable;
+    auto accepted = rotation["accepted"].to<JsonArray>();
+    auto failed = rotation["failed"].to<JsonArray>();
+    for (unsigned i = 0; i < ROTATION_ROUTES; ++i) {
+      accepted.add(rotationSendStats.accepted[i]); failed.add(rotationSendStats.failed[i]);
+    }
     doc["restartRequired"] = strcmp(config.ssid, bootSsid) != 0 || strcmp(config.password, bootPassword) != 0;
     doc["freeHeap"] = ESP.getFreeHeap(); doc["uptimeMs"] = millis();
     doc["largestFreeBlock"] = ESP.getMaxAllocHeap(); doc["minFreeHeap"] = ESP.getMinFreeHeap();
@@ -235,6 +255,7 @@ void loop() {
       lastActivity = now;
     }
   } else if (static_cast<int32_t>(now - restartAt) >= 0) ESP.restart();
+  if (!restartAt && configOutputsAllowed()) rotationSendTick();
   bool led = WiFi.status() == WL_CONNECTED ? now - lastActivity > 50 : now % 1000 < 500;
   setStatusLed(inputReady && led);
   if (diagnosticsEnabled && now - lastDiagnostics >= 5000) {

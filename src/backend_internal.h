@@ -8,6 +8,7 @@ SendResult oscDispatch(const Action&);
 SendResult midiDispatch(const Action&);
 SendResult keyboardDispatch(const Action&);
 void midiTick();
+bool midiQueued(Transport);
 void keyboardTick();
 void midiPanic();
 void keyboardPanic();
