@@ -66,7 +66,7 @@ size_t rotationSenderBytes() {
 }
 void rotationPublish(uint32_t position) {
   sync();
-  const auto& settings = config.encoderRotation;
+  const auto& settings = activeConfig().encoderRotation;
   ++rotationSendStats.generation; // RAM-only modulo counter; valid bits do not depend on its value.
   rotationSendStats.snapshot = position;
   for (unsigned i = 0; i < settings.outputCount; ++i) {
@@ -104,7 +104,7 @@ void rotationSendTick() {
     // Never append Rotation CC to the ordinary FIFO or bypass its queued messages.
     if (route && midiQueued(routeTransport(route))) continue;
     --budget;
-    const auto& output = config.encoderRotation.outputs[i];
+    const auto& output = activeConfig().encoderRotation.outputs[i];
     p.valid = false; // One API attempt only; failures are never retried.
     bool accepted;
     if (route) accepted = midiWrite(routeTransport(route), 0xb0 | (output.channel - 1), output.number, p.value.integer);

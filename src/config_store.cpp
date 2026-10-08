@@ -63,6 +63,7 @@ bool readRecord(File& file, JsonDocument& doc) {
   return !deserializeJson(doc, reader, DeserializationOption::NestingLimit(8)) && file.read() == '\n';
 }
 bool scan(const char* path, bool apply, String& error) {
+  auto& config = activeConfig();
   error = "Invalid LittleFS settings records";
   auto file = LittleFS.open(path, "r");
   if (!file) return false;
@@ -92,6 +93,7 @@ bool scan(const char* path, bool apply, String& error) {
   error = ""; return true;
 }
 void defaults() {
+  auto& config = activeConfig();
   static_cast<NetworkSettings&>(config) = NetworkSettings{};
   for (auto& chain : config.chains) chain.count = 0;
   config.encoderRotation.mode = RotationMode::ActionChain;
@@ -162,6 +164,7 @@ bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& er
   ++nextChain; error = ""; return true;
 }
 bool commitConfigSave(uint32_t token, String& error) {
+  auto& config = activeConfig();
   error = "Incomplete or expired configuration transaction";
   if (!transaction || token != transaction || nextChain != INPUT_COUNT || !rotationStaged) return false;
   transaction = 0;
@@ -174,6 +177,7 @@ bool commitConfigSave(uint32_t token, String& error) {
   error = ""; return true;
 }
 bool loadConfig(String& message) {
+  auto& config = activeConfig();
   transaction = 0;
   defaults();
   rotationRuntime.restart(config.encoderRotation, false);
@@ -185,6 +189,7 @@ bool loadConfig(String& message) {
   message = "Loaded LittleFS settings"; return true;
 }
 bool saveWifiConfig(const String& json, String& error) {
+  auto& config = activeConfig();
   if (!configOutputsAllowed()) { error = "Settings unavailable: Wi-Fi save cannot replace existing settings"; return false; }
   if (json.length() > 1024) { error = "Wi-Fi request too large"; return false; }
   JsonDocument credentials, doc;

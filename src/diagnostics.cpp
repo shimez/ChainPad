@@ -7,6 +7,7 @@
 #include "inputs.h"
 #include <LittleFS.h>
 #include <esp_heap_caps.h>
+#include <esp_memory_utils.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -76,6 +77,7 @@ void printMemoryDiagnostics(Print& out) {
   }
 }
 void printDiagnostics(Print& out, const char* reason) {
+  auto& config = activeConfig();
   // Capture RAM before filesystem queries and printing allocate temporary buffers.
   multi_heap_info_t ram{}, psram{};
   heap_caps_get_info(&ram, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -99,6 +101,8 @@ void printDiagnostics(Print& out, const char* reason) {
   out.printf("Static sizes: Action=%u Chain=%u Config=%u Engine=%u; recordLimit=%u\n",
     unsigned(sizeof(Action)), unsigned(sizeof(Chain)), unsigned(sizeof(Config)), unsigned(sizeof(Engine)), unsigned(MAX_RECORD_BYTES));
   out.printf("Active Config address: %p\n", static_cast<void*>(&config));
+  out.printf("Config external=%u PSRAM total=%u bytes\n", unsigned(esp_ptr_external_ram(&config)),
+    unsigned(heap_caps_get_total_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)));
   out.printf("Rotation storage: Output=%u Settings=%u count=%u/%u state=%s\n",
     unsigned(sizeof(RotationOutput)), unsigned(sizeof(EncoderRotationSettings)), unsigned(config.encoderRotation.outputCount),
     unsigned(ROTATION_OUTPUT_CAPACITY), configStorageStateName());

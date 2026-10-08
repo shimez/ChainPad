@@ -97,6 +97,29 @@ UI/UX改善候補はこのRegression中には修正せず、終了後にユー�
 - 空設定起動の入力初期化は成功。ただし内部RAM不足とloop中の確保失敗を記録。
   現行ボード設定はPSRAM有効であり、PSRAM未使用比較ではない。詳細はメモリ調査資料。
 - 診断版を保持、全Flash復元は未実施。接続・送受信・WebUI・最大設定のRegressionは未合格。
+- C5 PSRAM配置変更版を同個体へapplication-only書込み・hash検証。
+  Config external=1、inputs-ready内部free85284 bytes（前版比+82708）、largest65524、failure0を実測。
+  詳細は`c3-memory-investigation.md`冒頭のC5改善節。機能Regressionは継続中で合格扱いしない。
+- PSRAM変更版: ユーザーがAP接続・WebUI表示成功を確認。Serialで後続free81012 / min67472 /
+  largest61428、failure0を確認。エージェントPCのAP HTTPはtimeout。STA/保存/送信/再接続等は未確認。
+- 続いてWi-Fi設定保存・Restartをユーザーが確認。Serialで設定再読込、STA=192.168.0.26、
+  free79264 / min61408 / largest57332、failure0を確認。STA HTTP取得成功。
+- OSC/WaitのAPI triggerで2 packet実受信一致を確認。ただし先行2試行は受信timeoutで、安定性未確定。
+  過大Chainと不完全transactionのHTTP400拒否・旧設定保持を確認。元設定へ復元・GET一致確認済み。
+  物理入力・BLE・Rotation・最大設定等は未完了。全体Regression合格ではない。
+- ユーザー報告では先行UDP timeout時にFirewall許可ダイアログあり。許可後の再試験は20 Chain実行／
+  OSC40 packet全一致。Bluetooth接続報告とstatusのHID接続済み表示も確認。
+- BLE MIDIはWindows入力ポートを2回openし、各5組、計10組20 NoteOn/Offを実受信・bytes一致。
+  元設定へ復元済み。Bluetoothリンク再接続、HID report実受信、物理操作はまだ未確認。
+- 続報: Bluetooth OFF/ON後の再接続とMIDI再受信成功。allocation failure0、internal min46740。
+  物理キー12個＋PushのPress/Release、CW3/CCW3でOSC32件一致、キー1のF13 down/upと
+  キー2のNoteOn/OffをPCで確認。overflow/retry/rejection0。元設定復元済み。
+- 224最大長OSC String Actions＋16最大長address Outputsの保存・GET一致・再起動復元成功。
+  保存後のinternal min44108 bytes。元設定復元済み。詳細・未検証範囲はメモリ資料参照。
+- 224最大長Actions保持下でCW3/CCW3操作、Rotation16 OutputsのOSC48＋BLE CC48を実受信・値/順序一致。
+  最終Position64、pending/overwrite/discard/failed/overflow0。後続Serial failure0、min45908。
+- 最大長224 OSC ActionsもChainごとのAPI triggerで全packet実受信一致。各試験後に元設定を復元。
+  無線反復耐久・Wi-Fiリンク再接続・境界・OOM/I/O保存失敗等は未完了。全体Regression合格ではない。
 
 ### C3 — 識別・書込み
 

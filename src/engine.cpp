@@ -4,7 +4,7 @@
 namespace chimera {
 Engine engine;
 bool Engine::advance(Invocation& job, uint32_t now) {
-  const auto& chain = config.chains[job.input];
+  const auto& chain = activeConfig().chains[job.input];
   while (job.next < chain.count) {
     const uint8_t index = job.next++;
     const auto& action = chain.actions[index];
@@ -19,9 +19,9 @@ bool Engine::advance(Invocation& job, uint32_t now) {
 bool Engine::trigger(const InputEvent& event) {
   if (event.input >= INPUT_COUNT) return false;
   ++stats.events;
-  if (event.input >= 26 && config.encoderRotation.mode == RotationMode::RotationValue)
+  if (event.input >= 26 && activeConfig().encoderRotation.mode == RotationMode::RotationValue)
     return rotationRuntime.step(event.input == 26);
-  const auto& chain = config.chains[event.input];
+  const auto& chain = activeConfig().chains[event.input];
   bool needsSlot = false;
   for (uint8_t i = 0; i < chain.count; ++i)
     if (chain.actions[i].protocol == Protocol::Wait && chain.actions[i].delayMs) needsSlot = true;

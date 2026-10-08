@@ -4,26 +4,36 @@
 #include <memory>
 #include <new>
 #include <cstdio>
-#if defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CHAINPAD_HOST_TEST)
+#if (defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C5)) && !defined(CHAINPAD_HOST_TEST)
 #include <esp_heap_caps.h>
 #include <cstdlib>
-#if !CONFIG_SPIRAM_BOOT_INIT
+#if defined(CONFIG_IDF_TARGET_ESP32S3) && !CONFIG_SPIRAM_BOOT_INIT
 #error "S3 Config allocation requires PSRAM initialization before C++ constructors"
 #endif
 #endif
 
 namespace chimera {
-#if defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CHAINPAD_HOST_TEST)
+#if (defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C5)) && !defined(CHAINPAD_HOST_TEST)
 namespace {
 Config& allocateConfig() {
-  // The S3 SDK initializes PSRAM before global constructors. Keep the full
+  // Call only after the target has registered its PSRAM heap. Keep the full
   // fixed-capacity Config out of internal RAM needed by Wi-Fi/USB/BLE.
   void* storage = heap_caps_malloc(sizeof(Config), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
   if (!storage) std::abort();
   return *new (storage) Config{};
 }
 }
+#if defined(CONFIG_IDF_TARGET_ESP32C5)
+Config& activeConfig() {
+  // C5 registers PSRAM in initArduino(), after global constructors.
+  // First use is loadConfig() from setup(). Allocation failure aborts before
+  // any Config reference is returned; never fall back to scarce internal RAM.
+  static Config& instance = allocateConfig();
+  return instance;
+}
+#else
 Config& config = allocateConfig();
+#endif
 #else
 Config config;
 #endif

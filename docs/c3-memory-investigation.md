@@ -5,6 +5,177 @@
 本資料は調査順の記録。初期節の「未確認」「ビルド中」は当時の状態を示し、最新結果は
 「共通診断版: C3/C5/C6実測」以降を参照する。この記録のコミットはRegression合格・安定版リリースではない。
 
+## 方針更新: Standard / Mini候補とC5 PSRAM改善
+
+ユーザー決定により、製品優先はC6/S3 Standard（224 Actions／16 Outputs）。C5もPSRAM活用で
+Standardを目指す。C3のみ共通コード内のMini候補（共有pool12→必要なら10→8、CW/CCW各8、Outputs16）。
+以下の過去の共通容量削減推奨はこの決定で置き換える。今回はC3容量変更を実装しない。
+エンコーダ排他化、Action union、単一Action化、保存形式変更は保留。
+
+### C5 Config配置変更の実装調査
+
+- 原因: `model.h/.cpp`のPSRAM分岐は`CONFIG_IDF_TARGET_ESP32S3`限定で、C5は静的`Config config`だった。
+- 共通PlatformIOはpioarduino 55.03.311、Arduino/IDF SDKは各targetのprebuilt libraryを使用。
+  C5ボードは`BOARD_HAS_PSRAM`、SDK `esp32c5/qio_qspi/include/sdkconfig.h`は
+  `CONFIG_SPIRAM=1`、QUAD/80MHz、USE_MALLOC、ALWAYSINTERNAL4096、RESERVE_INTERNAL0。
+  C5には`CONFIG_SPIRAM_BOOT_INIT`定義がない。S3のboot-init条件をC5へ偽装して有効化しない。
+- Arduino core `esp32-hal-misc.c`のsystem init hookが`psramInit()`、その後`initArduino()`で
+  `psramAddToHeap()`を呼ぶ。PSRAM認識とheapへの登録は別段階。
+  S3のboot-initによるグローバルconstructor確保をC5へ直接コピーすると早過ぎる。
+- 実装: 共通`allocateConfig()`の明示SPIRAM＋8BIT確保とplacement newを再利用。
+  C5のみ`activeConfig()`内のfunction-local static referenceで初回確保し、初回呼出しは
+  `setup → loadConfig`（Arduino初期化後）。参照取得箇所をaccessorへ置換し、データモデルは変更しない。
+  他target/hostではaccessorは既存globalを返すinline関数。S3は従来のglobal reference確保とboot-init guard、
+  C3/C6は静的内部Configのまま。S3限定NimBLE外部確保flagも変更しない。
+- 確保失敗時は既存S3同様`abort()`し、nullへplacement newせず、不完全なConfig参照を返さない。
+  内部RAM fallbackはしない。これは停止／再起動になるfail-fast方針で、PSRAM故障時のUI復旧機能ではない。
+- Serial snapshotに`esp_ptr_external_ram`によるConfig外部判定とSPIRAM heap総量を追加。
+  C5のentry checkpointはConfig確保前になるため、旧版entryとの差を定常改善量として扱わない。
+  config-loaded以降と同条件snapshotで比較する。
+- DMA等のcaps=0x80c要求は外部PSRAMへ転送していない。内部RAM解放が該当heapの余裕を改善するか実測する。
+- rename後apply失敗リスクは既存課題のまま。今回storage transactionの順序・形式は変更しない。
+
+### 検証状況
+
+実装後のS3/C3/C5/C6 buildは全環境SUCCESS、`tests/check_image.py`も4環境PASS。
+既存host core/storage/rotation/capability suiteは終了コード0。
+hostは静的Configを使うためC5の実PSRAM初期化順・確保成功の証明にはならない。
+ELF symbol確認: C5は82648-byte静的Configがなく、`activeConfig()::instance`4 bytes＋guard8 bytes。
+S3は従来同様Config参照4 bytes。C3/C6は`config`が0x142d8＝82648 bytesのBSSとして残る。
+これは静的配置確認であり、C5の実配置先はSerialのexternal判定で確認する必要がある。
+C5 application SHA256 `95a016ffb457f7b1ef8c116e8dc3dd727a57ab1aa108c12c37db34c662f795f8`。
+ログは外部`c5-psram-config-build.log`と`c5-psram-config-host.log`。
+C5実機結果は次節。機能Regressionは継続中。commit/push未実施。
+
+### C5 PSRAM移動後の実機測定
+
+前回と同じCOM11 / MAC `10:bd:a3:ce:db:cc`。書込み前の現状全Flash8MBを外部
+`c5-before-psram-full-flash.bin`へ追加バックアップ、SHA256
+`f5ad9e4eee08fe0e414ae8a08de7294bcedcfb481a4ac5b8db1e7e0febca9974`。
+元バックアップ`regression-c5b-before-full-flash.bin`のハッシュ一致も確認。
+変更版applicationのみ0x10000へ書込み、hash検証成功。設定領域・partitionは書き換えていない。
+最初のSerial要求は無応答、後の再要求で取得。ログは外部`c5-psram-memory-retry.txt`。
+
+Config address=`0x42190908`、`esp_ptr_external_ram`によるexternal=1、PSRAM heap総容量8388608 bytes。
+Action352 / Chain5636 / Config82648 bytes、224 Actions / 16 Outputsを維持。
+
+| 段階 | internal free | minimum | largest |
+| --- | ---: | ---: | ---: |
+| entry（今回はConfig確保前） | 197820 | 197676 | 172020 |
+| config loaded | 194716 | 193916 | 172020 |
+| BLE host ready | 164884 | 159860 | 139252 |
+| BLE services ready | 160924 | 159860 | 139252 |
+| BLE advertising ready | 159168 | 159168 | 139252 |
+| backends ready | 159208 | 159168 | 139252 |
+| Wi-Fi mode ready | 105880 | 105392 | 86004 |
+| AP/DNS ready | 98196 | 98196 | 81908 |
+| STA requested | 98196 | 98196 | 81908 |
+| mDNS ready | 92420 | 92420 | 73716 |
+| Web ready | 89972 | 89716 | 73716 |
+| inputs ready | 85284 | 85284 | 65524 |
+
+起動checkpoint同士の比較: inputs-ready free2576→85284（**+82708 bytes**）、
+largest2292→65524（+63232 bytes）。Configサイズ分に概ね一致する改善で、
+差分は非同期処理・診断出力コード・allocator等も含みConfigのsizeofと完全一致するものではない。
+config-loaded freeは117348→194716（+77368 bytes）。entryは確保時点が異なるため比較基準にしない。
+
+後続snapshotはuptime13742395ms（約3.8時間）、internal free85692 / min83708 / largest65524。
+前版snapshot free2976との差は+82716 bytesだが、前版uptime14766msとは時間条件が違う。
+PSRAM free8381464→8298800（82664 bytes減）、allocated4736→87384（82648 bytes増）。
+PSRAM min=0は以前からの表示で、今回もPSRAM枯渇と解釈しない。
+inputsReady=1、AP=192.168.4.1、STA未接続、BLE起動checkpointは完了、allocation failure総数0。
+以前のcaps=0x80c要求失敗は今回の記録期間では未再現。接続／再接続負荷での解消保証は未確認。
+
+stack low-water bytes: loopTask5720、input-scan2660、nimble_host4076、wifi4868、tiT3892、
+esp_timer8268、IDLE2064。overflow/retryカウンタ0。空設定、保存recordなし。
+約3.8時間の経過中の接続・操作条件は連続追跡しておらず、長時間Regression合格とはしない。
+APクライアント接続・WebUI・STA/OSC・BLE送信・物理入力・高負荷保存・失敗保護は未実施。
+
+続報: ユーザーがAP接続とWebUI画面表示成功を報告。エージェントPCからのAP HTTP要求はtimeoutのため、
+API応答・画面内容の自動検証は未完了。Serial後続測定（uptime13884052ms、リセットなしの継続値）では
+internal free81012 / min67472 / largest61428、failure0、inputsReady=1、Config external=1。
+ログ: 外部`c5-psram-after-ap-ui.txt`。Wi-Fi task low-water4292 / tiT3780 bytes。
+AP/UI確認後も空きRAMは維持されたが、保存・STA/OSC・BLE接続送信等の合格を意味しない。
+
+続報: ユーザー操作でWi-Fi設定保存・Restart成功。Serialで`Loaded LittleFS settings`、
+storage ready、STA=192.168.0.26 / status3、inputsReady=1、Config external=1を確認。
+uptime30469ms、internal free79264 / min61408 / largest57332、failure0。
+ログ: 外部`c5-psram-after-sta-reboot.txt`。STA側HTTP status/configもエージェントから取得成功。
+現設定（認証情報を含む）は外部`c5-psram-pre-functional-config.json`へ退避し、リポジトリへ入れない。
+
+一時的にkey1.pressへOSC int51→Wait30ms→OSC int52を保存し、GET完全一致を確認。
+API trigger後、PC 192.168.0.22:9000でOSCのaddress/type/valueを含む2 UDP packetの完全一致を確認。
+初回19005と次の9000試行では受信timeout、3回目9000で成功。原因未確定のため連続通信安定性は未合格。
+17-action Chain stageはHTTP400、同tokenの不完全commitもHTTP400で拒否し、各失敗後に
+GET configが有効設定と完全一致することを確認。これはvalidation失敗保護のみで、OOM/I/O/電源断や
+rename後apply失敗を検証したものではない。finallyで元の設定へ復元しGET完全一致を確認。
+外部スクリプト`c5_psram_basic_regression.py`、結果`c5-psram-basic-results.json`。
+実物キー操作によるOSC送信、BLE MIDI/HID、Rotation Value、高負荷設定、再接続は引き続き未確認。
+
+続報: ユーザーがBluetooth接続成功を報告し、HTTP statusでもbleKeyboard=trueを確認。
+先行UDP timeout時にはPC Firewall許可ダイアログが出ていたとのユーザー報告あり。
+許可後の再試験でOSC/Waitを20回API triggerし、期待した40 UDP packetが全て一致した。
+Firewall待ちによる破棄は有力な説明だが、当時のpacket/filter traceはないため原因確定とはしない。
+
+BLE MIDI: 接続中の個体はadvertising scanで見つからず、Bleakのaddress接続はdevice-not-found。
+Windowsの既存MIDI入力`ChainPad Chimera IN 0`をmidoで開く方式へ変更し、Firmware bleMidi=trueを確認。
+一時的なNoteOn60/value100→Wait30ms→NoteOff60を5回ずつ2セッション、計10組20メッセージ実受信・bytes一致。
+MIDI入力ポートclose/openを検証したもので、Bluetoothリンク自体のdisconnect/reconnectではない。
+試験後は元設定へ復元しGET一致。外部`c5_ble_midi_check.py` / `c5-ble-midi-results.json`。
+BLE HIDは接続確認まででキーreportの実受信はまだ。物理入力、Rotation、高負荷、無線再接続は未確認。
+
+BluetoothをPC側でOFF→ONした後、ユーザーが再接続を確認。MIDI入力を再度開き、さらに10組20
+NoteOn/Offのbytes一致を実受信。元設定へ復元した。Serial uptime610562ms、internal free75304 /
+min46740 / largest53236、failure0、inputsReady=1、Config external=1。ログは外部
+`c5-psram-after-bt-reconnect.txt`。stack low-water: loop5240、input2664、NimBLE2760、wifi4156、
+tiT3708、esp_timer8236、IDLE2064 bytes。この1回の再接続確認を反復耐久試験の合格へ拡張しない。
+
+物理入力試験: ユーザーがキー1〜12各1回、Encoder Push1回、CW3/CCW3クリックを操作。
+OSC入力IDは0〜25各1回、26×3、27×3の計32件で期待通り。キー1のBLE HID F13は
+Windows GetAsyncKeyStateのdown/upを取得、キー2のBLE MIDI NoteOn60/100→NoteOff60/0も実受信一致。
+input/transport overflow、transport retry、rejectedChainsは0。元設定復元・GET一致確認。
+外部`c5_physical_capture.py` / `c5-physical-results.json`。
+
+最大設定保存試験: 13共有pool×16＋CW/CCW各8＝224 Actionsすべてに独立した192-byte address、
+128-byte String（全文字0x01、JSONで各6-byte escape）を設定し、16 OSC Outputs（各address192 bytes）を保存。
+mode=RotationValue、Range127、Initial64、Wrap。保存後GET完全一致、Restart後のGET完全一致・
+inputsReady=true・Position64を確認し、元設定へ復元してGET一致確認。大量Actionsの送信試験ではない。
+HTTP status実測: 保存後free72000/min44108/largest40948、再起動後free76556/min68240/largest59380、
+元設定復元後free73888/min45908/largest49140 bytes。minは各bootからの累積で瞬間save専用計測ではない。
+外部`c5_max_storage_check.py` / `c5-max-storage-results.json`。
+最大設定保存前後のallocation failure総数はこの試験単独では採取しておらず、再起動でhook記録はリセットされる。
+
+Rotation高負荷実機: 224最大長OSC String Actionsを保持したまま、OSC Int4＋Float4＋BLE MIDI CC8の
+計16 Outputsを設定。Range127/Initial64/WrapでユーザーがCW3→CCW3を約1秒間隔で操作した。
+全16宛先でPosition列65,66,67,66,65,64に一致。OSC48件（Int24/Float24）はfloat32を含めpacket bytes一致、
+BLE CC48件は値・順序一致。generation6、pending0、overwrite/discard/unavailable0、failed=[0,0,0]。
+input/transport overflow、Chain rejection0。元設定へ復元・GET一致。
+試験終了時HTTP free71656 / min45908 / largest49140。後続Serial uptime188514msでは
+free74836 / min45908 / largest49140、failure0、inputsReady=1、Config external=1。
+stack low-water: loop5160/input2656/NimBLE4052/wifi4076/tiT3708/esp_timer8236/IDLE2064 bytes。
+外部`c5_rotation_capture.py`、`c5_rotation_verify.py`、`c5-rotation-results.json`、`c5-after-rotation-memory.txt`。
+この試験はWrap境界を跨いでおらず、境界挙動や高速連続回転の耐久合格を意味しない。
+
+最大長Action送信: ActionChainモードで224件を保存し、各非空Chainを順にAPI trigger。
+192-byteの各独立address＋128-byte String（0x01）のOSC packetを224件すべて実受信・完全一致。
+一斉に全Chainを起動した試験ではない。元設定へ復元・GET一致。
+外部`c5_max_send_check.py` / `c5-max-send-results.json`。
+
+### C5改善の現時点のまとめ
+
+- ConfigのPSRAM配置と起動後内部RAM約82.7KB改善を実測し、224/16を変更せず基本通信・物理入力・
+  最大設定保存／再起動復元・16 Outputs配信・最大長224 Actions送信を確認できた。
+- 確認したhook記録でcaps=0x80cを含む確保失敗は0。観測した内部minは最大設定保存を含むbootで44108 bytes。
+  数値は限られた負荷条件の実測であり、全ケースの下限保証ではない。
+- 設定は試験前のユーザーWi-Fi＋空Action/Outputsへ復元済み。PSRAM変更Firmwareを保持。
+  旧全Flashへは戻していない。Flash/認証情報付きconfig/生ログは外部保存のまま。
+- 未完了: Wi-Fiリンク切断からの再接続、反復・長時間複合負荷、Stop/Wrap境界とPreviewのC5実機照合、
+  OOM/I/O/電源断時の保存保護、PSRAM確保失敗の実機注入、S3/C3/C6の変更版実機Regression。
+  C5ではvalidation失敗保護を確認したが、既存rename後apply失敗問題は未修正・未検証。
+- 推奨: C5のPSRAM配置方式を維持して上記残試験を進める。現時点でC5容量削減の必要性は示されていない。
+  S3初期化方式とC3/C6配置は保持し、4機種build/host成功を実機合格と混同しない。
+  全体Regression合格・安定版認定はまだ行わない。C3 Mini実装、commit/pushは未実施。
+
 ## 実測した問題
 
 Phase E後のC3（空設定、Wi-Fi AP＋BLE）で、起動時freeHeapは以下だった。

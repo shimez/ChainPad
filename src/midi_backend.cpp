@@ -35,8 +35,8 @@ SendResult midiDispatch(const Action& a) {
     uint8_t targets[2][16][16]{};
     unsigned count[2]{};
     for (uint8_t input = 0; input < INPUT_COUNT; ++input) {
-      if (input >= 26 && config.encoderRotation.mode != RotationMode::ActionChain) continue;
-      const auto& chain = config.chains[input];
+      if (input >= 26 && activeConfig().encoderRotation.mode != RotationMode::ActionChain) continue;
+      const auto& chain = activeConfig().chains[input];
       for (uint8_t k = 0; k < chain.count; ++k) {
         const auto& source = chain.actions[k];
         if (source.protocol != Protocol::Midi || (source.message != MidiMessage::NoteOn && source.message != MidiMessage::NoteOff)) continue;

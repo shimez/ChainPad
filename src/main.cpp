@@ -69,7 +69,7 @@ void setupWeb() {
     web.send_P(200, "text/html; charset=utf-8", WEB_UI);
   });
   web.on("/api/wifi", HTTP_GET, [] {
-    JsonDocument doc; doc["ssid"] = config.ssid; doc["password"] = config.password;
+    JsonDocument doc; doc["ssid"] = activeConfig().ssid; doc["password"] = activeConfig().password;
     jsonResponse(200, doc);
   });
   web.on("/api/wifi", HTTP_PUT, [] {
@@ -89,16 +89,16 @@ void setupWeb() {
     web.setContentLength(CONTENT_LENGTH_UNKNOWN);
     web.send(200, "application/json; charset=utf-8", "");
     JsonDocument doc; String part;
-    encodeNetwork(config, doc); serializeSettingsJson(doc, part);
+    encodeNetwork(activeConfig(), doc); serializeSettingsJson(doc, part);
     web.sendContent("{\"schemaVersion\":2,\"network\":"); web.sendContent(part);
     web.sendContent(",\"chains\":[");
     for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
-      encodeChain(config.chains[i], i, doc); part = ""; serializeSettingsJson(doc, part);
+      encodeChain(activeConfig().chains[i], i, doc); part = ""; serializeSettingsJson(doc, part);
       if (i) web.sendContent(",");
       web.sendContent(part);
     }
     web.sendContent("],\"encoderRotation\":");
-    encodeRotation(config.encoderRotation, doc, true); part = ""; serializeSettingsJson(doc, part); web.sendContent(part);
+    encodeRotation(activeConfig().encoderRotation, doc, true); part = ""; serializeSettingsJson(doc, part); web.sendContent(part);
     web.sendContent("}"); web.sendContent("");
     diagnosticCheckpoint("config-get-after");
   });
@@ -156,8 +156,8 @@ void setupWeb() {
     doc["inputsReady"] = inputReady; doc["bootMessage"] = bootMessage;
     doc["storageState"] = configStorageStateName(); doc["configOutputsAllowed"] = configOutputsAllowed();
     auto rotation = doc["encoderRotation"].to<JsonObject>();
-    rotation["mode"] = config.encoderRotation.mode == RotationMode::ActionChain ? "actionChain" : "rotationValue";
-    rotation["rangeSteps"] = config.encoderRotation.axis.rangeSteps;
+    rotation["mode"] = activeConfig().encoderRotation.mode == RotationMode::ActionChain ? "actionChain" : "rotationValue";
+    rotation["rangeSteps"] = activeConfig().encoderRotation.axis.rangeSteps;
     rotation["runtimeActive"] = rotationRuntime.active();
     if (rotationRuntime.active()) rotation["currentPosition"] = rotationRuntime.position();
     else rotation["currentPosition"] = nullptr;
@@ -175,7 +175,7 @@ void setupWeb() {
     for (unsigned i = 0; i < ROTATION_ROUTES; ++i) {
       accepted.add(rotationSendStats.accepted[i]); failed.add(rotationSendStats.failed[i]);
     }
-    doc["restartRequired"] = strcmp(config.ssid, bootSsid) != 0 || strcmp(config.password, bootPassword) != 0;
+    doc["restartRequired"] = strcmp(activeConfig().ssid, bootSsid) != 0 || strcmp(activeConfig().password, bootPassword) != 0;
     doc["freeHeap"] = ESP.getFreeHeap(); doc["uptimeMs"] = millis();
     doc["largestFreeBlock"] = ESP.getMaxAllocHeap(); doc["minFreeHeap"] = ESP.getMinFreeHeap();
     jsonResponse(200, doc);
@@ -186,7 +186,7 @@ void setupWeb() {
     if (deserializeJson(doc, web.arg("plain")) || !doc["input"].is<unsigned>() || doc["input"].as<unsigned>() >= INPUT_COUNT) {
       result(400, "input must be 0..27"); return;
     }
-    if (doc["input"].as<unsigned>() >= 26 && config.encoderRotation.mode == RotationMode::RotationValue) {
+    if (doc["input"].as<unsigned>() >= 26 && activeConfig().encoderRotation.mode == RotationMode::RotationValue) {
       result(409, "CW/CCW Action Chains are inactive in Rotation Value mode; API does not change Position"); return;
     }
     if (!engine.trigger({doc["input"].as<uint8_t>(), millis()})) { result(409, "Wait scheduler full (32 running chains)"); return; }
@@ -212,6 +212,7 @@ void setup() {
   console.setTxTimeoutMs(0);
   memoryPhase("config/load");
   loadConfig(bootMessage);
+  auto& config = activeConfig();
   memoryCheckpoint("config/loaded");
   memcpy(bootSsid, config.ssid, sizeof(bootSsid)); memcpy(bootPassword, config.password, sizeof(bootPassword));
   backendsBegin();

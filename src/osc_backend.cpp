@@ -23,8 +23,8 @@ SendResult oscDispatch(const Action& a) {
     else memcpy(&bits, &a.floatValue, sizeof(bits));
     for (int shift = 24; shift >= 0; shift -= 8) packet[offset++] = (bits >> shift) & 255;
   } else if (a.oscType == OscType::String) string(a.stringValue);
-  IPAddress target; target.fromString(config.oscHost);
-  if (!udp.beginPacket(target, config.oscPort)) return SendResult::Failed;
+  IPAddress target; target.fromString(activeConfig().oscHost);
+  if (!udp.beginPacket(target, activeConfig().oscPort)) return SendResult::Failed;
   if (udp.write(packet, offset) != offset) { udp.endPacket(); return SendResult::Failed; }
   return udp.endPacket() ? SendResult::Accepted : SendResult::Failed;
 }
