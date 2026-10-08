@@ -234,7 +234,11 @@ void loop() {
   // At most one command per loop, so pasted input cannot monopolize execution.
   if (console.available() > 0) {
     const int command = console.read();
-    if (command == 'm') printDiagnostics(console, "manual");
+    if (command == 'm') {
+      console.printf("Boot: %s\nWi-Fi mode=%u status=%u AP=%s STA=%s\n", bootMessage.c_str(),
+        unsigned(WiFi.getMode()), unsigned(WiFi.status()), WiFi.softAPIP().toString().c_str(), WiFi.localIP().toString().c_str());
+      printDiagnostics(console, "manual");
+    }
     else if (command == 'd') {
       diagnosticsEnabled = !diagnosticsEnabled; lastDiagnostics = millis();
       console.println(diagnosticsEnabled ? "Diagnostics ON" : "Diagnostics OFF");

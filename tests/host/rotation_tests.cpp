@@ -142,6 +142,23 @@ void rotationTests() {
       assert(value.integer == (p == 4 ? 31 : 32) * sign);
     }
   }
+  // Export actual Firmware results as float32 bit patterns for browser parity.
+  FILE* vectors = fopen(".pio/host-tests/rotation-preview-vectors.json", "w");
+  assert(vectors); fputs("[", vectors); bool first = true;
+  for (auto range : {RotationFloatRange{-maximum,maximum}, RotationFloatRange{1,-1},
+                     RotationFloatRange{-0.0f,0.1f}, RotationFloatRange{maximum,maximum},
+                     RotationFloatRange{std::numeric_limits<float>::denorm_min(),-std::numeric_limits<float>::denorm_min()}}) {
+    output.kind=RotationOutputKind::OscFloat;output.range.floating=range;
+    uint32_t startBits,endBits;memcpy(&startBits,&range.start,4);memcpy(&endBits,&range.end,4);
+    for (uint32_t n : {1u,2u,20u,65535u}) {
+      axis={n,0,RotationBoundary::Stop};
+      for(uint32_t p : {0u,n/2,n/2+uint32_t(n>1),n}) {
+        assert(mapRotation(axis,p,output,value));uint32_t bits;memcpy(&bits,&value.floating,4);
+        fprintf(vectors,"%s[%u,%u,%u,%u,%u]",first?"":",",startBits,endBits,p,n,bits);first=false;
+      }
+    }
+  }
+  fputs("]",vectors);fclose(vectors);
   printf("Rotation calculation tests passed: Axis=%zu Range=%zu Output=%zu Mapped=%zu Settings16=%zu Config=%zu\n",
     sizeof(RotationAxis), sizeof(RotationRange), sizeof(RotationOutput), sizeof(RotationMappedValue),
     sizeof(RotationSettings<16>), sizeof(Config));

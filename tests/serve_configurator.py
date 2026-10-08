@@ -13,6 +13,7 @@ CONFIG = {"schemaVersion": 2,
 BOARD = "s3"
 PENDING = None
 TOKEN = 0
+POSITION = None
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -34,7 +35,7 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(payload)
         elif self.path == "/api/config":
             self.reply(CONFIG)
-        elif self.path in ("/presets.js", "/action-ui.js"):
+        elif self.path in ("/presets.js", "/action-ui.js", "/rotation-ui.js"):
             payload = (ROOT / "web" / self.path.lstrip("/")).read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/javascript; charset=utf-8")
@@ -47,10 +48,12 @@ class Handler(BaseHTTPRequestHandler):
             usb = BOARD == "s3"
             self.reply({"hardware": f"XIAO ESP32{BOARD.upper()}", "usbMidi": usb, "usbKeyboard": usb,
                         "defaultMidiTransport": "both" if usb else "ble",
+                        "rotationOutputCapacity": 16, "rotationRuntimeSupported": True, "rotationOutputSendingSupported": True,
                         "midiTransports": ["both", "usb", "ble"] if usb else ["ble"],
                         "keyboardTransports": ["usb", "ble"] if usb else ["ble"]})
         elif self.path == "/api/status":
             self.reply({"hardware": f"XIAO ESP32{BOARD.upper()}",
+                        "encoderRotation": {"mode": CONFIG["encoderRotation"]["mode"], "rangeSteps": CONFIG["encoderRotation"]["rotationValue"]["rangeSteps"], "currentPosition": POSITION, "runtimeActive": POSITION is not None, "outputSendingSupported": True},
                         "usbMidiSupported": BOARD == "s3", "usbKeyboardSupported": BOARD == "s3",
                         "wifi": True, "usbMidi": BOARD == "s3", "usbKeyboard": BOARD == "s3", "bleMidi": True,
                         "bleKeyboard": True, "ip": "127.0.0.1", "apIp": "192.168.4.1",
@@ -94,7 +97,7 @@ class Handler(BaseHTTPRequestHandler):
         self.reply({"ok": True, "message": "Saved (test fixture)"})
 
     def do_POST(self):
-        global CONFIG, PENDING, TOKEN
+        global CONFIG, PENDING, TOKEN, POSITION
         body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
         path = urlsplit(self.path).path
         if path == "/api/config/begin":
@@ -111,8 +114,15 @@ class Handler(BaseHTTPRequestHandler):
             if not PENDING or int(query["token"][0]) != TOKEN or len(PENDING["chains"]) != 28 or "encoderRotation" not in PENDING:
                 self.send_error(409)
                 return
+            rotation = PENDING["encoderRotation"]
+            if rotation["mode"] == "actionChain":
+                POSITION = None
+            elif POSITION is None or rotation["rotationValue"]["rangeSteps"] != CONFIG["encoderRotation"]["rotationValue"]["rangeSteps"]:
+                POSITION = rotation["rotationValue"]["initialPosition"]
             CONFIG = PENDING
             PENDING = None
+        if path == "/api/restart":
+            POSITION = CONFIG["encoderRotation"]["rotationValue"]["initialPosition"] if CONFIG["encoderRotation"]["mode"] == "rotationValue" else None
         self.reply({"ok": True, "message": "Dispatched (test fixture)"})
 
 

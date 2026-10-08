@@ -13,6 +13,7 @@ on:
       - 'scripts/**'
       - 'tests/check_image.py'
       - 'tests/test_presets.cjs'
+      - 'tests/test_rotation_preview.cjs'
       - 'tests/test_build_site.py'
       - 'platformio.ini'
       - 'partitions*.csv'
@@ -61,6 +62,8 @@ jobs:
       - name: Validate preset formats
         if: steps.firmware.outputs.rebuild == 'true'
         run: node tests/test_presets.cjs
+      - name: Validate Rotation Preview calculations
+        run: node tests/test_rotation_preview.cjs
       - name: Build all four boards
         if: steps.firmware.outputs.rebuild == 'true'
         run: pio run

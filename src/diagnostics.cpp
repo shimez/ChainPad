@@ -41,6 +41,7 @@ void printDiagnostics(Print& out, const char* reason) {
     unsigned(psram.total_free_bytes), unsigned(psram.minimum_free_bytes), unsigned(psram.largest_free_block), unsigned(psram.total_allocated_bytes));
   out.printf("Static sizes: Action=%u Chain=%u Config=%u Engine=%u; recordLimit=%u\n",
     unsigned(sizeof(Action)), unsigned(sizeof(Chain)), unsigned(sizeof(Config)), unsigned(sizeof(Engine)), unsigned(MAX_RECORD_BYTES));
+  out.printf("Active Config address: %p\n", static_cast<void*>(&config));
   out.printf("Rotation storage: Output=%u Settings=%u count=%u/%u state=%s\n",
     unsigned(sizeof(RotationOutput)), unsigned(sizeof(EncoderRotationSettings)), unsigned(config.encoderRotation.outputCount),
     unsigned(ROTATION_OUTPUT_CAPACITY), configStorageStateName());

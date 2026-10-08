@@ -86,7 +86,11 @@ struct Config : NetworkSettings {
 private:
   Action slots[MAX_TOTAL_ACTIONS];
 };
+#if defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CHAINPAD_HOST_TEST)
+extern Config& config;
+#else
 extern Config config;
+#endif
 String inputName(uint8_t id);
 void encodeConfig(const Config& source, JsonDocument& doc);
 void encodeCapabilities(JsonDocument& doc);

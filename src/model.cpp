@@ -4,9 +4,29 @@
 #include <memory>
 #include <new>
 #include <cstdio>
+#if defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CHAINPAD_HOST_TEST)
+#include <esp_heap_caps.h>
+#include <cstdlib>
+#if !CONFIG_SPIRAM_BOOT_INIT
+#error "S3 Config allocation requires PSRAM initialization before C++ constructors"
+#endif
+#endif
 
 namespace chimera {
+#if defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CHAINPAD_HOST_TEST)
+namespace {
+Config& allocateConfig() {
+  // The S3 SDK initializes PSRAM before global constructors. Keep the full
+  // fixed-capacity Config out of internal RAM needed by Wi-Fi/USB/BLE.
+  void* storage = heap_caps_malloc(sizeof(Config), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  if (!storage) std::abort();
+  return *new (storage) Config{};
+}
+}
+Config& config = allocateConfig();
+#else
 Config config;
+#endif
 String inputName(uint8_t id) {
   if (id < 24) return "key" + String(id / 2 + 1) + (id % 2 ? ".release" : ".press");
   const char* names[] = {"encoder.press", "encoder.release", "encoder.cw", "encoder.ccw"};
