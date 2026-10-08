@@ -12,11 +12,68 @@
 
 namespace chimera {
 namespace {
+struct MemorySample { const char* phase; uint32_t free, minimum, largest; };
+struct AllocationFailure { const char* phase; const char* function; uint32_t size, caps, free, minimum, largest; };
+MemorySample startup[16]{};
+AllocationFailure failures[4]{};
+unsigned startupCount = 0, failureCount = 0;
+const char* currentPhase = "entry";
+portMUX_TYPE memoryMux = portMUX_INITIALIZER_UNLOCKED;
+void allocationFailed(size_t size, uint32_t caps, const char* function) {
+  // The phase identifies the operation; function is the allocator API name,
+  // not a captured backtrace. Keep this hook allocation-free and bounded.
+  const uint32_t available = heap_caps_get_free_size(caps);
+  const uint32_t minimum = heap_caps_get_minimum_free_size(caps);
+  const uint32_t largest = heap_caps_get_largest_free_block(caps);
+  portENTER_CRITICAL(&memoryMux);
+  if (failureCount < 4) failures[failureCount] = {currentPhase, function, uint32_t(size), caps, available, minimum, largest};
+  ++failureCount;
+  portEXIT_CRITICAL(&memoryMux);
+}
 int fileBytes(const char* path) {
   if (!LittleFS.exists(path)) return -1;
   auto file = LittleFS.open(path, "r");
   return file ? static_cast<int>(file.size()) : -2;
 }
+}
+void beginMemoryDiagnostics() {
+  heap_caps_register_failed_alloc_callback(allocationFailed);
+  memoryCheckpoint("entry");
+}
+void memoryPhase(const char* phase) {
+  portENTER_CRITICAL(&memoryMux);
+  currentPhase = phase;
+  portEXIT_CRITICAL(&memoryMux);
+}
+void memoryCheckpoint(const char* phase) {
+  memoryPhase(phase);
+  if (startupCount < 16) {
+    constexpr uint32_t caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+    startup[startupCount++] = {phase, uint32_t(heap_caps_get_free_size(caps)),
+      uint32_t(heap_caps_get_minimum_free_size(caps)), uint32_t(heap_caps_get_largest_free_block(caps))};
+  }
+}
+void printMemoryDiagnostics(Print& out) {
+  out.printf("Memory records: startup=%u failures=%u recordBytes=%u\n", startupCount, failureCount,
+    unsigned(sizeof(startup) + sizeof(failures)));
+  for (unsigned i = 0; i < startupCount; ++i) {
+    const auto& s = startup[i];
+    out.printf("MEM %s free=%lu min=%lu largest=%lu\n", s.phase, s.free, s.minimum, s.largest);
+  }
+  for (unsigned i = 0; i < 4; ++i) {
+    AllocationFailure f;
+    portENTER_CRITICAL(&memoryMux);
+    const bool valid = i < failureCount;
+    if (valid) f = failures[i];
+    portEXIT_CRITICAL(&memoryMux);
+    if (valid) out.printf("ALLOC FAIL phase=%s api=%s size=%lu caps=0x%lx free=%lu min=%lu largest=%lu\n",
+      f.phase, f.function, f.size, f.caps, f.free, f.minimum, f.largest);
+  }
+  for (const char* name : {"loopTask", "input-scan", "nimble_host", "wifi", "tiT", "esp_timer", "IDLE"}) {
+    TaskHandle_t task = xTaskGetHandle(name);
+    if (task) out.printf("STACK %s lowWaterBytes=%u\n", name, unsigned(uxTaskGetStackHighWaterMark(task)));
+    else out.printf("STACK %s not found\n", name);
+  }
 }
 void printDiagnostics(Print& out, const char* reason) {
   // Capture RAM before filesystem queries and printing allocate temporary buffers.

@@ -207,23 +207,38 @@ void setupWeb() {
 }
 }
 void setup() {
+  beginMemoryDiagnostics();
   console.begin(115200);
   console.setTxTimeoutMs(0);
+  memoryPhase("config/load");
   loadConfig(bootMessage);
+  memoryCheckpoint("config/loaded");
   memcpy(bootSsid, config.ssid, sizeof(bootSsid)); memcpy(bootPassword, config.password, sizeof(bootPassword));
   backendsBegin();
+  memoryCheckpoint("backends/ready");
   WiFi.persistent(false);
+  memoryPhase("wifi/mode");
   WiFi.mode(WIFI_AP_STA);
+  memoryCheckpoint("wifi/mode-ready");
+  memoryPhase("wifi/softAP");
   if (WiFi.softAP("ChainPad-Setup", "chimera-pad")) {
     portalDns.setTTL(0);
     portalReady = portalDns.start(53, "*", WiFi.softAPIP());
     if (!portalReady) bootMessage += " / Captive DNS failed";
   } else bootMessage += " / Setup AP failed";
+  memoryCheckpoint("wifi/AP-DNS-ready");
   WiFi.setAutoReconnect(true);
   if (config.ssid[0]) WiFi.begin(config.ssid, config.password);
+  memoryCheckpoint("wifi/STA-requested");
   MDNS.begin("chainpad"); MDNS.addService("http", "tcp", 80);
+  memoryCheckpoint("mdns/ready");
+  memoryPhase("web/routes");
   setupWeb();
+  memoryCheckpoint("web/ready");
+  memoryPhase("inputs/begin");
   inputReady = inputsBegin();
+  memoryCheckpoint(inputReady ? "inputs/ready" : "inputs/FAILED");
+  memoryPhase("loop");
    console.println("ChainPad / Project Chimera Phase 2"); console.println(bootMessage);
   console.println("Setup: ChainPad-Setup / http://192.168.4.1");
   console.println("Diagnostics: m=snapshot, d=toggle 5s + save logging, ?=help (115200 baud)");
@@ -235,15 +250,21 @@ void loop() {
   if (console.available() > 0) {
     const int command = console.read();
     if (command == 'm') {
+      console.printf("inputsReady=%u\n", unsigned(inputReady));
       console.printf("Boot: %s\nWi-Fi mode=%u status=%u AP=%s STA=%s\n", bootMessage.c_str(),
         unsigned(WiFi.getMode()), unsigned(WiFi.status()), WiFi.softAPIP().toString().c_str(), WiFi.localIP().toString().c_str());
       printDiagnostics(console, "manual");
+    }
+    else if (command == 'h') {
+      console.setTxTimeoutMs(20);
+      printMemoryDiagnostics(console);
+      console.setTxTimeoutMs(0);
     }
     else if (command == 'd') {
       diagnosticsEnabled = !diagnosticsEnabled; lastDiagnostics = millis();
       console.println(diagnosticsEnabled ? "Diagnostics ON" : "Diagnostics OFF");
       if (diagnosticsEnabled) printDiagnostics(console, "enabled");
-    } else if (command == '?') console.println("m=snapshot; d=toggle 5s + save logging (default OFF); bytes; file -1=absent -2=open failed");
+    } else if (command == '?') console.println("m=snapshot; h=startup/allocations/stacks; d=toggle 5s + save logging (default OFF); bytes; file -1=absent -2=open failed");
   }
   uint32_t now = millis();
   backendsTick(now);

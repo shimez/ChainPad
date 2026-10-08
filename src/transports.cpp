@@ -1,4 +1,5 @@
 #include "transports.h"
+#include "diagnostics.h"
 #if CHAINPAD_HAS_USB
 #include <USB.h>
 #include <USBMIDI.h>
@@ -66,7 +67,10 @@ void transportsBegin() {
   usbMidi.begin(); usbKeyboard.begin(); USB.begin();
 #endif
 
+  memoryPhase("ble/init");
   NimBLEDevice::init("ChainPad Chimera");
+  memoryCheckpoint("ble/host-ready");
+  memoryPhase("ble/services");
   NimBLEDevice::setSecurityAuth(true, false, true);
   NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
   auto* server = NimBLEDevice::createServer();
@@ -98,6 +102,7 @@ void transportsBegin() {
   hid->getOutputReport(1)->setValue(&leds, sizeof(leds));
   hid->setBatteryLevel(100);
   server->start(); // Both services are registered before starting one server.
+  memoryCheckpoint("ble/services-ready");
 
   // Legacy advertising is limited to 31 bytes. Keep both service UUIDs in
   // the primary packet and the device name in a separate scan response.
@@ -113,6 +118,7 @@ void transportsBegin() {
   advertising->setScanResponseData(response);
   advertising->enableScanResponse(true);
   advertising->start();
+  memoryCheckpoint("ble/advertising-ready");
 }
 void transportsTick() {
 #if CHAINPAD_HAS_USB

@@ -1,4 +1,5 @@
 #include "inputs.h"
+#include "diagnostics.h"
 #include "hardware.h"
 #include <esp_timer.h>
 #include <atomic>
@@ -74,6 +75,7 @@ void scanTask(void*) {
 void scanTick(void*) { if (scanner) xTaskNotifyGive(scanner); }
 }
 bool inputsBegin() {
+  memoryPhase("inputs/queue");
   events = xQueueCreate(128, sizeof(InputEvent));
   if (!events) return false;
   for (auto pin : hardware::ROWS) { digitalWrite(pin, HIGH); pinMode(pin, OUTPUT_OPEN_DRAIN); }
@@ -84,9 +86,11 @@ bool inputsBegin() {
   previousAB = (digitalRead(hardware::ENCODER_A) << 1) | digitalRead(hardware::ENCODER_B);
   attachInterrupt(hardware::ENCODER_A, encoderInterrupt, CHANGE);
   attachInterrupt(hardware::ENCODER_B, encoderInterrupt, CHANGE);
+  memoryPhase("inputs/task");
   if (xTaskCreatePinnedToCore(scanTask, "input-scan", 3072, nullptr, 2, &scanner, ARDUINO_RUNNING_CORE) != pdPASS) return false;
   esp_timer_create_args_t args{};
   args.callback = scanTick; args.name = "input-tick"; args.skip_unhandled_events = true;
+  memoryPhase("inputs/timer");
   if (esp_timer_create(&args, &timer) != ESP_OK) return false;
   return esp_timer_start_periodic(timer, 1000) == ESP_OK;
 }
