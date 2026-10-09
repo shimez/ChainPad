@@ -14,6 +14,8 @@ const Presets = (() => {
       return {protocol:'wait', delayMs:a.delayMs};
     }
     if (a.delayMs !== 0) fail('待機にはWait Actionを使用してください。');
+    const pair=(a.protocol==='midi'&&['noteOnOff','allNotesOnOff'].includes(a.message))||(a.protocol==='keyboard'&&a.message==='keyDownUp');
+    if (a.holdMs!==undefined && (!pair || !int(a.holdMs,0,86400000))) fail('On/Down→Off/Upの待ち時間は0〜86400000 msの整数で指定してください。');
     if (a.protocol === 'osc') {
       if (!text(a.address,192)) fail('OSC AddressはUTF-8で192 bytes以内（NUL不可）にしてください。');
       if (a.type==='string' && !text(a.value,128)) fail('OSC String値はUTF-8で128 bytes以内（NUL不可）にしてください。');
@@ -21,14 +23,14 @@ const Presets = (() => {
       const valid = a.type === 'int' ? int(a.value,-2147483648,2147483647) : a.type === 'float' ? typeof a.value === 'number' && Number.isFinite(a.value) && Math.abs(a.value) <= 3.4028234663852886e38 : a.type === 'bool' ? typeof a.value === 'boolean' : a.type === 'string' && text(a.value,128);
       if (!valid) fail('OSCの型または値が不正です。');
     } else if (a.protocol === 'midi') {
-      if (['allNotesOn','allNotesOff'].includes(a.message)) {
-        if (a.message==='allNotesOn' && !int(a.value,1,127)) fail('All NotesのVelocityは1〜127で指定してください。');
-        return {protocol:'midi',delayMs:0,message:a.message,...(a.message==='allNotesOn'?{value:a.value}:{})};
+      if (['allNotesOn','allNotesOff','allNotesOnOff'].includes(a.message)) {
+        if (a.message!=='allNotesOff' && !int(a.value,1,127)) fail('All NotesのVelocityは1〜127で指定してください。');
+        return {protocol:'midi',delayMs:0,message:a.message,...(a.message!=='allNotesOff'?{value:a.value}:{}),...(pair&&a.holdMs!==undefined?{holdMs:a.holdMs}:{})};
       }
-      if (!['usb','ble','both'].includes(a.transport) || !['noteOn','noteOff','cc'].includes(a.message) || !int(a.channel,1,16) || !int(a.number,0,127) || !int(a.value,a.message==='noteOn'?1:0,127)) fail('MIDI Actionが不正です。');
+      if (!['usb','ble','both'].includes(a.transport) || !['noteOn','noteOff','noteOnOff','cc'].includes(a.message) || !int(a.channel,1,16) || !int(a.number,0,127) || !int(a.value,['noteOn','noteOnOff'].includes(a.message)?1:0,127)) fail('MIDI Actionが不正です。');
       if (!capabilities.usbMidi && a.transport !== 'ble') { a.transport='ble'; changes.count++; }
     } else if (a.protocol === 'keyboard') {
-      if (!['usb','ble'].includes(a.transport) || !['keyDown','keyUp','releaseAll'].includes(a.message) || !int(a.usage,4,115) || !int(a.modifiers,0,255)) fail('Keyboard Actionが不正です。');
+      if (!['usb','ble'].includes(a.transport) || !['keyDown','keyUp','keyDownUp','releaseAll'].includes(a.message) || !int(a.usage,4,115) || !int(a.modifiers,0,255)) fail('Keyboard Actionが不正です。');
       if (!capabilities.usbKeyboard && a.transport !== 'ble') { a.transport='ble'; changes.count++; }
     } else fail('未対応のActionです。');
     return a;

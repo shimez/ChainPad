@@ -15,11 +15,11 @@ constexpr size_t MAX_RECORD_BYTES = 24576; // 16 maximum OSC Actions, including 
 constexpr uint32_t MAX_WAIT_MS = 86400000; // 24 hours; safely below half the millis() range.
 enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait };
 enum class OscType : uint8_t { Int, Float, Bool, String };
-enum class MidiMessage : uint8_t { NoteOn, NoteOff, CC, AllNotesOn, AllNotesOff };
-inline bool allNotes(MidiMessage m) { return m == MidiMessage::AllNotesOn || m == MidiMessage::AllNotesOff; }
-enum class KeyMessage : uint8_t { Down, Up, ReleaseAll };
+enum class MidiMessage : uint8_t { NoteOn, NoteOff, CC, AllNotesOn, AllNotesOff, NoteOnOff, AllNotesOnOff };
+inline bool allNotes(MidiMessage m) { return m == MidiMessage::AllNotesOn || m == MidiMessage::AllNotesOff || m == MidiMessage::AllNotesOnOff; }
+enum class KeyMessage : uint8_t { Down, Up, ReleaseAll, DownUp };
 
-// delayMs is the duration of an explicit Wait Action; other Actions use zero.
+// delayMs stores Wait duration or paired-action holdMs; other Actions use zero.
 struct Action {
   Protocol protocol = Protocol::Osc;
   Transport transport = Transport::Wifi;
@@ -39,6 +39,10 @@ struct Action {
   uint8_t modifiers = 0;
 };
 struct Chain { uint8_t count = 0; Action actions[MAX_ACTIONS]; };
+inline bool pairedAction(const Action& a) {
+  return (a.protocol == Protocol::Midi && (a.message == MidiMessage::NoteOnOff || a.message == MidiMessage::AllNotesOnOff)) ||
+    (a.protocol == Protocol::Keyboard && a.keyMessage == KeyMessage::DownUp);
+}
 // Press grows from the front, Release from the back of the SAME 16-slot pool.
 // Logical indexing preserves each Event's configured order without moving its peer.
 struct ActionView {

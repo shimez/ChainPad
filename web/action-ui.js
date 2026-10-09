@@ -26,13 +26,14 @@ function actionSummary(a) {
   if(a.protocol==='midi'){
     if(a.message==='allNotesOn')return `All Notes → Note On · Velocity ${a.value}`;
     if(a.message==='allNotesOff')return 'All Notes → Note Off';
+    if(a.message==='allNotesOnOff')return `All Notes On→Off · Velocity ${a.value} · 待ち時間 ${a.holdMs??0} ms`;
     if(a.message==='cc')return `CC · Ch ${a.channel} · Controller ${a.number} → ${a.value} · ${transport}`;
-    return `${a.message==='noteOn'?'Note On':'Note Off'} · Ch ${a.channel} · Note ${a.number} · Velocity ${a.value} · ${transport}`;
+    return `${a.message==='noteOn'?'Note On':a.message==='noteOnOff'?'Note On→Off':'Note Off'} · Ch ${a.channel} · Note ${a.number} · Velocity ${a.value} · ${transport}${a.message==='noteOnOff'?` · 待ち時間 ${a.holdMs??0} ms`:''}`;
   }
   if(a.message==='releaseAll')return `Keyboard · Release All · ${transport}`;
   const mods=['L Ctrl','L Shift','L Alt','L GUI','R Ctrl','R Shift','R Alt','R GUI'].filter((_,bit)=>a.modifiers&(1<<bit));
   const key=usageNames[a.usage]||`Usage 0x${a.usage.toString(16)}`;
-  return `Keyboard · ${a.message==='keyDown'?'KeyDown':'KeyUp'} · ${a.message==='keyDown'&&mods.length?mods.join(' + ')+' + ':''}${key} · ${transport}`;
+  return `Keyboard · ${a.message==='keyDown'?'KeyDown':a.message==='keyDownUp'?'KeyDown→Up':'KeyUp'} · ${['keyDown','keyDownUp'].includes(a.message)&&mods.length?mods.join(' + ')+' + ':''}${key} · ${transport}${a.message==='keyDownUp'?` · 待ち時間 ${a.holdMs??0} ms`:''}`;
 }
 
 let editingAction=-1, cancelActionDrag=()=>{};

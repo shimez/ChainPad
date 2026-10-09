@@ -27,6 +27,7 @@ void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
 }
 namespace fake {
 bool connected[2] = {true, true}, writable = true;
+int midiWritesLeft = -1;
 uint32_t epoch[2] = {};
 struct Midi { Transport transport; uint8_t status, a, b; };
 std::vector<Midi> midi;
@@ -40,7 +41,8 @@ bool keyboardReady(Transport t) { return midiReady(t); }
 uint32_t midiEpoch(Transport t) { return fake::epoch[transportIndex(t)]; }
 uint32_t keyboardEpoch(Transport t) { return midiEpoch(t); }
 bool midiWrite(Transport t, uint8_t status, uint8_t a, uint8_t b) {
-  if (!fake::writable) return false;
+  if (!fake::writable || fake::midiWritesLeft == 0) return false;
+  if (fake::midiWritesLeft > 0) --fake::midiWritesLeft;
   fake::midi.push_back({t, status, a, b}); return true;
 }
 bool keyboardWrite(Transport, const KeyboardReport& report) {
@@ -50,6 +52,7 @@ bool keyboardWrite(Transport, const KeyboardReport& report) {
 }
 void settle() { for (int i = 0; i < 20; ++i) backendsTick(0); }
 void reset() {
+  fake::midiWritesLeft = -1;
   fake::writable = true; fake::connected[0] = fake::connected[1] = true;
   ++fake::epoch[0]; ++fake::epoch[1]; settle();
   fake::midi.clear(); fake::hid.clear();
@@ -143,7 +146,7 @@ void midiTests() {
   assert(fake::midi.empty());
   // Overflow drops the backlog without synthesizing MIDI messages.
   fake::writable = false;
-  for (int i = 0; i < MAX_TOTAL_ACTIONS + 64; ++i) assert(midiDispatch(a) == SendResult::Accepted);
+  for (unsigned i = 0; i < MIDI_CAPACITY; ++i) assert(midiDispatch(a) == SendResult::Accepted);
   assert(midiDispatch(a) == SendResult::Failed);
   fake::midi.clear(); fake::writable = true; settle();
   assert(fake::midi.empty());
@@ -199,7 +202,7 @@ void midiBothTests() {
   // Saturating USB must not prevent BLE delivery or duplicate it on retry.
   reset(); fake::writable = false;
   Action usb = a; usb.transport = Transport::Usb;
-  for (int i = 0; i < MAX_TOTAL_ACTIONS + 64; ++i) midiDispatch(usb);
+  for (unsigned i = 0; i < MIDI_CAPACITY; ++i) midiDispatch(usb);
   assert(midiDispatch(a) == SendResult::Accepted);
   fake::writable = true; settle();
   unsigned bleCount = 0;
@@ -386,12 +389,13 @@ void allNotesTests() {
   reset(); config=Config{}; unsigned n=0;
   for(auto& c:config.chains){c.count=8; for(unsigned k=0;k<c.count;++k){auto& a=c.actions[k];a.protocol=Protocol::Midi;a.transport=Transport::Usb;a.channel=n/128+1;a.number=n%128;++n;}}
   fake::writable=false; assert(midiDispatch(bulk)==SendResult::Accepted);
-  assert(midiDispatch(bulk)==SendResult::Failed); // no partial second batch
+  assert(midiDispatch(bulk)==SendResult::Accepted);
+  assert(midiDispatch(bulk)==SendResult::Failed); // no partial third batch
   note.message=MidiMessage::NoteOn;note.number=127;note.channel=16;note.value=99;
   assert(midiDispatch(note)==SendResult::Accepted);
-  fake::writable=true; for(int i=0;i<40;++i)backendsTick(0);
-  assert(fake::midi.size()==225);
-  for(unsigned i=0;i<224;++i)assert(fake::midi[i].status==(0x80|i/128)&&fake::midi[i].a==i%128&&fake::midi[i].b==0);
+  fake::writable=true; for(int i=0;i<80;++i)backendsTick(0);
+  assert(fake::midi.size()==449);
+  for(unsigned i=0;i<448;++i)assert(fake::midi[i].status==(0x80|(i%224)/128)&&fake::midi[i].a==(i%224)%128&&fake::midi[i].b==0);
   assert(fake::midi.back().status==0x9f && fake::midi.back().b==99);
   // Normal Chain composition with Wait, without collecting All Notes itself.
   reset(); config=Config{}; config.chains[0].count=1;config.chains[0].actions[0]=note;
@@ -597,11 +601,175 @@ void rotationSenderTests() {
   e.trigger({26,0}); assert(rotationSendStats.generation==g+1 && rotationPendingCount()==0);
   std::cout<<"PASS Rotation Latest-State snapshots / overwrite / equal values / API discard / no reconnect replay / lifecycle / FIFO priority / budget fairness / duplicates; pending="<<rotationPendingBytes()<<" sender="<<rotationSenderBytes()<<"\n";
 }
+void pairedActionTests() {
+  Action note; note.protocol = Protocol::Midi; note.transport = Transport::Both;
+  note.message = MidiMessage::NoteOnOff; note.number = 60; note.value = 100;
+  Action key; key.protocol = Protocol::Keyboard; key.transport = Transport::Ble;
+  key.keyMessage = KeyMessage::DownUp; key.usage = 104; key.modifiers = 2;
+  Config source; source.chains[0].count = 2;
+  source.chains[0].actions[0] = note; source.chains[0].actions[1] = key;
+  String error; assert(saveSource(source, error)); assert(loadConfig(error));
+  assert(config.chains[0].count == 2);
+  assert(config.chains[0].actions[0].message == MidiMessage::NoteOnOff);
+  assert(config.chains[0].actions[1].keyMessage == KeyMessage::DownUp);
+  JsonDocument doc; encodeConfig(source, doc);
+  doc["chains"][0]["actions"][0]["value"] = 0;
+  assert(!decodeConfig(doc.as<JsonVariantConst>(), source, error));
+
+  reset(); fake::writable = false;
+  assert(midiDispatch(note) == SendResult::Accepted); assert(fake::midi.empty());
+  fake::writable = true; settle(); assert(fake::midi.size() == 4);
+  for (unsigned i = 0; i < 4; i += 2) {
+    assert(fake::midi[i].status == 0x90 && fake::midi[i].b == 100);
+    assert(fake::midi[i+1].status == 0x80 && fake::midi[i+1].b == 0);
+  }
+  reset(); note.transport = Transport::Ble; fake::midiWritesLeft = 1;
+  assert(midiDispatch(note) == SendResult::Accepted);
+  assert(fake::midi.size() == 1 && pairedActionPending(note));
+  midiTick(); assert(fake::midi.size() == 1);
+  fake::midiWritesLeft = -1; midiTick();
+  assert(fake::midi.size() == 2 && fake::midi[1].status == 0x80 && !pairedActionPending(note));
+  reset(); Action held = key; held.keyMessage = KeyMessage::Down; held.usage = 4; held.modifiers = 1;
+  assert(keyboardDispatch(held) == SendResult::Accepted); settle(); fake::hid.clear();
+  assert(keyboardDispatch(key) == SendResult::Accepted); settle();
+  assert(fake::hid.size() == 2 && fake::hid[0].modifiers == 3 && fake::hid[1].modifiers == 1);
+  assert(fake::hid[0].keys[0] == 4 && fake::hid[0].keys[1] == 104);
+  assert(fake::hid[1].keys[0] == 4 && fake::hid[1].keys[1] == 0);
+  held.keyMessage = KeyMessage::DownUp;
+  assert(keyboardDispatch(held) == SendResult::Busy); // Never release another held key.
+
+  // Insufficient FIFO capacity must not emit a partial pair or erase backlog.
+  reset(); fake::writable = false; note.transport = Transport::Ble;
+  Action single = note; single.message = MidiMessage::NoteOn;
+  for (unsigned i = 0; i < MIDI_CAPACITY - 1; ++i) assert(midiDispatch(single) == SendResult::Accepted);
+  assert(midiDispatch(note) == SendResult::Failed);
+  fake::writable = true; for (unsigned i = 0; i < MIDI_CAPACITY; ++i) midiTick();
+  assert(fake::midi.size() == MIDI_CAPACITY - 1);
+  reset(); fake::writable = false; Action release = key; release.keyMessage = KeyMessage::ReleaseAll;
+  for (unsigned i = 0; i < 63; ++i) assert(keyboardDispatch(release) == SendResult::Accepted);
+  assert(keyboardDispatch(key) == SendResult::Failed);
+  fake::writable = true; for (unsigned i = 0; i < 70; ++i) keyboardTick();
+  assert(fake::hid.size() == 63);
+
+  for (const Action& pair : {note, key}) {
+    reset(); engine.cancelAll(); config = Config{};
+    config.chains[0].count = 2; config.chains[0].actions[0] = pair;
+    config.chains[0].actions[1] = Action{};
+    fake::osc.clear(); fake::writable = false;
+    assert(engine.trigger({0,0})); assert(engine.activeCount() == 1 && fake::osc.empty());
+    engine.tick(millis()); assert(fake::osc.empty());
+    fake::writable = true;
+    if (pair.protocol == Protocol::Keyboard) {
+      keyboardTick(); engine.tick(millis()); assert(fake::osc.empty()); // Down only.
+      fake::writable = false; keyboardTick(); engine.tick(millis()); assert(fake::osc.empty());
+      fake::writable = true;
+      keyboardTick();
+    } else midiTick();
+    engine.tick(millis()); assert(!fake::osc.empty() && engine.activeCount() == 0);
+  }
+  reset(); engine.cancelAll(); config = Config{};
+  std::cout << "PASS paired Actions: storage / atomic reserve / retries / held keys / release-before-next\n";
+}
+void timedPairTests() {
+  const uint32_t savedClock = hostMillis;
+  Action note; note.protocol = Protocol::Midi; note.transport = Transport::Ble;
+  note.message = MidiMessage::NoteOnOff; note.delayMs = 50;
+  Action key; key.protocol = Protocol::Keyboard; key.transport = Transport::Ble;
+  key.keyMessage = KeyMessage::DownUp; key.delayMs = 50;
+  for (const auto& pair : {note, key}) {
+    reset(); engine.cancelAll(); config = Config{}; hostMillis = 0xffffffe0u;
+    config.chains[0].count = 2; config.chains[0].actions[0] = pair; config.chains[0].actions[1] = Action{};
+    fake::osc.clear(); fake::writable = false;
+    assert(engine.trigger({0, 0})); hostMillis += 100;
+    backendsTick(hostMillis); engine.tick(hostMillis); assert(fake::osc.empty());
+    fake::writable = true; backendsTick(hostMillis); // Actual On/Down starts the 50ms hold.
+    const size_t started = pair.protocol == Protocol::Midi ? fake::midi.size() : fake::hid.size();
+    assert(started == 1);
+    hostMillis += 49; backendsTick(hostMillis); engine.tick(hostMillis); assert(fake::osc.empty());
+    assert((pair.protocol == Protocol::Midi ? fake::midi.size() : fake::hid.size()) == 1);
+    hostMillis += 1; backendsTick(hostMillis); engine.tick(hostMillis);
+    assert(!fake::osc.empty() && engine.activeCount() == 0);
+  }
+  // Every On in the captured membership precedes every Off, on each transport.
+  for (uint32_t hold : {0u, 50u}) {
+    reset(); config = Config{}; hostMillis = 0xffffffe0u;
+    for (unsigned n = 0; n < 20; ++n) {
+      auto& chain = config.chains[n < 16 ? 0 : 2];
+      Action source = note; source.message = MidiMessage::NoteOn; source.delayMs = 0;
+      source.transport = Transport::Both; source.number = n; chain.actions[chain.count++] = source;
+    }
+    Action batch; batch.protocol = Protocol::Midi; batch.message = MidiMessage::AllNotesOnOff;
+    batch.delayMs = hold; batch.value = 90;
+    assert(midiDispatch(batch) == SendResult::Accepted);
+    for (int i = 0; i < 10; ++i) midiTick();
+    if (hold) {
+      assert(fake::midi.size() == 40);
+      for (auto m : fake::midi) assert(m.status == 0x90 && m.b == 90);
+      config = Config{}; // Off uses the same captured set, not a rescan.
+      hostMillis += 49; midiTick(); assert(fake::midi.size() == 40);
+      hostMillis += 1; for (int i = 0; i < 10; ++i) midiTick();
+    }
+    assert(fake::midi.size() == 80);
+    for (auto t : {Transport::Usb, Transport::Ble}) {
+      unsigned index = 0;
+      for (auto m : fake::midi) if (m.transport == t) {
+        assert(m.status == (index < 20 ? 0x90 : 0x80));
+        assert(m.a == index % 20); assert(m.b == (index < 20 ? 90 : 0)); ++index;
+      }
+      assert(index == 40);
+    }
+  }
+  reset(); config = Config{}; hostMillis = 1000;
+  unsigned target = 0;
+  for (auto& chain : config.chains) {
+    chain.count = 8;
+    for (unsigned i = 0; i < 8; ++i) {
+      auto& source = chain.actions[i]; source.protocol = Protocol::Midi;
+      source.message = MidiMessage::NoteOn; source.transport = Transport::Both;
+      source.channel = target / 128 + 1; source.number = target % 128; ++target;
+    }
+  }
+  Action maximum; maximum.protocol = Protocol::Midi; maximum.message = MidiMessage::AllNotesOnOff;
+  maximum.delayMs = 10; maximum.value = 80;
+  assert(midiDispatch(maximum) == SendResult::Accepted);
+  for (unsigned i = 0; i < 40; ++i) midiTick();
+  assert(fake::midi.size() == 448);
+  for (auto m : fake::midi) assert((m.status & 0xf0) == 0x90);
+  hostMillis += 10; for (unsigned i = 0; i < 40; ++i) midiTick();
+  assert(fake::midi.size() == 896);
+  for (unsigned i = 448; i < fake::midi.size(); ++i) assert((fake::midi[i].status & 0xf0) == 0x80);
+  // Disconnect cancels delayed Off; it must not replay into a new connection.
+  reset(); assert(midiDispatch(note) == SendResult::Accepted); assert(fake::midi.size() == 1);
+  fake::connected[1] = false; midiTick(); fake::connected[1] = true; ++fake::epoch[1];
+  hostMillis += 100; midiTick(); assert(fake::midi.size() == 1);
+  reset(); assert(keyboardDispatch(key) == SendResult::Accepted);
+  keyboardPanic(); hostMillis += 100; settle();
+  assert(fake::hid.size() == 3); // Down, then one reset report per transport.
+  assert(fake::hid[1].keys[0] == 0 && fake::hid[2].keys[0] == 0); // No stale pair replay.
+
+  Config source; source.chains[0].count = 3;
+  source.chains[0].actions[0] = note; source.chains[0].actions[1] = key;
+  auto& batch = source.chains[0].actions[2]; batch.protocol = Protocol::Midi;
+  batch.message = MidiMessage::AllNotesOnOff; batch.delayMs = MAX_WAIT_MS; batch.value = 100;
+  String error; assert(saveSource(source, error)); assert(loadConfig(error));
+  assert(config.chains[0].actions[0].delayMs == 50 && config.chains[0].actions[1].delayMs == 50);
+  assert(config.chains[0].actions[2].delayMs == MAX_WAIT_MS);
+  JsonDocument doc; encodeConfig(source, doc);
+  assert(doc["chains"][0]["actions"][2]["message"] == "allNotesOnOff");
+  for (auto bad : {-1LL, 86400001LL}) {
+    doc["chains"][0]["actions"][0]["holdMs"] = bad;
+    assert(!decodeConfig(doc.as<JsonVariantConst>(), source, error));
+  }
+  reset(); engine.cancelAll(); config = Config{}; hostMillis = savedClock;
+  std::cout << "PASS timed pairs: hold after send / wrap / whole-set On-hold-Off / snapshot / persistence\n";
+}
 int main() {
   rotationTests();
   configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests(); sharedSlotsTests();
   rotationStorageTests();
   rotationRuntimeTests();
   rotationSenderTests();
+  pairedActionTests();
+  timedPairTests();
   std::cout << "All firmware host tests passed.\n";
 }

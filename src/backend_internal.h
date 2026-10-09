@@ -4,12 +4,14 @@
 
 namespace chimera {
 extern uint32_t transportRetries, transportOverflows;
+constexpr unsigned MIDI_CAPACITY = 2 * MAX_TOTAL_ACTIONS + 64;
 SendResult oscDispatch(const Action&);
 SendResult midiDispatch(const Action&);
 SendResult keyboardDispatch(const Action&);
 void midiTick();
 bool midiQueued(Transport);
 void keyboardTick();
+bool keyboardQueued(Transport);
 void midiPanic();
 void keyboardPanic();
 // FIFO ownership is confined to the loop task. BLE callbacks only set atomics.

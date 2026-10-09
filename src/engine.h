@@ -21,7 +21,7 @@ class Engine {
    uint8_t activeCount() const { return running; }
    EngineStats stats;
  private:
-   struct Invocation { uint8_t input = 0, next = 0; uint32_t wakeAt = 0; } jobs[MAX_RUNNING];
+    struct Invocation { uint8_t input = 0, next = 0; bool pairPending = false; uint32_t wakeAt = 0; } jobs[MAX_RUNNING];
    uint8_t running = 0;
    bool advance(Invocation& job, uint32_t now);
 };

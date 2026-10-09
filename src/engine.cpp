@@ -5,6 +5,10 @@ namespace chimera {
 Engine engine;
 bool Engine::advance(Invocation& job, uint32_t now) {
   const auto& chain = activeConfig().chains[job.input];
+  if (job.pairPending) {
+    if (pairedActionPending(chain.actions[job.next - 1])) return false;
+    job.pairPending = false;
+  }
   while (job.next < chain.count) {
     const uint8_t index = job.next++;
     const auto& action = chain.actions[index];
@@ -13,6 +17,9 @@ bool Engine::advance(Invocation& job, uint32_t now) {
     stats.lastInput = job.input; stats.lastAction = index; stats.lastResult = result;
     if (result == SendResult::Accepted) ++stats.accepted; else ++stats.skipped;
     if (wait && action.delayMs) { job.wakeAt = now + action.delayMs; return false; }
+    if (pairedAction(action) && result == SendResult::Accepted && pairedActionPending(action)) {
+      job.pairPending = true; job.wakeAt = now; return false;
+    }
   }
   return true;
 }
@@ -24,9 +31,9 @@ bool Engine::trigger(const InputEvent& event) {
   const auto& chain = activeConfig().chains[event.input];
   bool needsSlot = false;
   for (uint8_t i = 0; i < chain.count; ++i)
-    if (chain.actions[i].protocol == Protocol::Wait && chain.actions[i].delayMs) needsSlot = true;
+    if ((chain.actions[i].protocol == Protocol::Wait && chain.actions[i].delayMs) || pairedAction(chain.actions[i])) needsSlot = true;
   // Reject the whole new invocation before emitting any prefix Actions.
-  // Immediate chains (notably Release) remain executable when wait slots are full.
+  // Chains without Wait or paired sends remain executable when slots are full.
   if (needsSlot && running == MAX_RUNNING) {
     ++stats.rejectedChains; stats.lastInput = event.input;
     stats.lastAction = 0; stats.lastResult = SendResult::Busy; return false;

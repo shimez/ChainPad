@@ -2,6 +2,7 @@
 #include "model.h"
 
 namespace chimera {
+bool pairedActionPending(const Action&);
 enum class SendResult { Accepted, Unavailable, Busy, Failed };
 struct BackendStatus {
   bool usbMidi, usbKeyboard, bleMidi, bleKeyboard, wifi;

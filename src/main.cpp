@@ -189,7 +189,7 @@ void setupWeb() {
     if (doc["input"].as<unsigned>() >= 26 && activeConfig().encoderRotation.mode == RotationMode::RotationValue) {
       result(409, "CW/CCW Action Chains are inactive in Rotation Value mode; API does not change Position"); return;
     }
-    if (!engine.trigger({doc["input"].as<uint8_t>(), millis()})) { result(409, "Wait scheduler full (32 running chains)"); return; }
+    if (!engine.trigger({doc["input"].as<uint8_t>(), millis()})) { result(409, "Chain scheduler full (32 running chains)"); return; }
     lastActivity = millis();
     result(200, "Saved chain dispatched; see status for transport results.");
   });

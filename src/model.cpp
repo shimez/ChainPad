@@ -62,11 +62,17 @@ bool parseAction(JsonVariantConst j, Action& a) {
   }
   if (!integer(j["delayMs"], 0, 0)) return false;
   a.delayMs = 0;
-  if (p == "midi" && (j["message"] == "allNotesOn" || j["message"] == "allNotesOff")) {
+  const bool pair = (p == "midi" && (j["message"] == "noteOnOff" || j["message"] == "allNotesOnOff")) ||
+    (p == "keyboard" && j["message"] == "keyDownUp");
+  if (!j["holdMs"].isUnbound()) {
+    if (!pair || !integer(j["holdMs"], 0, MAX_WAIT_MS)) return false;
+    a.delayMs = j["holdMs"];
+  }
+  if (p == "midi" && (j["message"] == "allNotesOn" || j["message"] == "allNotesOff" || j["message"] == "allNotesOnOff")) {
     a.protocol = Protocol::Midi;
-    a.message = j["message"] == "allNotesOn" ? MidiMessage::AllNotesOn : MidiMessage::AllNotesOff;
-    if (a.message == MidiMessage::AllNotesOn && !integer(j["value"], 1, 127)) return false;
-    a.value = a.message == MidiMessage::AllNotesOn ? j["value"].as<uint8_t>() : 0;
+    a.message = j["message"] == "allNotesOn" ? MidiMessage::AllNotesOn : j["message"] == "allNotesOnOff" ? MidiMessage::AllNotesOnOff : MidiMessage::AllNotesOff;
+    if (a.message != MidiMessage::AllNotesOff && !integer(j["value"], 1, 127)) return false;
+    a.value = a.message != MidiMessage::AllNotesOff ? j["value"].as<uint8_t>() : 0;
     return true;
   }
   String t = j["transport"] | "";
@@ -93,16 +99,16 @@ bool parseAction(JsonVariantConst j, Action& a) {
   if (p == "midi") {
     a.protocol = Protocol::Midi;
     String m = j["message"] | "";
-    if (m != "noteOn" && m != "noteOff" && m != "cc") return false;
-    a.message = m == "noteOn" ? MidiMessage::NoteOn : m == "noteOff" ? MidiMessage::NoteOff : MidiMessage::CC;
+    if (m != "noteOn" && m != "noteOff" && m != "noteOnOff" && m != "cc") return false;
+    a.message = m == "noteOn" ? MidiMessage::NoteOn : m == "noteOff" ? MidiMessage::NoteOff : m == "noteOnOff" ? MidiMessage::NoteOnOff : MidiMessage::CC;
     if (!integer(j["channel"], 1, 16) || !integer(j["number"], 0, 127) ||
-        !integer(j["value"], m == "noteOn" ? 1 : 0, 127)) return false;
+        !integer(j["value"], (m == "noteOn" || m == "noteOnOff") ? 1 : 0, 127)) return false;
     a.channel = j["channel"]; a.number = j["number"]; a.value = j["value"];
   } else if (p == "keyboard") {
     a.protocol = Protocol::Keyboard;
     String m = j["message"] | "";
-    if (m != "keyDown" && m != "keyUp" && m != "releaseAll") return false;
-    a.keyMessage = m == "keyDown" ? KeyMessage::Down : m == "keyUp" ? KeyMessage::Up : KeyMessage::ReleaseAll;
+    if (m != "keyDown" && m != "keyUp" && m != "keyDownUp" && m != "releaseAll") return false;
+    a.keyMessage = m == "keyDown" ? KeyMessage::Down : m == "keyUp" ? KeyMessage::Up : m == "keyDownUp" ? KeyMessage::DownUp : KeyMessage::ReleaseAll;
     if (!integer(j["usage"], 4, 115) || !integer(j["modifiers"], 0, 255)) return false;
     a.usage = j["usage"]; a.modifiers = j["modifiers"];
   } else return false;
@@ -209,12 +215,13 @@ template<typename T> void encodeChainImpl(const T& source, uint8_t id, JsonDocum
     auto actions = c["actions"].to<JsonArray>();
     for (uint8_t k = 0; k < source.count; ++k) {
       const auto& a = source.actions[k]; auto j = actions.add<JsonObject>();
-      j["delayMs"] = a.delayMs;
+      j["delayMs"] = a.protocol == Protocol::Wait ? a.delayMs : 0;
+      if (pairedAction(a) && a.delayMs) j["holdMs"] = a.delayMs;
       if (a.protocol == Protocol::Wait) { j["protocol"] = "wait"; continue; }
       if (a.protocol == Protocol::Midi && allNotes(a.message)) {
         j["protocol"] = "midi";
-        j["message"] = a.message == MidiMessage::AllNotesOn ? "allNotesOn" : "allNotesOff";
-        if (a.message == MidiMessage::AllNotesOn) j["value"] = a.value;
+        j["message"] = a.message == MidiMessage::AllNotesOn ? "allNotesOn" : a.message == MidiMessage::AllNotesOnOff ? "allNotesOnOff" : "allNotesOff";
+        if (a.message != MidiMessage::AllNotesOff) j["value"] = a.value;
         continue;
       }
       j["transport"] = a.transport == Transport::Wifi ? "wifi" : a.transport == Transport::Usb ? "usb" : a.transport == Transport::Ble ? "ble" : "both";
@@ -228,11 +235,11 @@ template<typename T> void encodeChainImpl(const T& source, uint8_t id, JsonDocum
         }
       } else if (a.protocol == Protocol::Midi) {
         j["protocol"] = "midi";
-        j["message"] = a.message == MidiMessage::NoteOn ? "noteOn" : a.message == MidiMessage::NoteOff ? "noteOff" : "cc";
+        j["message"] = a.message == MidiMessage::NoteOn ? "noteOn" : a.message == MidiMessage::NoteOff ? "noteOff" : a.message == MidiMessage::NoteOnOff ? "noteOnOff" : "cc";
         j["channel"] = a.channel; j["number"] = a.number; j["value"] = a.value;
       } else {
         j["protocol"] = "keyboard"; j["usage"] = a.usage; j["modifiers"] = a.modifiers;
-        j["message"] = a.keyMessage == KeyMessage::Down ? "keyDown" : a.keyMessage == KeyMessage::Up ? "keyUp" : "releaseAll";
+        j["message"] = a.keyMessage == KeyMessage::Down ? "keyDown" : a.keyMessage == KeyMessage::Up ? "keyUp" : a.keyMessage == KeyMessage::DownUp ? "keyDownUp" : "releaseAll";
       }
     }
 }

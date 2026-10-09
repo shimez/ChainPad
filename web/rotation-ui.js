@@ -45,10 +45,16 @@ const RotationEditor = (() => {
     if(!config)return;
     const r=config.encoderRotation.rotationValue;
     $('rotationPreviewPosition').max=r.rangeSteps;
-    $('rotationSummary').textContent=`編集中: ${config.encoderRotation.mode} · ${r.outputs.length} / 16 Outputs（検証用暫定容量）`;
+    const encoder=selected>=26,valueMode=config.encoderRotation.mode==='rotationValue';
+    $('encoderSettings').hidden=!encoder;
+    $('encoderRuntime').hidden=!encoder;
+    $('rotationValueEditor').hidden=!encoder||!valueMode;
+    $('actionChainEditor').hidden=encoder&&valueMode;
+    $('title').textContent=encoder?'Rotation Direction':names[Math.floor(selected/2)];
+    $('rotationSummary').textContent=`Rotation Value · ${r.outputs.length} / 16 Outputs（検証用暫定容量）`;
     $('rotationAdd').disabled=saving||r.outputs.length>=16;
-    $('rotationInactive').hidden=config.encoderRotation.mode==='rotationValue';
-    $('rotationChainInactive').hidden=selected<26||config.encoderRotation.mode!=='rotationValue';
+    $('rotationInactive').hidden=true;
+    $('rotationChainInactive').hidden=true;
     $('trigger').disabled=saving||(selected>=26&&config.encoderRotation.mode==='rotationValue');
     const values=$('rotationPreviewValues');values.replaceChildren();
     try {
@@ -65,8 +71,9 @@ const RotationEditor = (() => {
     if(!config)return;
     const rotation=config.encoderRotation,r=rotation.rotationValue;
     const axis=$('rotationAxis');axis.replaceChildren();
-    axis.append(field('Encoder Mode',rotation.mode,v=>{rotation.mode=v;render();},{options:[['actionChain','Action Chain'],['rotationValue','Rotation Value']]}),
-      field('Range Steps',r.rangeSteps,v=>{r.rangeSteps=v;render();},{min:1,max:65535}),
+    const mode=$('encoderMode');mode.replaceChildren();
+    mode.append(field('Encoder Mode',rotation.mode,v=>{cancelActionDrag();rotation.mode=v;render();},{options:[['rotationValue','Rotation Value'],['actionChain','Rotation Direction']]}));
+    axis.append(field('Range Steps',r.rangeSteps,v=>{r.rangeSteps=v;render();},{min:1,max:65535}),
       field('Initial Position',r.initialPosition,v=>r.initialPosition=v,{min:0,max:r.rangeSteps}),
       field('Boundary',r.boundary,v=>r.boundary=v,{options:[['stop','Stop'],['wrap','Wrap']]}));
     const list=$('rotationOutputs');list.replaceChildren();
@@ -91,6 +98,17 @@ const RotationEditor = (() => {
     refresh();
   }
   function init(){
+    const editor=$('actions').parentElement;
+    const chains=node('div');chains.id='actionChainEditor';
+    chains.append(...editor.childNodes);editor.append(chains);
+    const settings=node('div');settings.id='encoderSettings';settings.className='panel';settings.hidden=true;
+    const mode=node('div');mode.id='encoderMode';mode.className='fields';
+    settings.append(node('h2','Encoder'),mode,node('p','Rotation ValueはPositionから値を送信、Rotation DirectionはCW / CCWの各Action Chainを実行します。同時には実行しません。モード切替だけでは編集中の設定は失われません。'));
+    settings.lastChild.className='hint';
+    const value=$('rotationAxis').closest('section');value.id='rotationValueEditor';value.hidden=true;
+    value.querySelector('h2').textContent='Rotation Value';
+    const runtime=$('rotationRuntime').closest('section');runtime.id='encoderRuntime';runtime.classList.remove('status');runtime.hidden=true;
+    editor.prepend(settings,value);editor.append(runtime);
     $('rotationAdd').disabled=true;
     $('trigger').closest('.panel').append($('rotationChainInactive'));
     $('rotationAdd').onclick=()=>{if(saving||config.encoderRotation.rotationValue.outputs.length>=16)return;config.encoderRotation.rotationValue.outputs.push({protocol:'osc',transport:'wifi',address:'/avatar/parameters/Value',type:'int',start:0,end:127});changed();render();};

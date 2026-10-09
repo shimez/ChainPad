@@ -11,6 +11,24 @@ config.chains[1].actions=[{protocol:'keyboard',transport:'usb',delayMs:0,message
 config.chains[27].actions=[{protocol:'osc',transport:'wifi',delayMs:0,address:'/test',type:'string',value:'hello'}];
 const normalized=v=>JSON.parse(JSON.stringify(v));
 const full=P.full(config);
+const paired=P.full(config);
+paired.chains[0].actions=[{protocol:'midi',transport:'both',delayMs:0,message:'noteOnOff',channel:1,number:60,value:100},
+  {protocol:'keyboard',transport:'usb',delayMs:0,message:'keyDownUp',usage:104,modifiers:2}];
+assert.deepEqual(normalized(P.read(paired,'full',usb).config.chains[0]),normalized(paired.chains[0]));
+const pairedBle=P.read(paired,'full',ble);
+assert.equal(pairedBle.converted,3); // Includes the original USB keyUp in Release.
+assert.equal(pairedBle.config.chains[0].actions.length,2);
+assert.ok(pairedBle.config.chains[0].actions.every(a=>a.transport==='ble'));
+paired.chains[0].actions[0].value=0;assert.throws(()=>P.read(paired,'full',usb));
+paired.chains[0].actions[0].value=100;
+paired.chains[0].actions[0].holdMs=25;
+paired.chains[0].actions[1].holdMs=50;
+paired.chains[0].actions.push({protocol:'midi',delayMs:0,message:'allNotesOnOff',value:90,holdMs:86400000});
+assert.deepEqual(normalized(P.read(paired,'full',usb).config.chains[0]),normalized(paired.chains[0]));
+for(const bad of [-1,86400001,1.5,null,'20',true]){
+  const invalid=normalized(paired);invalid.chains[0].actions[2].holdMs=bad;
+  assert.throws(()=>P.read(invalid,'full',usb));
+}
 for(const [address,value] of [['/'+'a'.repeat(191),'b'.repeat(128)],['/'+'あ'.repeat(63)+'ab','あ'.repeat(42)+'ab'],['/'+'😀'.repeat(47)+'abc','😀'.repeat(32)]]){
   const file=P.full(config);file.chains[27].actions[0].address=address;file.chains[27].actions[0].value=value;
   assert.doesNotThrow(()=>P.read(file,'full',usb));
