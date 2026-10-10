@@ -54,8 +54,6 @@ const RotationEditor = (() => {
     $('rotationSummary').textContent=`Rotation Value · ${r.outputs.length} / 16 Outputs（検証用暫定容量）`;
     $('rotationAdd').disabled=saving||r.outputs.length>=16;
     $('rotationInactive').hidden=true;
-    $('rotationChainInactive').hidden=true;
-    $('trigger').disabled=saving||(selected>=26&&config.encoderRotation.mode==='rotationValue');
     const values=$('rotationPreviewValues');values.replaceChildren();
     try {
       const rotation=normalized(), axis=rotation.rotationValue;
@@ -72,16 +70,16 @@ const RotationEditor = (() => {
     const rotation=config.encoderRotation,r=rotation.rotationValue;
     const axis=$('rotationAxis');axis.replaceChildren();
     const mode=$('encoderMode');mode.replaceChildren();
-    mode.append(field('Encoder Mode',rotation.mode,v=>{cancelActionDrag();rotation.mode=v;render();},{options:[['rotationValue','Rotation Value'],['actionChain','Rotation Direction']]}));
+    mode.append(field('Encoder Mode',rotation.mode,v=>{cancelActionDrag();rotation.mode=v;render();},{options:[['rotationValue','Rotation Value（回転量モード）'],['actionChain','Rotation Direction（回転方向モード）']]}));
     axis.append(field('Range Steps',r.rangeSteps,v=>{r.rangeSteps=v;render();},{min:1,max:65535}),
       field('Initial Position',r.initialPosition,v=>r.initialPosition=v,{min:0,max:r.rangeSteps}),
-      field('Boundary',r.boundary,v=>r.boundary=v,{options:[['stop','Stop'],['wrap','Wrap']]}));
+      field('Boundary',r.boundary,v=>r.boundary=v,{options:[['stop','🛑Stop（停止する）'],['wrap','🔄Wrap（ループする）']]}));
     const list=$('rotationOutputs');list.replaceChildren();
     r.outputs.forEach((o,i)=>{
       const card=node('article');card.className='panel';card.append(node('h3',`Output ${i+1}`));
       const fields=node('div');fields.className='fields';
       const kind=o.protocol==='midi'?'midi':o.type;
-      fields.append(field('Output Type',kind,v=>{r.outputs[i]=v==='midi'?{protocol:'midi',message:'cc',transport:capabilities.defaultMidiTransport,channel:1,number:7,start:0,end:127}:{protocol:'osc',transport:'wifi',type:v,address:o.address||'/avatar/parameters/Value',start:0,end:v==='float'?1:127};render();},{options:[['int','OSC Int'],['float','OSC Float'],['midi','MIDI CC']]}));
+      fields.append(field('Output Type',kind,v=>{r.outputs[i]=v==='midi'?{protocol:'midi',message:'cc',transport:capabilities.defaultMidiTransport,channel:1,number:7,start:0,end:127}:{protocol:'osc',transport:'wifi',type:v,address:o.address||'/avatar/parameters/Value',start:0,end:v==='float'?1:127};render();},{options:[['int','🛜OSC Int'],['float','🛜OSC Float'],['midi','🎹MIDI CC']]}));
       if(o.protocol==='osc') {
         const address=field('OSC Address（最大192 UTF-8 bytes）',o.address,v=>{o.address=v;render();});
         address.append(node('small',`${new TextEncoder().encode(o.address).length} / 192 bytes`));fields.append(address);
@@ -103,14 +101,24 @@ const RotationEditor = (() => {
     chains.append(...editor.childNodes);editor.append(chains);
     const settings=node('div');settings.id='encoderSettings';settings.className='panel';settings.hidden=true;
     const mode=node('div');mode.id='encoderMode';mode.className='fields';
-    settings.append(node('h2','Encoder'),mode,node('p','Rotation ValueはPositionから値を送信、Rotation DirectionはCW / CCWの各Action Chainを実行します。同時には実行しません。モード切替だけでは編集中の設定は失われません。'));
-    settings.lastChild.className='hint';
+    const modeHelp=node('ul');modeHelp.className='hint';
+    modeHelp.append(
+      node('li','Rotation Value（回転量モード）はエンコーダーの回転した量に応じてOSC/MIDI CCの値を変化させて送信するモードです。'),
+      node('li','Rotation Direction（回転方向モード）はエンコーダーの回転方向（時計回り、反時計回り）それぞれにKeyと同様のAction Chainを設定するモードです。1クリックの回転でAction Chainが実行されます')
+    );
+    settings.append(node('h2','Encoder'),mode,modeHelp);
     const value=$('rotationAxis').closest('section');value.id='rotationValueEditor';value.hidden=true;
     value.querySelector('h2').textContent='Rotation Value';
+    const parameterHelp=node('ul');parameterHelp.className='hint';
+    parameterHelp.append(
+      node('li','Range Stepsは「何クリック回すとStartからEndまで変化するか」を設定します'),
+      node('li','Initial Positionは「Range Stepsの初期クリック位置」を設定します'),
+      node('li','Boundaryは「Start・Endから更に回したときの動作」を設定します')
+    );
+    $('rotationSummary').before(parameterHelp);
     const runtime=$('rotationRuntime').closest('section');runtime.id='encoderRuntime';runtime.classList.remove('status');runtime.hidden=true;
     editor.prepend(settings,value);editor.append(runtime);
     $('rotationAdd').disabled=true;
-    $('trigger').closest('.panel').append($('rotationChainInactive'));
     $('rotationAdd').onclick=()=>{if(saving||config.encoderRotation.rotationValue.outputs.length>=16)return;config.encoderRotation.rotationValue.outputs.push({protocol:'osc',transport:'wifi',address:'/avatar/parameters/Value',type:'int',start:0,end:127});changed();render();};
     $('rotationPreviewPosition').oninput=()=>{previewPosition=$('rotationPreviewPosition').value===''?NaN:Number($('rotationPreviewPosition').value);refresh();};
   }

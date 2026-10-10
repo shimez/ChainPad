@@ -135,7 +135,7 @@ void setupWeb() {
   web.on("/api/status", HTTP_GET, [] {
     JsonDocument doc;
     auto s = backendStatus();
-    doc["name"] = "ChainPad"; doc["version"] = "0.5.0-chimera";
+    doc["name"] = "ChainPad"; doc["version"] = "0.5.1-chimera";
     doc["hardware"] = HARDWARE_NAME;
     doc["usbMidiSupported"] = HAS_USB_MIDI; doc["usbKeyboardSupported"] = HAS_USB_KEYBOARD;
     doc["keyCount"] = 12; doc["encoder"] = true; doc["encoderPush"] = true; doc["led"] = true;
