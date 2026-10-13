@@ -10,6 +10,7 @@ asset = '#pragma once\n#include <Arduino.h>\n'
 for filename, symbol in (("index.html", "WEB_UI"), ("wifi.html", "WIFI_UI")):
     html = (root / "web" / filename).read_text(encoding="utf-8")
     html = html.replace('href="favicon.svg"', 'href="' + favicon + '"')
+    html = html.replace('<script src="maintenance.js"></script>', '<script>\n' + (root / 'web/maintenance.js').read_text(encoding='utf-8') + '\n</script>')
     if filename == "index.html":
         html = html.replace('<script src="rotation-ui.js"></script>', '<script>\n' + (root / "web/rotation-ui.js").read_text(encoding="utf-8") + '\n</script>')
         html = html.replace('<script src="action-ui.js"></script>', '<script>\n' + (root / "web/action-ui.js").read_text(encoding="utf-8") + '\n</script>')

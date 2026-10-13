@@ -14,6 +14,7 @@
 #include "inputs.h"
 #include "backends.h"
 #include "diagnostics.h"
+#include "factory_reset.h"
 #include "web_assets.h"
 
 using namespace chimera;
@@ -39,6 +40,7 @@ void diagnosticCheckpoint(const char* reason) {
   if (diagnosticsEnabled) printDiagnostics(console, reason);
 }
 bool inputReady = false;
+bool maintenanceRecovery = false;
 uint32_t restartAt = 0, lastActivity = 0;
 char bootSsid[33]{}, bootPassword[65]{};
 void jsonResponse(int status, JsonDocument& doc) {
@@ -50,7 +52,25 @@ void result(int status, const String& message) {
   JsonDocument doc; doc["ok"] = status < 400; doc["message"] = message; jsonResponse(status, doc);
 }
 void panic() { engine.cancelAll(); backendsPanic(); discardInputs(); }
+bool resetGuard() {
+  if (!factoryResetBlocked()) return false;
+  result(409, "Factory Reset pending or failed; settings and outputs are locked"); return true;
+}
 void setupWeb() {
+  web.on("/api/factory-reset", HTTP_GET, [] {
+    JsonDocument doc; doc["state"] = factoryResetStatus(); jsonResponse(200, doc);
+  });
+  web.on("/api/factory-reset", HTTP_POST, [] {
+    JsonDocument doc;
+    if (web.arg("plain").length() > 128 || deserializeJson(doc, web.arg("plain")) || doc["confirm"] != "factory-reset") {
+      result(400, "Explicit Factory Reset confirmation required"); return;
+    }
+    const bool alreadyAccepted = strcmp(factoryResetStatus(), "accepted") == 0;
+    if (!requestFactoryReset()) { result(500, "Could not persist reset request; use Web Installer if retry fails"); return; }
+    panic();
+    result(202, "Factory Reset accepted; erasure will run after restart. Reconnect to ChainPad-Setup.");
+    if (!alreadyAccepted) restartAt = millis() + 750;
+  });
 #ifdef CHAINPAD_ROTATION_TEST
   web.on("/api/rotation-test/hold", HTTP_POST, [] {
     rotationTestHeld = web.arg("enabled") == "1";
@@ -73,6 +93,7 @@ void setupWeb() {
     jsonResponse(200, doc);
   });
   web.on("/api/wifi", HTTP_PUT, [] {
+    if (resetGuard()) return;
     diagnosticCheckpoint("wifi-save-before");
     String error;
     if (!saveWifiConfig(web.arg("plain"), error)) { diagnosticCheckpoint("wifi-save-failed"); result(400, error); return; }
@@ -84,6 +105,7 @@ void setupWeb() {
     JsonDocument doc; encodeCapabilities(doc); jsonResponse(200, doc);
   });
   web.on("/api/config", HTTP_GET, [] {
+    if (resetGuard()) return;
     // Stream one record at a time; never construct the full JSON in device RAM.
     web.sendHeader("Cache-Control", "no-store");
     web.setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -103,12 +125,14 @@ void setupWeb() {
     diagnosticCheckpoint("config-get-after");
   });
   web.on("/api/config/begin", HTTP_POST, [] {
+    if (resetGuard()) return;
     String error; auto token = beginConfigSave(web.arg("plain"), error);
     diagnosticCheckpoint(token ? "save-begin" : "save-begin-failed");
     if (!token) { result(400, error); return; }
     JsonDocument doc; doc["token"] = token; jsonResponse(200, doc);
   });
   web.on("/api/config/chain", HTTP_PUT, [] {
+    if (resetGuard()) return;
     int id = web.arg("input").toInt();
     String error;
     if (!web.hasArg("input") || id < 0 || id >= INPUT_COUNT ||
@@ -117,6 +141,7 @@ void setupWeb() {
     result(200, "Staged");
   });
   web.on("/api/config/rotation", HTTP_PUT, [] {
+    if (resetGuard()) return;
     String error;
     diagnosticCheckpoint("rotation-stage-before");
     if (!stageConfigRotation(web.arg("token").toInt(), web.arg("plain"), error)) { result(400, error); return; }
@@ -124,6 +149,7 @@ void setupWeb() {
     result(200, "Rotation staged");
   });
   web.on("/api/config/commit", HTTP_POST, [] {
+    if (resetGuard()) return;
     diagnosticCheckpoint("save-commit-before");
     String error;
     if (!commitConfigSave(web.arg("token").toInt(), error)) { if (!configOutputsAllowed()) panic(); diagnosticCheckpoint("save-commit-failed"); result(400, error); return; }
@@ -154,7 +180,7 @@ void setupWeb() {
     doc["transportRetries"] = s.retries; doc["transportOverflows"] = s.overflows;
     doc["inputOverflows"] = inputOverflows(); doc["pressedMask"] = pressedInputs();
     doc["inputsReady"] = inputReady; doc["bootMessage"] = bootMessage;
-    doc["storageState"] = configStorageStateName(); doc["configOutputsAllowed"] = configOutputsAllowed();
+    doc["storageState"] = configStorageStateName(); doc["configOutputsAllowed"] = configOutputsAllowed() && !factoryResetBlocked();
     auto rotation = doc["encoderRotation"].to<JsonObject>();
     rotation["mode"] = activeConfig().encoderRotation.mode == RotationMode::ActionChain ? "actionChain" : "rotationValue";
     rotation["rangeSteps"] = activeConfig().encoderRotation.axis.rangeSteps;
@@ -181,6 +207,7 @@ void setupWeb() {
     jsonResponse(200, doc);
   });
   web.on("/api/trigger", HTTP_POST, [] {
+    if (resetGuard()) return;
     if (!configOutputsAllowed()) { result(409, "Settings unavailable; outputs disabled"); return; }
     JsonDocument doc;
     if (deserializeJson(doc, web.arg("plain")) || !doc["input"].is<unsigned>() || doc["input"].as<unsigned>() >= INPUT_COUNT) {
@@ -210,12 +237,16 @@ void setup() {
   beginMemoryDiagnostics();
   console.begin(115200);
   console.setTxTimeoutMs(0);
+  const auto reset = factoryResetBoot();
+  if (reset == ResetBoot::Restart) { ESP.restart(); return; }
+  maintenanceRecovery = reset == ResetBoot::Failed;
   memoryPhase("config/load");
-  loadConfig(bootMessage);
+  if (maintenanceRecovery) bootMessage = "Factory Reset failed/stopped; retry explicitly or use Web Installer. Outputs disabled.";
+  else loadConfig(bootMessage);
   auto& config = activeConfig();
   memoryCheckpoint("config/loaded");
   memcpy(bootSsid, config.ssid, sizeof(bootSsid)); memcpy(bootPassword, config.password, sizeof(bootPassword));
-  backendsBegin();
+  if (!maintenanceRecovery) backendsBegin();
   memoryCheckpoint("backends/ready");
   WiFi.persistent(false);
   memoryPhase("wifi/mode");
@@ -237,7 +268,7 @@ void setup() {
   setupWeb();
   memoryCheckpoint("web/ready");
   memoryPhase("inputs/begin");
-  inputReady = inputsBegin();
+  if (!maintenanceRecovery) inputReady = inputsBegin();
   memoryCheckpoint(inputReady ? "inputs/ready" : "inputs/FAILED");
   memoryPhase("loop");
    console.println("ChainPad / Project Chimera Phase 2"); console.println(bootMessage);
@@ -268,20 +299,20 @@ void loop() {
     } else if (command == '?') console.println("m=snapshot; h=startup/allocations/stacks; d=toggle 5s + save logging (default OFF); bytes; file -1=absent -2=open failed");
   }
   uint32_t now = millis();
-  backendsTick(now);
+  if (!maintenanceRecovery) backendsTick(now);
   uint32_t overflows = inputOverflows();
   if (overflows != observedOverflows) {
     observedOverflows = overflows; panic(); // Cancel pending work and release HID; no generated MIDI.
   }
-  if (!restartAt) {
+  if (!restartAt && !factoryResetBlocked()) {
     if (configOutputsAllowed()) engine.tick(now);
     InputEvent event;
     for (unsigned budget = 0; budget < 16 && nextInput(event); ++budget) {
       if (configOutputsAllowed()) engine.trigger(event);
       lastActivity = now;
     }
-  } else if (static_cast<int32_t>(now - restartAt) >= 0) ESP.restart();
-  if (!restartAt && configOutputsAllowed()) rotationSendTick();
+  } else if (restartAt && static_cast<int32_t>(now - restartAt) >= 0) ESP.restart();
+  if (!restartAt && !factoryResetBlocked() && configOutputsAllowed()) rotationSendTick();
   bool led = WiFi.status() == WL_CONNECTED ? now - lastActivity > 50 : now % 1000 < 500;
   setStatusLed(inputReady && led);
   if (diagnosticsEnabled && now - lastDiagnostics >= 5000) {

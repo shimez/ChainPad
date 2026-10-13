@@ -7,6 +7,12 @@ $json = Join-Path $root '.pio\libdeps\xiao_esp32s3\ArduinoJson\src'
 if (-not (Test-Path $json)) { throw 'Run pio run first to install ArduinoJson' }
 $build = Join-Path $root '.pio\host-tests'
 New-Item -ItemType Directory -Force $build | Out-Null
+$resetCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /std:c++17 /EHsc /utf-8 /I`"$root\src`" /Fe:`"$build\factory_reset_tests.exe`" /Fo`"$build\\`" `"$root\tests\host\factory_reset_tests.cpp`" && `"$build\factory_reset_tests.exe`""
+& cmd.exe /d /c $resetCommand
+if ($LASTEXITCODE -ne 0) { throw 'Factory Reset tests failed' }
+$platformCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /std:c++17 /EHsc /utf-8 /I`"$root\tests\reset_platform`" /I`"$root\src`" /Fe:`"$build\factory_reset_platform_tests.exe`" /Fo`"$build\\`" `"$root\tests\host\factory_reset_platform_tests.cpp`" `"$root\src\factory_reset.cpp`" && `"$build\factory_reset_platform_tests.exe`""
+& cmd.exe /d /c $platformCommand
+if ($LASTEXITCODE -ne 0) { throw 'Factory Reset platform tests failed' }
 $sources = @('tests\host\core_tests.cpp','tests\host\rotation_tests.cpp','tests\host\rotation_storage_tests.cpp','src\rotation.cpp','src\model.cpp','src\config_store.cpp','src\engine.cpp','src\backends.cpp','src\osc_backend.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
 $args = @('/nologo','/std:c++17','/EHsc','/utf-8','/D_CRT_SECURE_NO_WARNINGS','/DCHAINPAD_HAS_USB=1',"/I`"$root\tests\host`"", "/I`"$root\src`"", "/I`"$json`"", "/Fe:`"$build\core_tests.exe`"", "/Fo`"$build\\`"")
 $args += '/DCHAINPAD_HOST_TEST=1'
