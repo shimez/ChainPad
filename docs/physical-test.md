@@ -2,6 +2,8 @@
 
 対象: XIAO ESP32S3 / ESP32C3 / ESP32C6 / ESP32C5、現行ChainOSCPad PCB、Windows PC。PoC2のC6での確認結果とは別に記録します。以下のUSB検証はS3のみ対象です。
 
+実機観測記録：[C6 Standard：208 ActionsでのWebUI連続再読込＋キー連打](c6-standard-http-load-observation.md)（2026-10-12）。高負荷時の一時的なHTTP応答停止として記録し、現時点では改修対象としません。
+
 ## 0.3.0 LittleFS保存（C6を優先し4機種で確認）
 
 1. partition table込みで書き込む。旧設定が読み込まれずSetup APで起動すること。Wi-Fiを再設定する。
