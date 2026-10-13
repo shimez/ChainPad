@@ -131,7 +131,7 @@ uint32_t beginConfigSave(const String& json, String& error) {
       (!doc["replaceUnsupported"].is<bool>() || !doc["replaceUnsupported"].as<bool>())) return 0;
   // A new begin invalidates any abandoned transaction; its active file is untouched.
   transaction = 0; nextChain = 0; stagedPressCount = 0;
-  encodeNetwork(network, doc);
+  if (!encodeNetwork(network, doc)) { error = "Network encode failed"; return 0; }
   JsonDocument header; header["storageVersion"] = 2; header["network"] = doc;
   if (!writeRecord(header, "w", error)) return 0;
   if (++generation == 0) ++generation;
@@ -153,7 +153,7 @@ bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& er
       error = "Press / Release total exceeds 16 Actions"; transaction = 0; return false;
     }
   }
-  encodeChain(chain, id, doc);
+  if (!encodeChain(chain, id, doc)) { error = "Chain encode failed"; transaction = 0; return false; }
   if (!writeRecord(doc, "a", error)) { transaction = 0; return false; }
   ++nextChain; error = ""; return true;
 }
@@ -194,21 +194,32 @@ bool saveWifiConfig(const String& json, String& error) {
   auto& config = activeConfig();
   if (bootReadLocked) { error = "Boot settings read failed; reload or restart before saving"; return false; }
   if (!configOutputsAllowed()) { error = "Settings unavailable: Wi-Fi save cannot replace existing settings"; return false; }
+  // Also invalidate any prior staging when this full-config rewrite fails.
+  transaction = 0;
   if (json.length() > 1024) { error = "Wi-Fi request too large"; return false; }
   JsonDocument credentials, doc;
   if (deserializeJson(credentials, json)) { error = "Invalid Wi-Fi JSON"; return false; }
-  encodeNetwork(config, doc);
-  doc["ssid"] = credentials["ssid"]; doc["password"] = credentials["password"];
-  JsonDocument request; request["schemaVersion"] = 2; request["network"] = doc;
-  String body; serializeJson(request, body); request.clear();
+  error = "Settings encode or serialization failed";
+  if (!encodeNetwork(config, doc) || !doc["ssid"].set(credentials["ssid"]) ||
+      !doc["password"].set(credentials["password"])) return false;
+  JsonDocument request; request["schemaVersion"] = 2;
+  if (doc.overflowed() || !request["network"].set(doc)) return false;
+  String body; if (!checkedSettingsJson(request, body)) return false;
+  request.clear();
   credentials.clear(); doc.clear();
   auto token = beginConfigSave(body, error);
   if (!token) return false;
   for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
-    encodeChain(config.chains[i], i, doc); body = ""; serializeJson(doc, body); doc.clear();
+    if (!encodeChain(config.chains[i], i, doc) || !checkedSettingsJson(doc, body)) {
+      error = "Chain encode or serialization failed"; transaction = 0; return false;
+    }
+    doc.clear();
     if (!stageConfigChain(token, i, body, error)) return false;
   }
-  encodeRotation(config.encoderRotation, doc, true); body = ""; serializeJson(doc, body); doc.clear();
+  if (!encodeRotation(config.encoderRotation, doc, true) || !checkedSettingsJson(doc, body)) {
+    error = "Rotation encode or serialization failed"; transaction = 0; return false;
+  }
+  doc.clear();
   if (!stageConfigRotation(token, body, error)) return false;
   return commitConfigSave(token, error);
 }
@@ -220,7 +231,7 @@ bool stageConfigRotation(uint32_t token, const String& json, String& error) {
   std::unique_ptr<EncoderRotationSettings> rotation(new (std::nothrow) EncoderRotationSettings);
   if (!rotation) { transaction = 0; error = "Not enough RAM for rotation stage"; return false; }
   if (deserializeJson(doc, json) || !decodeRotation(doc.as<JsonVariantConst>(), *rotation, error)) { transaction = 0; return false; }
-  encodeRotation(*rotation, doc, true);
+  if (!encodeRotation(*rotation, doc, true)) { error = "Rotation encode failed"; transaction = 0; return false; }
   if (!writeRecord(doc, "a", error)) { transaction = 0; return false; }
   rotationStaged = true; error = ""; return true;
 }

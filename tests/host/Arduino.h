@@ -5,6 +5,9 @@
 #include <cstring>
 #include <string>
 #include <type_traits>
+#ifdef CHAINPAD_STORAGE_FAULT
+#include "string_fault.h"
+#endif
 #define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
 class String {
   std::string value;
@@ -17,8 +20,19 @@ class String {
   const char* c_str() const { return value.c_str(); }
   size_t length() const { return value.size(); }
   bool isEmpty() const { return value.empty(); }
-  bool concat(const char* s, size_t n) { value.append(s, n); return true; }
-  bool concat(const char* s) { value.append(s); return true; }
+  bool reserve(size_t n) {
+#ifdef CHAINPAD_STORAGE_FAULT
+    if (!stringFault::reserve(n)) return false;
+#endif
+    value.reserve(n); return true;
+  }
+  bool concat(const char* s, size_t n) {
+#ifdef CHAINPAD_STORAGE_FAULT
+    if (!stringFault::concat()) return false;
+#endif
+    value.append(s, n); return true;
+  }
+  bool concat(const char* s) { return concat(s, std::strlen(s)); }
   friend String operator+(const String& a, const String& b) { return a.value + b.value; }
   friend bool operator==(const String& a, const String& b) { return a.value == b.value; }
   friend bool operator!=(const String& a, const String& b) { return !(a == b); }

@@ -102,7 +102,7 @@ extern Config config;
 inline Config& activeConfig() { return config; }
 #endif
 String inputName(uint8_t id);
-void encodeConfig(const Config& source, JsonDocument& doc);
+bool encodeConfig(const Config& source, JsonDocument& doc);
 void encodeCapabilities(JsonDocument& doc);
 bool decodeConfig(JsonVariantConst root, Config& out, String& error);
 bool loadConfig(String& message);
@@ -114,13 +114,13 @@ bool configOutputsAllowed();
 bool decodeRotation(JsonVariantConst root, EncoderRotationSettings& out, String& error);
 // losslessWire emits exact numeric JSON literals for float32 endpoints. Use it
 // when serializing; false keeps variants numeric for in-memory validation.
-void encodeRotation(const EncoderRotationSettings& source, JsonDocument& doc, bool losslessWire = false);
+bool encodeRotation(const EncoderRotationSettings& source, JsonDocument& doc, bool losslessWire = false);
 bool saveWifiConfig(const String& json, String& error);
 bool decodeNetwork(JsonVariantConst root, NetworkSettings& out, String& error);
 bool decodeChain(JsonVariantConst root, uint8_t id, Chain& out, String& error);
-void encodeNetwork(const NetworkSettings& source, JsonDocument& doc);
-void encodeChain(const Chain& source, uint8_t id, JsonDocument& doc);
-void encodeChain(const ChainView& source, uint8_t id, JsonDocument& doc);
+bool encodeNetwork(const NetworkSettings& source, JsonDocument& doc);
+bool encodeChain(const Chain& source, uint8_t id, JsonDocument& doc);
+bool encodeChain(const ChainView& source, uint8_t id, JsonDocument& doc);
 uint32_t beginConfigSave(const String& network, String& error);
 bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& error);
 bool stageConfigRotation(uint32_t token, const String& json, String& error);

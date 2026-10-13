@@ -196,25 +196,33 @@ void encodeCapabilities(JsonDocument& doc) {
   if (HAS_USB_KEYBOARD) keyboard.add("usb");
   keyboard.add("ble");
 }
-void encodeConfig(const Config& source, JsonDocument& doc) {
+bool encodeConfig(const Config& source, JsonDocument& doc) {
   doc.clear(); doc["schemaVersion"] = 2;
-  JsonDocument part; encodeNetwork(source, part); doc["network"] = part;
-  encodeRotation(source.encoderRotation, part); doc["encoderRotation"] = part;
+  JsonDocument part;
+  if (!encodeNetwork(source, part) || !doc["network"].set(part)) return false;
+  if (!encodeRotation(source.encoderRotation, part) || !doc["encoderRotation"].set(part)) return false;
   auto chains = doc["chains"].to<JsonArray>();
+  if (chains.isNull()) return false;
   for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
-    encodeChain(source.chains[i], i, part); chains.add(part.as<JsonObjectConst>());
+    if (!encodeChain(source.chains[i], i, part) || !chains.add(part.as<JsonObjectConst>())) return false;
   }
+  return !doc.overflowed() && chains.size() == INPUT_COUNT;
 }
-void encodeNetwork(const NetworkSettings& source, JsonDocument& doc) {
+bool encodeNetwork(const NetworkSettings& source, JsonDocument& doc) {
   doc.clear(); auto n = doc.to<JsonObject>();
+  if (n.isNull()) return false;
   n["ssid"] = source.ssid; n["password"] = source.password;
   n["oscHost"] = source.oscHost; n["oscPort"] = source.oscPort;
+  return !doc.overflowed() && n.size() == 4;
 }
-template<typename T> void encodeChainImpl(const T& source, uint8_t id, JsonDocument& doc) {
+template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocument& doc) {
     doc.clear(); auto c = doc.to<JsonObject>(); c["input"] = id;
+    if (c.isNull()) return false;
     auto actions = c["actions"].to<JsonArray>();
+    if (actions.isNull()) return false;
     for (uint8_t k = 0; k < source.count; ++k) {
       const auto& a = source.actions[k]; auto j = actions.add<JsonObject>();
+      if (j.isNull()) return false;
       j["delayMs"] = a.protocol == Protocol::Wait ? a.delayMs : 0;
       if (pairedAction(a) && a.delayMs) j["holdMs"] = a.delayMs;
       if (a.protocol == Protocol::Wait) { j["protocol"] = "wait"; continue; }
@@ -242,9 +250,12 @@ template<typename T> void encodeChainImpl(const T& source, uint8_t id, JsonDocum
         j["message"] = a.keyMessage == KeyMessage::Down ? "keyDown" : a.keyMessage == KeyMessage::Up ? "keyUp" : a.keyMessage == KeyMessage::DownUp ? "keyDownUp" : "releaseAll";
       }
     }
+    // Includes optional members (holdMs/transport) and copied strings: losing
+    // any assignment must fail even when the remaining schema is valid.
+    return !doc.overflowed() && actions.size() == source.count;
 }
-void encodeChain(const Chain& source, uint8_t id, JsonDocument& doc) { encodeChainImpl(source, id, doc); }
-void encodeChain(const ChainView& source, uint8_t id, JsonDocument& doc) { encodeChainImpl(source, id, doc); }
+bool encodeChain(const Chain& source, uint8_t id, JsonDocument& doc) { return encodeChainImpl(source, id, doc); }
+bool encodeChain(const ChainView& source, uint8_t id, JsonDocument& doc) { return encodeChainImpl(source, id, doc); }
 bool decodeRotation(JsonVariantConst root, EncoderRotationSettings& out, String& error) {
   error = "Invalid encoder rotation settings";
   if (!root.is<JsonObjectConst>()) return false;
@@ -290,16 +301,19 @@ bool decodeRotation(JsonVariantConst root, EncoderRotationSettings& out, String&
   }
   error = ""; return true;
 }
-void encodeRotation(const EncoderRotationSettings& source, JsonDocument& doc, bool losslessWire) {
+bool encodeRotation(const EncoderRotationSettings& source, JsonDocument& doc, bool losslessWire) {
   doc.clear();
   doc["mode"] = source.mode == RotationMode::ActionChain ? "actionChain" : "rotationValue";
   auto value = doc["rotationValue"].to<JsonObject>();
+  if (value.isNull()) return false;
   value["rangeSteps"] = source.axis.rangeSteps;
   value["initialPosition"] = source.axis.initialPosition;
   value["boundary"] = source.axis.boundary == RotationBoundary::Stop ? "stop" : "wrap";
   auto outputs = value["outputs"].to<JsonArray>();
+  if (outputs.isNull()) return false;
   for (uint32_t i = 0; i < source.outputCount; ++i) {
     const auto& output = source.outputs[i]; auto j = outputs.add<JsonObject>();
+    if (j.isNull()) return false;
     if (output.kind == RotationOutputKind::MidiCC) {
       j["protocol"] = "midi"; j["message"] = "cc";
       j["transport"] = output.transport == Transport::Usb ? "usb" : output.transport == Transport::Ble ? "ble" : "both";
@@ -314,11 +328,13 @@ void encodeRotation(const EncoderRotationSettings& source, JsonDocument& doc, bo
         // 7 significant digits. Seventeen digits preserve the promoted float32
         // value without emitting a decimal above FLT_MAX (e.g. %.9g would).
         char start[32], end[32];
-        snprintf(start, sizeof(start), "%.17g", double(output.range.floating.start));
-        snprintf(end, sizeof(end), "%.17g", double(output.range.floating.end));
+        const int startSize = snprintf(start, sizeof(start), "%.17g", double(output.range.floating.start));
+        const int endSize = snprintf(end, sizeof(end), "%.17g", double(output.range.floating.end));
+        if (startSize <= 0 || size_t(startSize) >= sizeof(start) || endSize <= 0 || size_t(endSize) >= sizeof(end)) return false;
         if (output.range.floating.start == 0 && std::signbit(output.range.floating.start)) strcpy(start, "-0.0");
         if (output.range.floating.end == 0 && std::signbit(output.range.floating.end)) strcpy(end, "-0.0");
-        j["start"] = serialized(String(start)); j["end"] = serialized(String(end));
+        if (!j["start"].set(serialized(start, strlen(start))) ||
+            !j["end"].set(serialized(end, strlen(end)))) return false;
       } else {
         j["start"] = output.range.floating.start; j["end"] = output.range.floating.end;
       }
@@ -326,5 +342,6 @@ void encodeRotation(const EncoderRotationSettings& source, JsonDocument& doc, bo
       j["start"] = output.range.integer.start; j["end"] = output.range.integer.end;
     }
   }
+  return !doc.overflowed() && outputs.size() == source.outputCount;
 }
 } // namespace chimera

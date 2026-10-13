@@ -2,20 +2,26 @@
 // wrappers scope allocator failure to one actual production encode invocation.
 #define encodeChain rawEncodeChain
 #define encodeRotation rawEncodeRotation
+#define encodeNetwork rawEncodeNetwork
 #include "../../src/model.cpp"
 #undef encodeChain
 #undef encodeRotation
+#undef encodeNetwork
 #include "../../src/json_wire.h"
 namespace {
 void observe(bool selected, JsonDocument& doc){
   if(!selected)return;
+  // Wi-Fi prefix test keeps failures enabled through credential replacement
+  // and request deep-copy, then disables at the first checked serialization.
+  if(jsonFault::target=="request")return;
   jsonFault::enabled=false;jsonFault::allocationCount=jsonFault::calls;
   jsonFault::overflow=doc.overflowed();
   String s;chimera::serializeSettingsJson(doc,s);jsonFault::wire=s.c_str();
 }
 }
 namespace chimera {
-void encodeChain(const Chain& c,uint8_t id,JsonDocument& d){bool s=jsonFault::enter(id==0?"chain":"other");rawEncodeChain(c,id,d);observe(s,d);}
-void encodeChain(const ChainView& c,uint8_t id,JsonDocument& d){bool s=jsonFault::enter(id==0?"chain":"other");rawEncodeChain(c,id,d);observe(s,d);}
-void encodeRotation(const EncoderRotationSettings& r,JsonDocument& d,bool lossless){bool s=jsonFault::enter("rotation");rawEncodeRotation(r,d,lossless);observe(s,d);}
+bool encodeNetwork(const NetworkSettings& n,JsonDocument& d){bool s=jsonFault::enter("network");bool ok=rawEncodeNetwork(n,d);observe(s,d);return ok;}
+bool encodeChain(const Chain& c,uint8_t id,JsonDocument& d){bool s=jsonFault::enter(id==0?"chain":"other");bool ok=rawEncodeChain(c,id,d);observe(s,d);return ok;}
+bool encodeChain(const ChainView& c,uint8_t id,JsonDocument& d){bool s=jsonFault::enter(id==0?"chain":"other");bool ok=rawEncodeChain(c,id,d);observe(s,d);return ok;}
+bool encodeRotation(const EncoderRotationSettings& r,JsonDocument& d,bool lossless){bool s=jsonFault::enter("rotation");bool ok=rawEncodeRotation(r,d,lossless);observe(s,d);return ok;}
 }

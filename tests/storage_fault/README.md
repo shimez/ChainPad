@@ -1,8 +1,23 @@
-# Storage tests：H2/H3安全性回帰＋H1/H4不具合再現
+# Storage tests：H2/H3/H4安全性回帰＋H1不具合再現
 
 ## A. 総括・作業基準
 
-### H3修正（現在）
+### H4修正（現在）
+
+- 開始HEAD：`2d689ad84c0b58f46c25109f07ce59280bc93a46`、`main`、開始時clean。
+- ArduinoJson 7.4.2、SDK・形式・Config/Action容量・WebUIを維持。
+- **H2/H3/H4は安全性回帰PASS。H1のPASSは未修正不具合の再現成功。**
+- network/chain/rotation/full encodeはboolを返し、生成参照・overflow・要素数を検査。
+  optional memberの確保失敗もoverflowで拒否。lossless floatはstack文字列からコピーする。
+- checked serializerはoverflow、計測長、reserve、sticky書込失敗、実byte数、String長を検査。
+- Wi-Fiは失敗をrename前に返し、transactionを無効化。active/RAM/出力状態を保持する。
+- GETは30レコード事前検査＋送信時再検査。一件分のdoc/Stringだけ使用する。
+  事前失敗は500、200後の失敗はclient.stop()。閉じ括弧・正常終端は送らない。
+- `jsonResponse`もchecked serializerを使用。生成失敗は小さい固定エラー本文へフォールバックし、
+  元がエラーstatusならそのstatusを保持する。
+- commit／push／実機書込みなし。
+
+### H3修正時の記録
 
 - 開始HEAD：`f7041fc3567a9a3318f834b1e85f530f314fc5ed`、`main`、作業開始時clean。
 - 変更前の通常host／fault suite成功を記録してから実装。
@@ -31,7 +46,7 @@
 powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_storage_fault.ps1
 ```
 
-前提：Visual Studio C++ Build Tools、`.venv`のPython、既存PlatformIO ArduinoJson依存。
+前提：Visual Studio C++ Build Tools、`.venv`のPython、Node.js（fetch対応）、既存PlatformIO ArduinoJson依存。
 生成物は`.pio/storage-fault-tests/`のみ。`sources.json`へHEAD、実handler行番号、
 全src/webファイルのSHA256を記録し、`handlers.inc`を毎回再生成する。
 
@@ -48,11 +63,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_storage_fault.ps1
 | H3 reset | pending/doneのstat/open/read/VFS障害・内容破損 | Failed、marker byte保持、renameなし。pending回復後はformatせず再開 | 安全性回帰PASS |
 | H3初回 | mount失敗＋全領域FF | Factory ResetはNormal。別プロセス試験で通常Configの初期mount/formatも確認 | 安全性回帰PASS |
 | H3異常mount | 非FF／partition read失敗／partitionなし | Failed。tmpを消去許可に使わない | 安全性回帰PASS |
-| H4 Wi-Fi Action | chain encode内3回目のallocateだけ失敗 | overflow=true、構文有効、HTTP200、16→15 Actions、load後も15 | 再現成功 |
-| H4 GET Action | 同上 | HTTP200、全体JSON構文・schemaとも有効、16→15 Actions | 再現成功 |
-| H4 Wi-Fi Rotation | rotation encode内4回目のallocateだけ失敗 | overflow=true、構文有効、HTTP200、16→15 Outputs、load後も15 | 再現成功 |
-| H4 GET Rotation | 同上 | HTTP200、全体JSON構文・schemaとも有効、16→15 Outputs | 再現成功 |
-| H4対照 | 別のallocate失敗点 | JSON構文は有効だがschema不正、Wi-Fi保存HTTP400、active不変 | 問題なし（この分岐のみ） |
+| H4 encode | network/chain/rotation、root/nested/pool/string、optional fields、full Configコピー | 単発・連続失敗を成否で通知 | 安全性回帰PASS |
+| H4 Wi-Fi | 一段目・stage側encode、credentials/requestコピー、全30文字列化 | HTTP400、active全byte/RAM不変、rename/restart/panicなし、旧・失敗token commit不可 | 安全性回帰PASS |
+| H4 GET | 全60文字列化、encode両巡の失敗 | 事前500／送信時stop、欠落した正常完了JSONなし、active/RAM不変 | 安全性回帰PASS |
+| H4 writer | reserve/concat・途中・末尾・短いescape書込 | sticky失敗、部分Stringを返さない | 安全性回帰PASS |
+| H4 WebUI | 実api/load＋500/切断/不正JSON | 既存編集状態を置換しない。正常16+16は採用 | 安全性回帰PASS |
 | H1復旧 | rename直後の最初のactive openだけ失敗 | HTTP400、diskはstagedと完全一致する新設定、RAM defaults、出力禁止。loadConfigで新設定復旧 | 再現成功 |
 | H1後続上書き | 上記→実GET handler→取得defaultsの再保存 | HTTP200で正常な新設定をdefaultsへ上書き。再loadでもdefaults | 再現成功 |
 | H2通常commit対照 | HID保持＋両backend pending＋Engine Wait、rename後open失敗 | HTTP400、出力禁止、jobs=0、pending破棄、不要MIDI=0、HID解除、入力discard=1 | 安全性回帰PASS |
@@ -101,6 +116,23 @@ Arduino initArduinoによるsetup前のNVS自動消去リスクは従来どお�
 
 ### H4：配列要素追加時のallocator失敗
 
+#### 現在の安全性回帰
+
+各S3/C5/C6 host variantで932ケース＋正常最大長/float端点/負のゼロ/制御文字検査。
+network/chain/rotationの対象encode呼出し番号を指定し、GETの事前／送信巡と
+Wi-Fiの初回／stage内encodeを別々に注入。全allocation境界で単発・持続故障を試す。
+requestモードはnetworkからcredentials代入・requestコピーまで注入し、最初の
+checked serializationのreserve境界で解除する。parseやH1のrename後適用には注入しない。
+full encodeの中間doc・コピー・array追加もallocation全点で失敗を検査する。
+
+String fakeは専用define時だけreserve/concat失敗を有効にする。GET全60レコード、
+Wi-Fi全30レコードを対象とし、別途末尾失敗と6byte escapeの短い書込を検査。
+HTTP adapterはstop後のsendを無視し、SDKと同じ自動終端呼出しもモデル化する。
+`webui_get.cjs`は既存WebUIのapi/loadを抽出し、Node fetchで実chunked切断も検証する。
+エラー時の編集状態未置換を確認するが、ESP32 SDKのTCP実装そのものをリンクした試験ではない。
+
+#### 修正前の再現記録
+
 構成：実ArduinoJson 7.4.2の公開Allocatorインターフェースを使用。
 本番`model.cpp`をincludeしてencode関数名だけ変更し、wrapperで対象encodeの
 最初の呼出し中だけ故障を有効にする。encode/decodeの本体は書き換えない。
@@ -125,9 +157,8 @@ overflow確認がない。配列要素が丸ごと欠けると残った配列は
 文字列化後の別Documentでは元のoverflow情報を失う。
 stageのwriteRecordにはoverflow保護があるが、この手前で起きた欠落を検出できない。
 
-修正後の期待：不完全encodeは保存／成功GETとして完了させない。元の配列を保持。
-限界：単発allocator故障（次のallocateは成功）を注入する試験。
-実機でのOOM頻度、持続OOM、heap断片化の発生確率は評価しない。
+上記は修正前の再現条件。現在は同じfixtureを含む安全性回帰で欠落保存・正常完了を禁止。
+実機でのOOM頻度、heap断片化の発生確率は評価しない。
 hostは64-bit。ESP32の標準pool境界に合わせ`ARDUINOJSON_POOL_CAPACITY=128`を指定。
 これはConfig／Action容量変更ではない。pointer・slotの実byteサイズはESP32と異なる。
 
@@ -189,7 +220,10 @@ HID解除をホストへ送信するロジックまでは確認するが、実�
 
 - `tests/run_storage_fault.ps1`：独立runner、S3/C5/C6を順番にcompile/run。
 - `tests/storage_fault/generate.py`：実handler/helper抽出、ArduinoJson shim、source hash。
-- `tests/storage_fault/tests.cpp`：H3/H2安全性回帰、H4/H1のcharacterizationと対照。
+- `tests/storage_fault/tests.cpp`：H2/H3/H4安全性回帰、H1のcharacterizationと対照。
+- `tests/storage_fault/string_fault.h`：String reserve/concatのrecord単位故障。
+- `tests/storage_fault/webui_get.cjs`：既存WebUIの失敗応答受理防止。
+- `tests/storage_fault/benchmark.py/.cpp`：H3 HEADとworktreeのGET比較（git show、checkout不要）。
 - `src/storage_probe.h/.cpp`：共有のread-only probeと全FF確認。
 - `tests/probe_platform/*`：stat、mount、partitionの故障注入。実probeをそのまま検査。
 - `tests/storage_fault/LittleFS.h`：パス限定exists-open故障、rename直後のactive-open故障、pending限定write失敗。
@@ -206,6 +240,39 @@ test includeパス・wrapper・allocatorは専用runnerだけに設定。
 本番PlatformIO環境へ故障注入用define／include／sourceを追加していない。
 
 ## E. 回帰・ビルド
+
+### H4修正結果
+
+- 基準fault runner：H1/H4再現、H2/H3回帰PASS。
+- 修正後fault runner：S3/C5/C6各932ケース＋正常系、WebUI安全性PASS。
+- H1再現、H2/H3回帰、通常host suite（Factory Reset含む）：PASS。
+- S3/C5/C6 Standard build・image検査：すべてPASS。
+- 3機種firmware.map：checked serializerリンク、故障注入symbol/object非混入を確認。
+
+| Standard | RAM bytes（H3比） | Flash bytes（H3比） |
+|---|---:|---:|
+| S3 | 95,708（±0） | 1,347,478（-1,172） |
+| C5 | 65,392（±0） | 1,625,489（-1,142） |
+| C6 | 141,220（±0） | 1,571,882（-1,152） |
+
+常駐Config容量・保存形式不変。GETは既存の一件分doc/Stringを再利用し、全Config複製・
+Flash一時ファイルは使用しない。リンク後RAM総量と動的heap最大量は別指標。
+
+GET比較：`.venv\Scripts\python.exe tests/storage_fault/benchmark.py`
+Windows host / MSVC `/O2` / C6マクロ / 128 slots / 最大224長文Actions＋16 Outputs、
+100回平均、通信なし。同じfixtureで応答97,191byte。
+
+| 対象 | header確定まで | handler全体 |
+|---|---:|---:|
+| H3 `2d689ad` | 0.707 µs | 1,084.81 µs |
+| H4 worktree | 1,388.72 µs | 2,767.77 µs |
+
+これはhostでの一回の比較測定。ESP32/C6の実時間やWi-Fiレイテンシへ換算しない。
+実機では最大設定時のTTFB/総時間、heap、USB/BLE併用、切断時のブラウザ動作を確認する。
+200後の障害は500へ変更できない。SDKの送信内部OOM・実通信まですべて保証する修正ではない。
+
+ログ：`%LOCALAPPDATA%\Temp\opencode\h4-before-fault.log`、`h4-after-fault.log`、
+`h4-after-host.log`、`h4-build.log`、`h4-get-benchmark.log`。
 
 ### H3修正結果
 
@@ -248,16 +315,13 @@ Config/Action容量・保存形式は不変。実機検証は未実施。
 
 ## F. 次の修正へ
 
-推奨順序：
-1. H4：各encode直後のoverflow確認、GETの不完全成功防止。
-2. H1：commit済み適用失敗状態と復旧導線、復旧前の上書き可否を設計。
+残るH1：commit済み適用失敗状態と復旧導線、復旧前の上書き可否を設計。
 
-H2/H3は修正済み。H4は局所的な修正候補。H1は「ディスクに新設定はあるが使えない」状態を
+H2/H3/H4は修正済み。H1は「ディスクに新設定はあるが使えない」状態を
 どう表示・回復するかの判断が必要。二重ConfigやHTTP非同期化は前提としない。
 
-H2/H3安全性回帰とH1/H4の現行不具合をassertするテストを区別すること。
-移行先の期待値：H4は欠落設定を成功させない、
-H1は誤上書き不可または明示確認。これら未修正項目の期待値は設計候補。
+H2/H3/H4安全性回帰とH1の現行不具合をassertするテストを区別すること。
+H1の移行先の期待値は誤上書き不可または明示確認（未修正、設計候補）。
 
 追加調査：実ESP32 allocator特性、SDKの同期エラー伝達、Flash電断時の永続性。
-H1/H4修正・実機検証は未着手。H3実機では初回boot、ストレージ回復後Restart、reset中断再開を確認する。
+H1修正・実機検証は未着手。H3実機では初回boot、ストレージ回復後Restart、reset中断再開を確認する。

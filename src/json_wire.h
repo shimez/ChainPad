@@ -7,14 +7,16 @@ namespace chimera {
 template<class Sink> struct SettingsJsonWriter {
   Sink& sink;
   size_t bytes = 0;
+  bool failed = false;
   size_t write(uint8_t c) {
+    if (failed) return 0;
     if (c < 32) {
       const char hex[] = "0123456789abcdef";
       const uint8_t escaped[] = {'\\','u','0','0',uint8_t(hex[c >> 4]),uint8_t(hex[c & 15])};
       const auto n = sink.write(escaped, sizeof(escaped)); bytes += n;
-      return n == sizeof(escaped) ? 1 : 0;
+      failed = n != sizeof(escaped); return failed ? 0 : 1;
     }
-    const auto n = sink.write(&c, 1); bytes += n; return n;
+    const auto n = sink.write(&c, 1); bytes += n; failed = n != 1; return failed ? 0 : 1;
   }
   size_t write(const uint8_t* data, size_t size) {
     size_t n = 0; for (; n < size; ++n) if (!write(data[n])) break; return n;
@@ -33,5 +35,17 @@ inline size_t serializeSettingsJson(const JsonDocument& doc, String& text) {
 }
 inline size_t measureSettingsJson(const JsonDocument& doc) {
   SettingsCountSink sink; return serializeSettingsJson(doc, sink);
+}
+// One record only. Never expose a partially generated String to parse/send.
+inline bool checkedSettingsJson(const JsonDocument& doc, String& text) {
+  text = "";
+  if (doc.overflowed()) return false;
+  const size_t expected = measureSettingsJson(doc);
+  if (!text.reserve(expected)) return false;
+  SettingsStringSink sink{text}; SettingsJsonWriter<SettingsStringSink> writer{sink};
+  serializeJson(doc, writer);
+  const bool ok = !writer.failed && writer.bytes == expected && text.length() == expected;
+  if (!ok) text = "";
+  return ok;
 }
 }

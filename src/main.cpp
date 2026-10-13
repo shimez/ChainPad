@@ -44,7 +44,12 @@ bool maintenanceRecovery = false;
 uint32_t restartAt = 0, lastActivity = 0;
 char bootSsid[33]{}, bootPassword[65]{};
 void jsonResponse(int status, JsonDocument& doc) {
-  String body; serializeSettingsJson(doc, body);
+  String body;
+  if (!checkedSettingsJson(doc, body)) {
+    // No JSON allocation is needed for the fallback body. Preserve errors.
+    web.send(status >= 400 ? status : 500, "application/json; charset=utf-8", "{\"ok\":false,\"message\":\"JSON generation failed\"}");
+    return;
+  }
   web.sendHeader("Cache-Control", "no-store");
   web.send(status, "application/json; charset=utf-8", body);
 }
@@ -106,21 +111,33 @@ void setupWeb() {
   });
   web.on("/api/config", HTTP_GET, [] {
     if (resetGuard()) return;
-    // Stream one record at a time; never construct the full JSON in device RAM.
+    // Same checked encoder in both passes; retain only one record at a time.
+    JsonDocument doc; String part;
+    auto record = [&](uint8_t index) {
+      bool ok;
+      if (!index) ok = encodeNetwork(activeConfig(), doc);
+      else if (index <= INPUT_COUNT) ok = encodeChain(activeConfig().chains[index - 1], index - 1, doc);
+      else ok = encodeRotation(activeConfig().encoderRotation, doc, true);
+      return ok && checkedSettingsJson(doc, part);
+    };
+    for (uint8_t i = 0; i < INPUT_COUNT + 2; ++i) {
+      if (!record(i)) { result(500, "Config encode or serialization failed"); return; }
+    }
     web.sendHeader("Cache-Control", "no-store");
     web.setContentLength(CONTENT_LENGTH_UNKNOWN);
     web.send(200, "application/json; charset=utf-8", "");
-    JsonDocument doc; String part;
-    encodeNetwork(activeConfig(), doc); serializeSettingsJson(doc, part);
+    // Stop the client on any second-pass failure. WebServer's automatic final
+    // chunk then has no connected socket; do not close the JSON or send an error.
+    if (!record(0)) { web.client().stop(); return; }
     web.sendContent("{\"schemaVersion\":2,\"network\":"); web.sendContent(part);
     web.sendContent(",\"chains\":[");
     for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
-      encodeChain(activeConfig().chains[i], i, doc); part = ""; serializeSettingsJson(doc, part);
+      if (!record(i + 1)) { web.client().stop(); return; }
       if (i) web.sendContent(",");
       web.sendContent(part);
     }
-    web.sendContent("],\"encoderRotation\":");
-    encodeRotation(activeConfig().encoderRotation, doc, true); part = ""; serializeSettingsJson(doc, part); web.sendContent(part);
+    if (!record(INPUT_COUNT + 1)) { web.client().stop(); return; }
+    web.sendContent("],\"encoderRotation\":"); web.sendContent(part);
     web.sendContent("}"); web.sendContent("");
     diagnosticCheckpoint("config-get-after");
   });

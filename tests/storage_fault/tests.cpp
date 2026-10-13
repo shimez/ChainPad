@@ -11,6 +11,10 @@
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
+#include <chrono>
+#include <fstream>
+#include <limits>
+#include <cmath>
 using namespace chimera;
 #define CHECK(x) do{if(!(x))throw std::runtime_error(std::string(__FILE__)+":"+std::to_string(__LINE__)+" " #x);}while(0)
 namespace transportFake {
@@ -40,7 +44,7 @@ uint32_t stage(const Config& c){
   encodeRotation(c.encoderRotation,d,true);CHECK(stageConfigRotation(token,json(d),error));return token;
 }
 void seed(const Config& c){
-  jsonFault::arm("",0);storageFault::clearFaults();String e;
+  jsonFault::arm("",0);stringFault::arm();storageFault::clearFaults();String e;
   auto t=stage(c);CHECK(commitConfigSave(t,e));CHECK(loadConfig(e));
 }
 Config fixture(int variant=0){
@@ -201,37 +205,117 @@ void h2(){
   engine.cancelAll();backendsPanic();
 }
 void h4(){
-  for(const char* kind:{"chain","rotation"}){
-    bool saveRepro=false,getRepro=false,rejected=false;
-    for(int variant=0;variant<=16 && (!saveRepro||!getRepro||!rejected);++variant){
-      const auto c=fixture(variant);seed(c);jsonFault::arm(kind,0);web.request("/api/config",HTTP_GET);int allocations=jsonFault::allocationCount;
-      CHECK(web.status==200&&!jsonFault::overflow&&jsonFault::failures==0);
-      JsonDocument baseline;CHECK(!deserializeJson(baseline,web.body));Config intact;String error;
-      CHECK(decodeConfig(baseline.as<JsonVariantConst>(),intact,error));
-      CHECK(intact.chains[0].count==16&&intact.encoderRotation.outputCount==16);
-      for(int at=1;at<=allocations && (!saveRepro||!getRepro||!rejected);++at){
-        seed(c);auto before=disk();jsonFault::arm(kind,at);
-        web.request("/api/wifi",HTTP_PUT,"{\"ssid\":\"oom-save\",\"password\":\"\"}");
-        CHECK(jsonFault::failures==1&&jsonFault::overflow);
-        JsonDocument fragment;CHECK(!deserializeJson(fragment,jsonFault::wire));
-        const int remaining=std::string(kind)=="chain"?fragment["actions"].size():fragment["rotationValue"]["outputs"].size();
-        if(web.status==200 && remaining>0 && remaining<16 && !saveRepro){
-          CHECK((std::string(kind)=="chain"?config.chains[0].count:config.encoderRotation.outputCount)==remaining);
-          String e;CHECK(loadConfig(e));CHECK((std::string(kind)=="chain"?config.chains[0].count:config.encoderRotation.outputCount)==remaining);
-          saveRepro=true;std::cout<<"REPRO H4 Wi-Fi "<<kind<<" variant="<<variant<<" allocation="<<at<<" allocationBytes="<<jsonFault::sizes.at(at-1)<<" overflow=1 validJSON=1 HTTP200 count=16->"<<remaining<<" persisted after reload\n";
+  auto ram=[](){JsonDocument d;CHECK(encodeConfig(config,d));return std::string(json(d).c_str());};
+  int cases=0;
+  // All allocation boundaries, including optional holdMs/transport, string
+  // storage, nested fields and pool expansion. Include the old 16->15 fixtures.
+  for(int variant:{0,4,6,16,17}){
+    auto c=fixture(variant==17?0:variant);
+    if(variant==17){
+      for(int i=0;i<16;++i){auto& a=c.chains[0].actions[i];a.protocol=Protocol::Midi;a.message=MidiMessage::NoteOnOff;a.transport=Transport::Ble;a.channel=1;a.number=60;a.value=100;a.delayMs=777;
+        auto& o=c.encoderRotation.outputs[i];o.kind=RotationOutputKind::OscFloat;o.range.floating={-0.0f,0.123456789f};}
+    }
+    seed(c);const auto before=disk(),snapshot=ram();
+    for(const char* kind:{"network","chain","rotation"}){
+      jsonFault::arm(kind,0);web.request("/api/config",HTTP_GET);int allocations=jsonFault::allocationCount;
+      CHECK(web.status==200&&web.finished&&!web.stopped);
+      for(bool persistent:{false,true})for(int at=1;at<=allocations;++at){
+        for(int pass:{1,2}){
+          stringFault::arm();jsonFault::arm(kind,at,pass,persistent);web.request("/api/config",HTTP_GET);
+          CHECK(jsonFault::failures>=1);jsonFault::arm("",0);
+          CHECK(disk()==before&&ram()==snapshot);
+          if(pass==1){CHECK(web.status==500&&!web.chunked&&web.body.find("schemaVersion")==std::string::npos);}
+          else {CHECK(web.status==200&&web.stopped&&!web.finished);JsonDocument d;CHECK(deserializeJson(d,web.body));
+            if(variant==4&&at==1&&std::string(kind)=="chain"&&!persistent){std::ofstream(".pio/storage-fault-tests/get-aborted.json")<<web.body;}}
+          ++cases;
         }
-        if(web.status==400&&remaining>0&&!rejected){CHECK(disk()==before);rejected=true;std::cout<<"SAFE H4 Wi-Fi "<<kind<<" variant="<<variant<<" allocation="<<at<<" overflow=1 validJSON=1 partialCount="<<remaining<<" schema rejects, active unchanged\n";}
-        seed(c);jsonFault::arm(kind,at);web.request("/api/config",HTTP_GET);
-        CHECK(jsonFault::failures==1&&jsonFault::overflow&&web.status==200);
-        JsonDocument full;CHECK(!deserializeJson(full,web.body));Config received;String e;
-        bool valid=decodeConfig(full.as<JsonVariantConst>(),received,e);
-        int count=std::string(kind)=="chain"?received.chains[0].count:received.encoderRotation.outputCount;
-        if(valid&&count>0&&count<16&&!getRepro){getRepro=true;std::cout<<"REPRO H4 GET "<<kind<<" variant="<<variant<<" allocation="<<at<<" overflow=1 validJSON=1 schemaValid=1 HTTP200 count=16->"<<count<<"\n";}
+        // First encode and stage's second encode must both propagate failure.
+        for(int invocation:{1,2}){
+          jsonFault::arm("",0);stringFault::arm();const auto oldToken=stage(c);
+          auto renames=storageFault::renames;restartAt=0;transportFake::discarded=0;
+          jsonFault::arm(kind,at,invocation,persistent);
+          web.request("/api/wifi",HTTP_PUT,"{\"ssid\":\"oom-save\",\"password\":\"\"}");
+          CHECK(jsonFault::failures>=1);jsonFault::arm("",0);
+          CHECK(web.status==400&&restartAt==0&&transportFake::discarded==0);
+          CHECK(disk()==before&&ram()==snapshot&&storageFault::renames==renames&&configOutputsAllowed());
+          String error;CHECK(!commitConfigSave(oldToken,error)&&!commitConfigSave(oldToken+1,error));++cases;
+        }
       }
     }
-    CHECK(saveRepro&&getRepro&&rejected);
   }
-  jsonFault::arm("",0);
+  jsonFault::arm("",0);stringFault::arm();
+  auto c=fixture(4);seed(c);const auto before=disk(),snapshot=ram();
+  // Reserve/concat failures independently target every one of the 60 GET
+  // record serializations, plus all 30 Wi-Fi rewrite records.
+  for(bool wifi:{false,true})for(int record=1;record<=(wifi?30:60);++record){
+    for(int failure:{0,1,7})for(bool persistent:{false,true}){
+      stringFault::arm();auto token=stage(c);auto renames=storageFault::renames;restartAt=0;transportFake::discarded=0;
+      stringFault::arm(record,failure==0,failure,persistent);
+      web.request(wifi?"/api/wifi":"/api/config",wifi?HTTP_PUT:HTTP_GET,wifi?"{\"ssid\":\"new\",\"password\":\"\"}":"");
+      CHECK(stringFault::failures>=1);stringFault::arm();
+      CHECK(disk()==before&&ram()==snapshot&&storageFault::renames==renames);
+      if(wifi){CHECK(web.status==400&&restartAt==0&&transportFake::discarded==0);String e;CHECK(!commitConfigSave(token,e)&&!commitConfigSave(token+1,e));}
+      else if(record<=30)CHECK(web.status==500&&!web.chunked);
+      else CHECK(web.status==200&&web.stopped&&!web.finished);
+      ++cases;
+    }
+  }
+  // Last byte and short multi-byte escape writes: failure is sticky even if
+  // the next sink call would succeed. No partial String escapes the helper.
+  JsonDocument d;d["control"]="a\x01z";String text;auto size=measureSettingsJson(d);
+  CHECK(checkedSettingsJson(d,text));CHECK(text.length()==size);
+  stringFault::arm(1,false,int(size)-5);CHECK(!checkedSettingsJson(d,text)&&text.isEmpty());stringFault::arm();
+  struct ShortSink {int calls=0;size_t write(const uint8_t*,size_t n){++calls;return n>1?n-1:0;}} sink;
+  SettingsJsonWriter<ShortSink> writer{sink};CHECK(!writer.write(uint8_t(1))&&writer.failed&&writer.bytes==5);
+  CHECK(!writer.write(uint8_t('x'))&&sink.calls==1);
+  // Full encode's intermediate copies/adds must report every allocation fault.
+  jsonFault::arm("all",0);CHECK(encodeConfig(c,d));int allocations=jsonFault::calls;jsonFault::arm("",0);
+  for(int at=1;at<=allocations;++at){jsonFault::arm("all",at);CHECK(!encodeConfig(c,d));CHECK(jsonFault::failures==1);jsonFault::arm("",0);++cases;}
+  CHECK(ram()==snapshot&&disk()==before);
+  // Exercise the actual saveWifiConfig prefix: network, credential member
+  // replacement, request deep-copy. Stop injection before parse/commit work.
+  int prefixAllocations=0;
+  stringFault::beforeReserve=[&]{if(jsonFault::enabled){prefixAllocations=jsonFault::calls;jsonFault::enabled=false;}};
+  jsonFault::arm("request",0);
+  web.request("/api/wifi",HTTP_PUT,"{\"ssid\":\"copied credentials\",\"password\":\"long copied password\"}");
+  CHECK(web.status==200&&prefixAllocations>0);jsonFault::arm("",0);seed(c);
+  for(bool persistent:{false,true})for(int at=1;at<=prefixAllocations;++at){
+    auto token=stage(c);auto renames=storageFault::renames;restartAt=0;transportFake::discarded=0;
+    stringFault::beforeReserve=[] {jsonFault::enabled=false;};jsonFault::arm("request",at,1,persistent);
+    web.request("/api/wifi",HTTP_PUT,"{\"ssid\":\"copied credentials\",\"password\":\"long copied password\"}");
+    CHECK(jsonFault::failures>=1);jsonFault::arm("",0);stringFault::arm();
+    CHECK(web.status==400&&restartAt==0&&transportFake::discarded==0&&storageFault::renames==renames);
+    CHECK(disk()==before&&ram()==snapshot);String e;CHECK(!commitConfigSave(token,e)&&!commitConfigSave(token+1,e));++cases;
+  }
+  std::cout<<"PASS SAFETY H4 "<<cases<<" cases: encode/pools/strings/optional fields/copies; Wi-Fi byte+RAM retention, no rename/restart/panic, expired transactions; GET preflight500/send abort; sticky short writes\n";
+  web.request("/api/config",HTTP_GET);CHECK(web.status==200&&web.finished&&!web.stopped);
+  std::ofstream(".pio/storage-fault-tests/get-complete.json")<<web.body;
+  String error;JsonDocument full;CHECK(!deserializeJson(full,web.body));Config received;CHECK(decodeConfig(full.as<JsonVariantConst>(),received,error));
+  CHECK(received.chains[0].count==16&&received.encoderRotation.outputCount==16);
+  // Timing includes actual checked GET handler, excludes file output/decoding.
+  using Clock=std::chrono::steady_clock;double headerUs=0;auto start=Clock::now();
+  web.beforeSend=[&](int code){CHECK(code==200);headerUs+=std::chrono::duration<double,std::micro>(Clock::now()-start).count();};
+  double totalUs=0;for(int i=0;i<100;++i){start=Clock::now();web.request("/api/config",HTTP_GET);totalUs+=std::chrono::duration<double,std::micro>(Clock::now()-start).count();}
+  web.beforeSend={};std::cout<<"HOST GET timing n=100: header_us="<<headerUs/100<<" total_us="<<totalUs/100<<" (host only, no transport/ESP timing inference)\n";
+  auto maximum=fixture();
+  for(int i=0;i<16;++i){auto& a=maximum.chains[0].actions[i];
+    memset(a.address,'a',sizeof(a.address)-1);a.address[0]='/';a.address[sizeof(a.address)-1]=0;
+    memset(a.stringValue,'s',sizeof(a.stringValue)-1);a.stringValue[0]=1;a.stringValue[sizeof(a.stringValue)-1]=0;
+    auto& o=maximum.encoderRotation.outputs[i];o.kind=RotationOutputKind::OscFloat;
+    o.range.floating=i%2?RotationFloatRange{-0.0f,0.1f}:RotationFloatRange{-std::numeric_limits<float>::max(),std::numeric_limits<float>::max()};}
+  seed(maximum);web.request("/api/config",HTTP_GET);CHECK(web.status==200&&web.finished);
+  CHECK(web.body.find("\\u0001")!=std::string::npos);CHECK(!deserializeJson(full,web.body));CHECK(decodeConfig(full.as<JsonVariantConst>(),received,error));
+  for(int i=0;i<16;++i){CHECK(!strcmp(received.chains[0].actions[i].address,maximum.chains[0].actions[i].address));
+    CHECK(!strcmp(received.chains[0].actions[i].stringValue,maximum.chains[0].actions[i].stringValue));
+    CHECK(received.encoderRotation.outputs[i].range.floating.start==maximum.encoderRotation.outputs[i].range.floating.start);
+    CHECK(received.encoderRotation.outputs[i].range.floating.end==maximum.encoderRotation.outputs[i].range.floating.end);}
+  CHECK(std::signbit(received.encoderRotation.outputs[1].range.floating.start));
+  restartAt=0;web.request("/api/wifi",HTTP_PUT,"{\"ssid\":\"max-preserved\",\"password\":\"\"}");
+  CHECK(web.status==200&&restartAt==millis()+750&&loadConfig(error));
+  CHECK(!strcmp(config.chains[0].actions[15].stringValue,maximum.chains[0].actions[15].stringValue));
+  CHECK(config.encoderRotation.outputs[0].range.floating.end==std::numeric_limits<float>::max());
+  CHECK(std::signbit(config.encoderRotation.outputs[1].range.floating.start));
+  std::cout<<"PASS SAFETY H4 normal max16+16/long strings/C0 escaping/float endpoints/negative zero/Wi-Fi restart/save-reload\n";
 }
 int main(int argc,char** argv){try{
   if(argc==2&&std::string(argv[1])=="--blank-boot"){
@@ -244,5 +328,5 @@ int main(int argc,char** argv){try{
     return 0;
   }
   registerHandlers();h3();h4();h1();h2();
-  std::cout<<"PASS H2/H3 safety regression; H1/H4 characterization reproduced (UNFIXED)\n";
+  std::cout<<"PASS H2/H3/H4 safety regression; H1 characterization reproduced (UNFIXED)\n";
 }catch(const std::exception& e){std::cerr<<"FAIL "<<e.what()<<"\n";return 1;}}
