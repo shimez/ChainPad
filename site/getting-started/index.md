@@ -35,7 +35,19 @@ Wi-Fi設定画面が自動表示されない場合は<http://192.168.4.1/> を�
 
 ChainPadがWi-Fiに接続されるとエンコーダーのLEDが点灯状態となります。
 
-## 3. Bluetoothのペアリング
+## 3. Bluetoothの接続
+
+### 3-1. BLE-MIDI Driverのインストール（Windows）
+
+WindowsでChainPadのBLE-MIDI機能を利用する場合、BLE-MIDI対応ドライバーが必要になる場合があります。
+
+KORGの「BLE-MIDI Driver」を使用して、ChainPadからMIDIメッセージを送信できることを確認しています。
+
+ドライバーのインストール方法や対応OSについては、KORGの公式サイトを参照してください。
+
+※Bluetooth HID（キーボード）機能のみを利用する場合、BLE-MIDI Driverのインストールは不要です。
+
+### 3-2. ChainPadとのBluetooth接続
 
 MIDI送信機能、HID送信機能を利用するにはBluetoothのペアリングを行う必要があります。
 
