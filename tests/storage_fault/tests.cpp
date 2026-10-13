@@ -1,6 +1,7 @@
 #include "model.h"
 #include "json_wire.h"
 #include "factory_reset.h"
+#include "storage_probe.h"
 #include "engine.h"
 #include "backend_internal.h"
 #include "rotation_runtime.h"
@@ -57,21 +58,78 @@ Config fixture(int variant=0){
   return c;
 }
 void h3(){
-  auto c=fixture();seed(c);const auto before=disk();String e;
-  storageFault::failExistsPath="/config.records";storageFault::existsFailures=1;
-  CHECK(loadConfig(e));CHECK(storageFault::injected==1);CHECK(disk()==before);
-  CHECK(configStorageState()==ConfigStorageState::Missing&&configOutputsAllowed());
-  CHECK(config.chains[0].count==0);
-  Config defaults=config;jsonFault::arm("",0);auto t=stage(defaults);CHECK(commitConfigSave(t,e));CHECK(disk()!=before);
-  std::cout<<"REPRO H3 active present -> exists-open failure -> Missing, defaults, outputsAllowed=1; subsequent save overwrites active\n";
-  seed(c);storageFault::activeReadFailures=1;CHECK(!loadConfig(e));CHECK(configStorageState()==ConfigStorageState::IoError);CHECK(!configOutputsAllowed());
-  std::cout<<"SAFE H3 control: exists succeeds, explicit active open fails -> IoError, outputsAllowed=0\n";
-  storageFault::files["/factory-reset.pending"]=std::make_shared<std::string>("FR1:1");
-  storageFault::clearFaults();storageFault::failExistsPath="/factory-reset.pending";storageFault::existsFailures=1;
-  CHECK(factoryResetBoot()==ResetBoot::Normal);CHECK(storageFault::injected==1);
-  CHECK(!factoryResetBlocked()&&storageFault::files.count("/factory-reset.pending"));
-  storageFault::files.erase("/factory-reset.pending");
-  std::cout<<"REPRO H3 reset journal present, NVS intent absent -> exists-open failure -> Normal, journal remains unread\n";
+  String e;probeFake::clear();
+  CHECK(probeSettingsFile("/config.records")==StoragePresence::Absent);
+  CHECK(loadConfig(e)&&configStorageState()==ConfigStorageState::Missing&&configOutputsAllowed());
+  auto c=fixture();seed(c);const auto original=disk();
+  CHECK(probeSettingsFile("/config.records")==StoragePresence::Present);
+  probeFake::successErrno=ENOENT;CHECK(probeSettingsFile("/config.records")==StoragePresence::Present);probeFake::successErrno=0;
+  for(int err:{EIO,ENOMEM,EINVAL,EBADMSG,ENOTDIR,EMFILE,0,9999}){
+    probeFake::statErrors["/config.records"]=err;CHECK(probeSettingsFile("/config.records")==StoragePresence::Error);
+  }
+  probeFake::statErrors.clear();
+  probeFake::directories.insert("/config.records");CHECK(probeSettingsFile("/config.records")==StoragePresence::Error);probeFake::directories.clear();
+  probeFake::mountpoint="/wrong";CHECK(probeSettingsFile("/config.records")==StoragePresence::Error);probeFake::clear();
+  probeFake::rootError=EIO;CHECK(probeSettingsFile("/config.records")==StoragePresence::Error);probeFake::clear();
+  CHECK(probeSettingsFile("/../config.records")==StoragePresence::Error);
+  std::cout<<"PASS SAFETY H3 probe: Present/Absent/Error, errno matrix, stale errno, directory, wrong root/path\n";
+
+  // Each failure starts with a fully loaded, healthy active snapshot. Even
+  // after the injected fault disappears, GET(defaults) must not authorize save.
+  for(int fault=0;fault<7;++fault){
+    probeFake::clear();storageFault::clearFaults();CHECK(loadConfig(e));
+    if(fault==0)probeFake::statErrors["/config.records"]=EIO;
+    if(fault==1)storageFault::openFailurePath="/config.records";
+    if(fault==2)storageFault::readFailurePath="/config.records";
+    if(fault==3)*storageFault::files.at("/config.records")="bad header\n";
+    if(fault==4)storageFault::files.at("/config.records")->pop_back(); // valid header, damaged body
+    if(fault==5)probeFake::mounted=false;
+    if(fault==6)probeFake::registered=false;
+    const auto preserved=disk();CHECK(!loadConfig(e)&&!configOutputsAllowed());
+    probeFake::clear();storageFault::clearFaults();
+    web.request("/api/config",HTTP_GET);CHECK(web.status==200);
+    JsonDocument got,request;CHECK(!deserializeJson(got,web.body));
+    request["schemaVersion"]=2;request["network"]=got["network"];
+    CHECK(!beginConfigSave(json(request),e));CHECK(!saveWifiConfig("{\"ssid\":\"overwrite\",\"password\":\"\"}",e));
+    CHECK(disk()==preserved&&!configOutputsAllowed());
+    if(fault==0){storageFault::files.erase("/config.records");CHECK(!loadConfig(e)&&!configOutputsAllowed());}
+    storageFault::files["/config.records"]=std::make_shared<std::string>(original);
+    CHECK(loadConfig(e)&&configOutputsAllowed()&&config.chains[0].count==16);
+    std::cout<<"PASS SAFETY H3 boot fault="<<fault<<": GET defaults cannot overwrite; bytes retained; only full load unlocks\n";
+  }
+  JsonDocument request,n;encodeNetwork(config,n);request["schemaVersion"]=2;request["network"]=n;
+  probeFake::statErrors["/config.records"]=EIO;CHECK(!beginConfigSave(json(request),e));
+  CHECK(configOutputsAllowed()&&config.chains[0].count==16&&disk()==original);
+  probeFake::clear();CHECK(beginConfigSave(json(request),e)); // no boot lock from save-only failure
+  CHECK(saveWifiConfig("{\"ssid\":\"recovered\",\"password\":\"\"}",e));
+  std::cout<<"PASS SAFETY H3 save-only probe failure retains RAM; normal load recovery permits saving\n";
+
+  for(const char* marker:{"/factory-reset.pending","/factory-reset.done"}){
+    for(int fault=0;fault<5;++fault){
+      storageFault::clearFaults();probeFake::clear();
+      storageFault::files[marker]=std::make_shared<std::string>(fault==4?"BAD:1":"FR1:1");
+      if(fault==0)probeFake::statErrors[marker]=EIO;
+      if(fault==1)storageFault::openFailurePath=marker;
+      if(fault==2)storageFault::readFailurePath=marker;
+      if(fault==3)probeFake::registered=false;
+      auto bytes=*storageFault::files.at(marker);auto count=storageFault::renames;
+      CHECK(factoryResetBoot()==ResetBoot::Failed&&factoryResetBlocked());
+      CHECK(*storageFault::files.at(marker)==bytes&&storageFault::renames==count);
+      storageFault::files.erase(marker);
+    }
+  }
+  probeFake::clear();storageFault::clearFaults();
+  storageFault::files["/factory-reset.done"]=std::make_shared<std::string>("FR1:1");
+  CHECK(factoryResetBoot()==ResetBoot::Complete&&!factoryResetBlocked());storageFault::files.erase("/factory-reset.done");
+  storageFault::files["/factory-reset.tmp"]=std::make_shared<std::string>("FR1:1");CHECK(factoryResetBoot()==ResetBoot::Normal);
+  storageFault::files.erase("/factory-reset.tmp");
+  probeFake::mounted=false;probeFake::erased=false;CHECK(factoryResetBoot()==ResetBoot::Failed);
+  probeFake::erased=true;probeFake::partitionReads=0;CHECK(factoryResetBoot()==ResetBoot::Normal);CHECK(probeFake::partitionReads==3);
+  probeFake::partitionReads=0;probeFake::partitionReadFailure=1;CHECK(factoryResetBoot()==ResetBoot::Failed);
+  probeFake::partitionReadFailure=-1;probeFake::partitionMissing=true;CHECK(factoryResetBoot()==ResetBoot::Failed);
+  probeFake::clear();CHECK(factoryResetBoot()==ResetBoot::Normal&&!factoryResetBlocked());
+  CHECK(loadConfig(e));
+  std::cout<<"PASS SAFETY H3 pending/done stat-open-read-corrupt errors stop, markers retained, tmp ignored; erased initial boot/non-erased/read-error/missing partition\n";
 }
 void h1(){
   Config old=fixture(),next=old;next.oscPort=9200;strcpy(next.ssid,"new-on-disk");
@@ -175,7 +233,16 @@ void h4(){
   }
   jsonFault::arm("",0);
 }
-int main(){try{
+int main(int argc,char** argv){try{
+  if(argc==2&&std::string(argv[1])=="--blank-boot"){
+    // Separate process: mounted cache and boot-read latch start at power-on values.
+    probeFake::clear();probeFake::mounted=false;probeFake::erased=true;
+    CHECK(factoryResetBoot()==ResetBoot::Normal);String error;
+    CHECK(loadConfig(error)&&configStorageState()==ConfigStorageState::Missing&&configOutputsAllowed());
+    CHECK(storageFault::files.empty()&&config.chains[0].count==0);
+    std::cout<<"PASS SAFETY H3 fresh process: erased unmountable settings -> normal reset flow -> initial Config mount/format\n";
+    return 0;
+  }
   registerHandlers();h3();h4();h1();h2();
-  std::cout<<"PASS H2 safety regression; H1/H3/H4 characterization reproduced (UNFIXED)\n";
+  std::cout<<"PASS H2/H3 safety regression; H1/H4 characterization reproduced (UNFIXED)\n";
 }catch(const std::exception& e){std::cerr<<"FAIL "<<e.what()<<"\n";return 1;}}

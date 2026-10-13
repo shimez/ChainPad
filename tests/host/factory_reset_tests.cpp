@@ -12,7 +12,7 @@ struct Store {
   std::vector<std::string> operations;
   bool op(const char* name) { operations.push_back(name);return fail!=name; }
   void after() { if(++calls==cut)throw PowerLoss{}; }
-  int intent(){return n;} int journal(){return j;} bool completed(){return done;}
+  int intent(){return n;} int journal(){return j;} int completed(){return done?1:-1;}
   bool saveIntent(int v){if(!op("intent"))return false;n=v;after();return true;}
   bool formatSettings(){if(!op("format"))return false;settings=false;j=-1;done=false;after();return true;}
   bool saveJournal(int v){if(!op("journal"))return false;j=v;after();return true;}

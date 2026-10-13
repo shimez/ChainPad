@@ -1,6 +1,17 @@
-# Storage tests：H2安全性回帰＋H1/H3/H4不具合再現
+# Storage tests：H2/H3安全性回帰＋H1/H4不具合再現
 
 ## A. 総括・作業基準
+
+### H3修正（現在）
+
+- 開始HEAD：`f7041fc3567a9a3318f834b1e85f530f314fc5ed`、`main`、作業開始時clean。
+- 変更前の通常host／fault suite成功を記録してから実装。
+- mount確認付きPOSIX stat三値probe、起動Config読込失敗の保存ロック、reset markerエラー伝播を追加。
+- **H2/H3のPASS SAFETYは安全性回帰合格。H1/H4のREPROは未修正不具合の再現成功。**
+- H1のcommit後適用失敗には起動読込ロックを設定しない。H2実装・WebUI・HTTP API・保存形式・容量は変更しない。
+- commit／push／実機書込みなし。
+
+### H2修正時の記録
 
 - H2修正開始HEAD：`cde0168670f77d620354e7d7fe3eb6aced828657`、branch `main`、開始時clean。
 - 既存テストを変更前に実行し、S3/C5/C6すべてでH2を再現した。
@@ -30,9 +41,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_storage_fault.ps1
 
 | ID | 故障注入 | 実行結果・観測 | 判定 |
 |---|---|---|---|
-| H3 active | exists内部のactive openだけ1回失敗 | 元ファイル不変、load成功、Missing、defaults、出力許可。後続保存でactive上書き | 再現成功 |
-| H3対照 | exists成功後の明示active open失敗 | IoError、出力禁止 | 問題なし（この分岐のみ） |
-| H3 reset | NVS intentなし、有効pending journalのexists内部openだけ失敗 | journalは残るがResetBoot::Normal、blocked=false | 再現成功 |
+| H3 probe | ENOENT／EIO／ENOMEM／EINVAL／EBADMSG／ENOTDIR／EMFILE／errno未設定・未知値 | ENOENTのみ正常mountでAbsent。他はError。成功時の古いerrnoは無視 | 安全性回帰PASS |
+| H3 Config | stat/open/read/ヘッダー破損/本文破損/mount/VFS障害 | defaults・出力停止。障害だけ回復してGET→保存しても拒否し元byteを保持 | 安全性回帰PASS |
+| H3復旧 | 失敗後のactive全件load | 正常load後のみ保存可能。loadなし・ファイル消失だけでは解除しない | 安全性回帰PASS |
+| H3保存時対照 | 正常稼働中、beginのstatだけ失敗 | 保存拒否、正常RAMと出力許可を保持。起動読込ロックを作らない | 安全性回帰PASS |
+| H3 reset | pending/doneのstat/open/read/VFS障害・内容破損 | Failed、marker byte保持、renameなし。pending回復後はformatせず再開 | 安全性回帰PASS |
+| H3初回 | mount失敗＋全領域FF | Factory ResetはNormal。別プロセス試験で通常Configの初期mount/formatも確認 | 安全性回帰PASS |
+| H3異常mount | 非FF／partition read失敗／partitionなし | Failed。tmpを消去許可に使わない | 安全性回帰PASS |
 | H4 Wi-Fi Action | chain encode内3回目のallocateだけ失敗 | overflow=true、構文有効、HTTP200、16→15 Actions、load後も15 | 再現成功 |
 | H4 GET Action | 同上 | HTTP200、全体JSON構文・schemaとも有効、16→15 Actions | 再現成功 |
 | H4 Wi-Fi Rotation | rotation encode内4回目のallocateだけ失敗 | overflow=true、構文有効、HTTP200、16→15 Outputs、load後も15 | 再現成功 |
@@ -50,21 +65,39 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_storage_fault.ps1
 
 ### H3：存在判定の誤分類
 
-構成：本番`loadConfig()`と`factoryResetBoot()`、テスト専用LittleFS。
-SDK `libraries/FS/src/vfs_api.cpp:86–98`と同じくexistsがread openを行い、
-失敗理由を区別せずfalseを返すようモデル化する。mapからファイルを削除しない。
+旧原因はArduino existsがopen失敗をfalseへ変換し、Config Missing／journalなしになったこと。
+現在は実`src/storage_probe.cpp`をhostにもコンパイルし、sys/statとSDK呼出境界だけfake化する。
 
-`failExistsPath`と`existsFailures`で対象パス・回数を限定する。
-`injected==1`とディスク内容の不変を確認してから、Missingと後続上書きを確認。
-対照としてexistsは成功、次の通常openだけ失敗させるとIoErrorになる。
+probeは`esp_littlefs_mounted("settings")`、Arduino mountpoint、root statを確認する。
+固定root下の通常ファイルだけPresent。file stat失敗直後にerrnoを保存し、ENOENTのときも
+rootを再確認する。その他・errno未設定・directory・パス不正はError。
+全FF確認は共有関数でpartitionを256byteずつ読む。末尾も範囲内に限定。
 
-原因：`src/config_store.cpp:103–107`はexists=falseをMissingとする。
-`src/factory_reset.cpp:38–45`もjournal不存在として扱う。
-後段のopenエラー処理は保護になるが、exists内の失敗はそこまで届かない。
+Configはload時の判定/open/read/破損失敗により`bootReadLocked`を設定。
+通常beginとWi-Fi保存の両方を拒否し、障害回復やヘッダーだけの成功では解除しない。
+正常activeの検証pass＋適用pass成功後だけ解除。Missingは初回のみ許可し、
+失敗を記録した後のMissingではロックを維持する。
+未対応version単独では新たなロックを作らず、従来の明示置換を維持する。
+保存中の失敗ではこのラッチを設定しないのでH1は未修正、H2は維持される。
 
-修正後の期待：確実な不存在のみMissing／journalなし。open不能はI/Oエラー・停止。
-限界：SDKのFSクラス自体をリンクした試験ではなく、その失敗意味を再現したfake。
-NVSは「intentなし」のみをモデル化し、NVS故障やSDK初期化は試験しない。
+pending/doneは同じ5byte `FR1:1`〜`FR1:3`の内容検査と三値probeを使う。
+mount不能かつ非FF／読込不能はError。確認済み全FFはjournal不存在として初回起動可能。
+doneのエラーもflowへ伝播する。優先順位は明示intent=0→valid pending→既存intentを維持。
+pendingがvalidならdoneは参照しない。tmpは読まない。エラーでは自動再起動しない。
+正常pendingからの再開・上限・明示再試行は既存／追加platformテストで検査。
+
+H3 Config検査は実GET handlerのdefaultsからbeginを試し、Wi-Fi保存も拒否されることをassert。
+元ファイルの全byte保持、障害解除のみではロック継続、全件load後の保存再開を確認。
+初回の全FF→Factory Reset Normal→Config初期formatは`--blank-boot`の独立プロセスで検査。
+
+限界：SDKの実FS／Flash／電源断はhostでは再現しない。errnoは公開API境界で注入する。
+Arduino FileのEOF／read errorの完全分類は今回変更しない。NVS初期化のSDK動作も対象外。
+直接VFS statはArduino FSの外側mutexを通らないため、probe中に別taskがmountを変更しない
+既存の実行順序を前提とする。mount bookkeepingとrootを照合するが、外部taskによるVFS登録の
+同時差し替えを原子的に防ぐ仕組みではない。
+実機ではS3/C5/C6それぞれの初回起動、既存設定の正常load/save、読込障害後の再起動復旧、
+pending書込〜NVS消去〜done rename各段階での電源断再開と試行上限を確認する。
+Arduino initArduinoによるsetup前のNVS自動消去リスクは従来どおり未解決。
 
 ### H4：配列要素追加時のallocator失敗
 
@@ -156,7 +189,9 @@ HID解除をホストへ送信するロジックまでは確認するが、実�
 
 - `tests/run_storage_fault.ps1`：独立runner、S3/C5/C6を順番にcompile/run。
 - `tests/storage_fault/generate.py`：実handler/helper抽出、ArduinoJson shim、source hash。
-- `tests/storage_fault/tests.cpp`：H3→H4→H1のcharacterization、H2安全性回帰と対照。
+- `tests/storage_fault/tests.cpp`：H3/H2安全性回帰、H4/H1のcharacterizationと対照。
+- `src/storage_probe.h/.cpp`：共有のread-only probeと全FF確認。
+- `tests/probe_platform/*`：stat、mount、partitionの故障注入。実probeをそのまま検査。
 - `tests/storage_fault/LittleFS.h`：パス限定exists-open故障、rename直後のactive-open故障、pending限定write失敗。
 - `tests/storage_fault/json_fault.h`：公開Allocator、対象encode内の単発N回目故障、観測値。
 - `tests/storage_fault/model_adapter.cpp`：実encode呼出しのscope wrapper。
@@ -165,12 +200,37 @@ HID解除をホストへ送信するロジックまでは確認するが、実�
   想定外のerase／format／NVS writeには例外を出し、誤った経路を通らないようにする。
 - 本README：結果・再現条件・引継ぎ。
 
-既存host fake／runnerは今回変更しない。本番変更はWi-Fi失敗分岐の1行だけ。
-WebUI・API仕様・format・Config/Action容量は変更なし。新しい本番状態・キューは追加なし。
+H3では既存host fake／runnerにもprobeのリンク・SDK境界fakeを追加。
+WebUI・API仕様・format・Config/Action容量は変更なし。新規常駐状態は起動読込ロックのboolのみ。
 test includeパス・wrapper・allocatorは専用runnerだけに設定。
 本番PlatformIO環境へ故障注入用define／include／sourceを追加していない。
 
 ## E. 回帰・ビルド
+
+### H3修正結果
+
+- 基準host／fault runner：成功。
+- 修正後host／fault runner：成功。H2/H3安全性回帰、H1/H4再現を区別。
+- 最終追加の初回boot・pending復旧検査：PASS。
+- S3/C5/C6 Standard build・image検査：すべてPASS。
+- 3機種firmware.mapで本番probeのリンクと、storageFault/jsonFault/probeFake/fakeResetおよび
+  故障注入objectの非混入を確認。
+- `git diff --check`：PASS。
+
+| Standard | RAM bytes（H2比） | Flash bytes（H2比） |
+|---|---:|---:|
+| S3 | 95,708（±0） | 1,348,650（+700） |
+| C5 | 65,392（±0） | 1,626,631（+744） |
+| C6 | 141,220（±0） | 1,573,034（+758） |
+
+容量比較は保存済み`h2-build.log`と`h3-build.log`のPlatformIO表示値。
+追加boolはあるがリンク後RAM総量は不変。probeのパス80byte、全FF確認256byteは一時stack領域。
+Config/Action容量・保存形式は不変。実機検証は未実施。
+
+- ログ：`%LOCALAPPDATA%\Temp\opencode\h3-before-host.log`、`h3-before-fault.log`、
+  `h3-after-host.log`、`h3-after-fault.log`、`h3-build.log`。
+
+### H2修正時の結果
 
 - 修正前runner：S3/C5/C6すべてH2不具合再現成功。
 - 修正後runner：S3/C5/C6すべてH2安全性回帰・3種のWi-Fi対照成功。
@@ -189,16 +249,15 @@ test includeパス・wrapper・allocatorは専用runnerだけに設定。
 ## F. 次の修正へ
 
 推奨順序：
-1. H3：確実な不存在とI/O失敗を区別。SDKのエラー取得方法とjournalへの適用範囲を先に確認。
-2. H4：各encode直後のoverflow確認、GETの不完全成功防止。
-3. H1：commit済み適用失敗状態と復旧導線、復旧前の上書き可否を設計。
+1. H4：各encode直後のoverflow確認、GETの不完全成功防止。
+2. H1：commit済み適用失敗状態と復旧導線、復旧前の上書き可否を設計。
 
-H2は今回修正済み。H3/H4は局所的な修正候補。H1は「ディスクに新設定はあるが使えない」状態を
+H2/H3は修正済み。H4は局所的な修正候補。H1は「ディスクに新設定はあるが使えない」状態を
 どう表示・回復するかの判断が必要。二重ConfigやHTTP非同期化は前提としない。
 
-H2安全性回帰とH1/H3/H4の現行不具合をassertするテストを区別すること。
-移行先の期待値：H3はIoError／停止、H4は欠落設定を成功させない、
+H2/H3安全性回帰とH1/H4の現行不具合をassertするテストを区別すること。
+移行先の期待値：H4は欠落設定を成功させない、
 H1は誤上書き不可または明示確認。これら未修正項目の期待値は設計候補。
 
 追加調査：実ESP32 allocator特性、SDKの同期エラー伝達、Flash電断時の永続性。
-H2修正・host安全性検証を完了。H1/H3/H4修正・実機検証は未着手。
+H1/H4修正・実機検証は未着手。H3実機では初回boot、ストレージ回復後Restart、reset中断再開を確認する。

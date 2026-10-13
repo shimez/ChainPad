@@ -11,8 +11,10 @@ template<class Store> ResetBoot runFactoryReset(Store& s) {
   const bool fresh = intent == 0;
   if (!fresh && journal == -2) return ResetBoot::Failed;
   if (!fresh && journal == -1 && intent == -2) return ResetBoot::Failed;
-  if (!fresh && journal == -1 && intent == -1)
-    return s.completed() ? ResetBoot::Complete : ResetBoot::Normal;
+  if (!fresh && journal == -1 && intent == -1) {
+    const int done = s.completed(); // Same -1 absent / -2 error / attempt encoding.
+    return done == -2 ? ResetBoot::Failed : done == -1 ? ResetBoot::Normal : ResetBoot::Complete;
+  }
   const bool resume = !fresh && journal >= 0;
   const int attempts = resume ? journal : intent;
   if (attempts < 0 || attempts >= 3) return ResetBoot::Failed;

@@ -113,6 +113,8 @@ void rotationStorageTests() {
   assert(loadConfig(error)&&configStorageState()==ConfigStorageState::Ready&&configOutputsAllowed());
   *fake::files.at("/config.records")="not json\n";
   assert(!loadConfig(error)&&configStorageState()==ConfigStorageState::Corrupt);
+  // Only a complete successful load releases the boot-read save lock.
+  *fake::files.at("/config.records")=v2;assert(loadConfig(error));
   fake::files.erase("/config.records");
   assert(loadConfig(error)&&configStorageState()==ConfigStorageState::Missing);
   * (fake::files["/config.records"]=std::make_shared<std::string>())=v2;

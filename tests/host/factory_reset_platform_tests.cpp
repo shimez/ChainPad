@@ -14,10 +14,23 @@ int main(){
     assert(factoryResetBoot()==ResetBoot::Complete&&!factoryResetBlocked());
   }
   fakeReset::clear();fakeReset::mountFail=true;
-  assert(factoryResetBoot()==ResetBoot::Normal);assert(requestFactoryReset());
+  assert(factoryResetBoot()==ResetBoot::Failed);assert(requestFactoryReset());
   assert(factoryResetBoot()==ResetBoot::Restart); // Explicit reset formats even unmountable settings.
   fakeReset::clear();assert(factoryResetBoot()==ResetBoot::Normal);fakeReset::commitFail=true;
   assert(!requestFactoryReset()&&!factoryResetBlocked()&&fakeReset::formats==0);
+  // The journal is the remaining authorization after NVS erasure. A stat
+  // failure must stop without consuming it; recovery resumes without format.
+  fakeReset::clear();fakeReset::files["/factory-reset.pending"]="FR1:1";
+  probeFake::statErrors["/factory-reset.pending"]=EIO;
+  assert(factoryResetBoot()==ResetBoot::Failed&&fakeReset::erases==0);
+  assert(fakeReset::files.at("/factory-reset.pending")=="FR1:1");
+  probeFake::statErrors.clear();probeFake::statErrors["/factory-reset.done"]=EIO;
+  assert(factoryResetBoot()==ResetBoot::Restart&&fakeReset::formats==0&&fakeReset::erases==1);
+  probeFake::statErrors.clear();assert(factoryResetBoot()==ResetBoot::Complete);
+  // A fresh explicit request still overrides an unreadable old marker.
+  fakeReset::clear();fakeReset::files["/factory-reset.pending"]="bad";
+  assert(factoryResetBoot()==ResetBoot::Failed);assert(requestFactoryReset());
+  assert(factoryResetBoot()==ResetBoot::Restart&&fakeReset::formats==1);
   for(bool erase:{false,true}){
     fakeReset::clear();factoryResetBoot();assert(requestFactoryReset());
     if(erase)fakeReset::eraseFail=true;else fakeReset::formatFail=true;

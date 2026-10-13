@@ -1,18 +1,18 @@
 #include "model.h"
 #include "json_wire.h"
 #include "rotation_runtime.h"
+#include "storage_probe.h"
 #include <LittleFS.h>
 #include <memory>
 #include <new>
-#ifndef CHAINPAD_HOST_TEST
-#include <esp_partition.h>
-#endif
 
 namespace chimera {
 namespace {
 constexpr char ACTIVE[] = "/config.records";
 constexpr char STAGED[] = "/pending.records";
 bool mounted = false;
+// Only loadConfig failures set this latch; commit/apply failures remain H1.
+bool bootReadLocked = false;
 uint32_t generation = 0, transaction = 0;
 uint8_t nextChain = 0;
 uint8_t stagedPressCount = 0;
@@ -22,21 +22,12 @@ ConfigStorageState storageState = ConfigStorageState::Missing;
 bool mount(String& error) {
   if (mounted) return true;
   mounted = LittleFS.begin(false, "/littlefs", 3, "settings");
-#ifndef CHAINPAD_HOST_TEST
   if (!mounted) {
     // Only a completely erased NEW filesystem partition may be formatted.
     // A damaged filesystem must not silently erase the user's saved settings.
-    auto p = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, "settings");
-    if (p) {
-      uint8_t buffer[256]; bool erased = true;
-      for (size_t offset = 0; erased && offset < p->size; offset += sizeof(buffer)) {
-        if (esp_partition_read(p, offset, buffer, sizeof(buffer)) != ESP_OK) { erased = false; break; }
-        for (auto b : buffer) if (b != 0xff) { erased = false; break; }
-      }
-      if (erased) mounted = LittleFS.begin(true, "/littlefs", 3, "settings");
-    }
+    if (inspectSettingsEraseState() == SettingsEraseState::Erased)
+      mounted = LittleFS.begin(true, "/littlefs", 3, "settings");
   }
-#endif
   if (!mounted) error = "LittleFS mount failed";
   return mounted;
 }
@@ -102,7 +93,9 @@ void defaults() {
 }
 ConfigStorageState inspect(String& error) {
   if (!mount(error)) return ConfigStorageState::IoError;
-  if (!LittleFS.exists(ACTIVE)) return ConfigStorageState::Missing;
+  const auto presence = probeSettingsFile(ACTIVE);
+  if (presence == StoragePresence::Error) { error = "Settings existence check failed"; return ConfigStorageState::IoError; }
+  if (presence == StoragePresence::Absent) return ConfigStorageState::Missing;
   auto file = LittleFS.open(ACTIVE, "r");
   if (!file) { error = "Settings open failed"; return ConfigStorageState::IoError; }
   JsonDocument doc;
@@ -125,6 +118,7 @@ const char* configStorageStateName() {
 bool configOutputsAllowed() { return storageState == ConfigStorageState::Ready || storageState == ConfigStorageState::Missing; }
 uint32_t beginConfigSave(const String& json, String& error) {
   transaction = 0; rotationStaged = false;
+  if (bootReadLocked) { error = "Boot settings read failed; reload or restart before saving"; return 0; }
   if (!mount(error)) return 0;
   if (json.length() > 2048) { error = "Network request too large"; return 0; }
   JsonDocument doc; NetworkSettings network;
@@ -182,14 +176,23 @@ bool loadConfig(String& message) {
   defaults();
   rotationRuntime.restart(config.encoderRotation, false);
   storageState = inspect(message);
-  if (storageState == ConfigStorageState::Missing) { message = "Factory config: all chains empty"; return true; }
-  if (storageState != ConfigStorageState::Ready) return false;
-  if (!scan(ACTIVE, false, message) || !scan(ACTIVE, true, message)) { defaults(); storageState = ConfigStorageState::Corrupt; return false; }
+  if (storageState == ConfigStorageState::Missing) {
+    if (bootReadLocked) { storageState = ConfigStorageState::IoError; message = "Previously unreadable settings now absent; recovery required"; return false; }
+    message = "Factory config: all chains empty"; return true;
+  }
+  if (storageState != ConfigStorageState::Ready) {
+    // Unsupported-version replacement remains an explicit supported operation.
+    if (storageState != ConfigStorageState::UnsupportedVersion) bootReadLocked = true;
+    return false;
+  }
+  if (!scan(ACTIVE, false, message) || !scan(ACTIVE, true, message)) { defaults(); storageState = ConfigStorageState::Corrupt; bootReadLocked = true; return false; }
+  bootReadLocked = false;
   rotationRuntime.restart(config.encoderRotation);
   message = "Loaded LittleFS settings"; return true;
 }
 bool saveWifiConfig(const String& json, String& error) {
   auto& config = activeConfig();
+  if (bootReadLocked) { error = "Boot settings read failed; reload or restart before saving"; return false; }
   if (!configOutputsAllowed()) { error = "Settings unavailable: Wi-Fi save cannot replace existing settings"; return false; }
   if (json.length() > 1024) { error = "Wi-Fi request too large"; return false; }
   JsonDocument credentials, doc;

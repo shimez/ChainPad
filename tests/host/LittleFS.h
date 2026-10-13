@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 #include <algorithm>
+#include "probe_state.h"
 namespace fake {
 inline bool writeFailure = false, renameFailure = false;
 inline int writesUntilFailure = -1;
@@ -29,6 +30,8 @@ public:
   void close() { data.reset(); }
 };
 struct FakeLittleFS {
+  const char* mountpoint(){return probeFake::mountpoint.c_str();}
+  bool testExists(const char* path){return fake::files.count(path);}
   bool begin(bool, const char*, int, const char*) { return true; }
   bool exists(const char* path) { return fake::files.count(path); }
   File open(const char* path, const char* mode) {

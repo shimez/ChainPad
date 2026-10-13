@@ -1,4 +1,5 @@
 #include "factory_reset.h"
+#include "storage_probe.h"
 #include <LittleFS.h>
 #include <nvs.h>
 #include <nvs_flash.h>
@@ -15,6 +16,7 @@ bool blocked = false, accepted = false;
 const char* state = "idle";
 struct Store {
   bool fs = false;
+  bool erased = false;
   int intent() {
     // Never automatically erase an unreadable NVS here.
     if (nvs_flash_init() != ESP_OK) return -2;
@@ -35,16 +37,23 @@ struct Store {
     if (err == ESP_OK) err = nvs_commit(h);
     nvs_close(h); return err == ESP_OK;
   }
-  int journal() {
-    fs = LittleFS.begin(false, "/littlefs", 3, "settings");
-    if (!fs || !LittleFS.exists(PENDING)) return -1;
-    auto f = LittleFS.open(PENDING, "r");
+  int marker(const char* path) {
+    if (!fs) return erased ? -1 : -2;
+    const auto presence = probeSettingsFile(path);
+    if (presence == StoragePresence::Absent) return -1;
+    if (presence == StoragePresence::Error) return -2;
+    auto f = LittleFS.open(path, "r");
     char value[6]{};
     if (!f || f.size() != 5 || f.readBytes(value, 5) != 5) return -2;
     if (memcmp(value, "FR1:", 4) || value[4] < '1' || value[4] > '3') return -2;
     return value[4] - '0';
   }
-  bool completed() { return fs && LittleFS.exists(DONE); }
+  int journal() {
+    fs = LittleFS.begin(false, "/littlefs", 3, "settings");
+    erased = !fs && inspectSettingsEraseState() == SettingsEraseState::Erased;
+    return marker(PENDING);
+  }
+  int completed() { return marker(DONE); }
   bool formatSettings() {
     LittleFS.end(); fs = false;
     // Explicit label: never format an SDK default/other partition.

@@ -10,7 +10,7 @@ New-Item -ItemType Directory -Force $build | Out-Null
 $resetCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /std:c++17 /EHsc /utf-8 /I`"$root\src`" /Fe:`"$build\factory_reset_tests.exe`" /Fo`"$build\\`" `"$root\tests\host\factory_reset_tests.cpp`" && `"$build\factory_reset_tests.exe`""
 & cmd.exe /d /c $resetCommand
 if ($LASTEXITCODE -ne 0) { throw 'Factory Reset tests failed' }
-$platformCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /std:c++17 /EHsc /utf-8 /I`"$root\tests\reset_platform`" /I`"$root\src`" /Fe:`"$build\factory_reset_platform_tests.exe`" /Fo`"$build\\`" `"$root\tests\host\factory_reset_platform_tests.cpp`" `"$root\src\factory_reset.cpp`" && `"$build\factory_reset_platform_tests.exe`""
+$platformCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /std:c++17 /EHsc /utf-8 /I`"$root\tests\reset_platform`" /I`"$root\tests\probe_platform`" /I`"$root\src`" /Fe:`"$build\factory_reset_platform_tests.exe`" /Fo`"$build\\`" `"$root\tests\host\factory_reset_platform_tests.cpp`" `"$root\src\factory_reset.cpp`" `"$root\src\storage_probe.cpp`" `"$root\tests\probe_platform\probe_stat.cpp`" && `"$build\factory_reset_platform_tests.exe`""
 & cmd.exe /d /c $platformCommand
 if ($LASTEXITCODE -ne 0) { throw 'Factory Reset platform tests failed' }
 $sources = @('tests\host\core_tests.cpp','tests\host\rotation_tests.cpp','tests\host\rotation_storage_tests.cpp','src\rotation.cpp','src\model.cpp','src\config_store.cpp','src\engine.cpp','src\backends.cpp','src\osc_backend.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
@@ -18,6 +18,9 @@ $args = @('/nologo','/std:c++17','/EHsc','/utf-8','/D_CRT_SECURE_NO_WARNINGS','/
 $args += '/DCHAINPAD_HOST_TEST=1'
 $sources += 'src\rotation_runtime.cpp'
 $sources += 'src\rotation_sender.cpp'
+$sources += 'src\storage_probe.cpp'
+$sources += 'tests\probe_platform\probe_stat.cpp'
+$args += "/I`"$root\tests\probe_platform`""
 $args += $sources | ForEach-Object { "`"$root\$_`"" }
 $command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($args -join ' ') + " && `"$build\core_tests.exe`""
 & cmd.exe /d /c $command
@@ -26,9 +29,12 @@ if ($LASTEXITCODE -ne 0) { throw 'Firmware host tests failed' }
 $bleSources = @('tests\host\capability_tests.cpp','src\rotation.cpp','src\model.cpp','src\config_store.cpp','src\engine.cpp','src\backends.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
 $bleSources += 'src\rotation_runtime.cpp'
 $bleSources += 'src\rotation_sender.cpp'
+$bleSources += 'src\storage_probe.cpp'
+$bleSources += 'tests\probe_platform\probe_stat.cpp'
 foreach ($chip in @('C3','C6','C5')) {
     $arguments = @('/nologo','/std:c++17','/EHsc','/utf-8','/D_CRT_SECURE_NO_WARNINGS',"/DCONFIG_IDF_TARGET_ESP32${chip}=1", "/I`"$root\tests\host`"", "/I`"$root\src`"", "/I`"$json`"", "/Fe:`"$build\capabilities_$chip.exe`"", "/Fo`"$build\\`"")
     $arguments += '/DCHAINPAD_HOST_TEST=1'
+    $arguments += "/I`"$root\tests\probe_platform`""
     $arguments += $bleSources | ForEach-Object { "`"$root\$_`"" }
     $command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($arguments -join ' ') + " && `"$build\capabilities_$chip.exe`""
     & cmd.exe /d /c $command
