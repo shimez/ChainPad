@@ -103,19 +103,42 @@ void pendingWork(){
   transportFake::hid.clear();transportFake::midi.clear();transportFake::discarded=0;
 }
 void h2(){
-  for(bool wifi:{false,true}){
+  const char* names[]={"normal commit apply failure","Wi-Fi apply failure","Wi-Fi invalid input","Wi-Fi pending write failure","Wi-Fi success"};
+  for(int scenario=0;scenario<5;++scenario){
+    const bool wifi=scenario!=0, success=scenario==4, stop=scenario<2||success;
     Config c=fixture();c.chains[0].count=1;c.chains[0].actions[0].protocol=Protocol::Wait;c.chains[0].actions[0].delayMs=10000;
-    seed(c);uint32_t t=wifi?0:stage(c);pendingWork();storageFault::failAfterRename=true;
-    web.request(wifi?"/api/wifi":"/api/config/commit",wifi?HTTP_PUT:HTTP_POST,wifi?"{\"ssid\":\"after\",\"password\":\"\"}":"",t);
-    CHECK(storageFault::injected==1&&web.status==400&&!configOutputsAllowed());
-    CHECK(engine.activeCount()==(wifi?1:0));CHECK(midiQueued(Transport::Ble)==wifi);CHECK(keyboardQueued(Transport::Ble)==wifi);
-    CHECK(transportFake::discarded==(wifi?0:1));
+    seed(c);uint32_t t=wifi?0:stage(c);pendingWork();restartAt=0;
+    const auto before=disk();const auto renames=storageFault::renames;
+    storageFault::failAfterRename=scenario<2;
+    storageFault::pendingWriteFailures=scenario==3?1:0;
+    int responses=0;
+    auto checkStop=[&]{
+      CHECK(engine.activeCount()==(stop?0:1));
+      CHECK(midiQueued(Transport::Ble)==!stop);CHECK(keyboardQueued(Transport::Ble)==!stop);
+      CHECK(transportFake::discarded==(stop?1:0));
+    };
+    // Observe at send(), not merely after handler return: cancellation must
+    // precede the HTTP response. Physical HID release can wait for transport.
+    web.beforeSend=[&](int code){++responses;CHECK(code==(success?200:400));checkStop();};
+    web.request(wifi?"/api/wifi":"/api/config/commit",wifi?HTTP_PUT:HTTP_POST,
+      scenario==2?"{\"ssid\":42,\"password\":\"\"}":wifi?"{\"ssid\":\"after\",\"password\":\"\"}":"",t);
+    web.beforeSend={};CHECK(responses==1);checkStop();
+    CHECK(storageFault::injected==((scenario<2||scenario==3)?1:0));
+    CHECK(configOutputsAllowed()==(scenario>=2));
+    CHECK(storageFault::renames==renames+(stop?1:0));
+    CHECK(restartAt==(success?millis()+750:0));
+    JsonDocument response;CHECK(!deserializeJson(response,web.body));
+    CHECK(response["ok"].as<bool>()==success);
+    const char* expected=success?"Saved. Restarting.":scenario<2?"Committed settings read failed; restart required":scenario==2?"Invalid network settings":"LittleFS write failed";
+    CHECK(response["message"]==expected);
+    if(!stop){CHECK(disk()==before);CHECK(config.chains[0].count==1&&String(config.ssid)=="before");}
+    if(success){CHECK(String(config.ssid)=="after");CHECK(disk()!=before);}
     transportFake::writable=true;for(int i=0;i<4;++i)backendsTick(0);
     CHECK(!transportFake::hid.empty());
-    bool released=std::all_of(std::begin(transportFake::hid.back().keys),std::end(transportFake::hid.back().keys),[](auto k){return k==0;});
-    CHECK(released==!wifi);CHECK(transportFake::midi.empty()==!wifi);
-    std::cout<<(wifi?"REPRO":"SAFE")<<" H2 "<<(wifi?"Wi-Fi PUT":"normal commit")<<": HTTP400 outputsAllowed=0 jobs="<<unsigned(engine.activeCount())
-      <<" midiSentAfterFailure="<<transportFake::midi.size()<<" finalHidReleased="<<released<<" inputDiscard="<<transportFake::discarded<<"\n";
+    bool released=transportFake::hid.back().modifiers==0&&std::all_of(std::begin(transportFake::hid.back().keys),std::end(transportFake::hid.back().keys),[](auto k){return k==0;});
+    CHECK(released==stop);CHECK(transportFake::midi.empty()==stop);
+    std::cout<<"PASS SAFETY H2 "<<names[scenario]<<": HTTP"<<web.status<<" outputsAllowed="<<configOutputsAllowed()<<" jobs="<<unsigned(engine.activeCount())
+      <<" midiSentAfterResponse="<<transportFake::midi.size()<<" finalHidReleased="<<released<<" inputDiscard="<<transportFake::discarded<<" restartAt="<<restartAt<<" checkedBeforeResponse=1\n";
   }
   engine.cancelAll();backendsPanic();
 }
@@ -154,5 +177,5 @@ void h4(){
 }
 int main(){try{
   registerHandlers();h3();h4();h1();h2();
-  std::cout<<"PASS characterization: H1-H4 reproduced; NOT a post-fix safety pass\n";
+  std::cout<<"PASS H2 safety regression; H1/H3/H4 characterization reproduced (UNFIXED)\n";
 }catch(const std::exception& e){std::cerr<<"FAIL "<<e.what()<<"\n";return 1;}}

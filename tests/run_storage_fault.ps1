@@ -15,7 +15,7 @@ foreach ($chip in @('S3','C5','C6')) {
     $args = @('/nologo','/std:c++17','/EHsc','/utf-8','/D_CRT_SECURE_NO_WARNINGS','/DCHAINPAD_HOST_TEST=1',"/DCHAINPAD_HAS_USB=$usb", "/DCONFIG_IDF_TARGET_ESP32${chip}=1",'/DARDUINOJSON_POOL_CAPACITY=128',"/I`"$build`"", "/I`"$root\tests\storage_fault`"", "/I`"$root\tests\host`"", "/I`"$root\src`"", "/I`"$json`"", "/Fe:`"$build\fault_$chip.exe`"", "/Fo`"$build\\`"")
     $args += $sources | ForEach-Object { "`"$root\$_`"" }
     $command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($args -join ' ') + " && `"$build\fault_$chip.exe`""
-    Write-Output "Storage fault characterization: $chip Standard"
+    Write-Output "Storage tests: H2 safety regression + H1/H3/H4 UNFIXED characterization: $chip Standard"
     & cmd.exe /d /c $command
     if ($LASTEXITCODE -ne 0) { throw "Storage fault tests failed: $chip" }
 }

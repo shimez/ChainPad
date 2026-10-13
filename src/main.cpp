@@ -96,7 +96,7 @@ void setupWeb() {
     if (resetGuard()) return;
     diagnosticCheckpoint("wifi-save-before");
     String error;
-    if (!saveWifiConfig(web.arg("plain"), error)) { diagnosticCheckpoint("wifi-save-failed"); result(400, error); return; }
+    if (!saveWifiConfig(web.arg("plain"), error)) { if (!configOutputsAllowed()) panic(); diagnosticCheckpoint("wifi-save-failed"); result(400, error); return; }
     diagnosticCheckpoint("wifi-save-after");
     panic(); restartAt = millis() + 750;
     result(200, "Saved. Restarting.");

@@ -1,14 +1,16 @@
-# Storage fault injection：H1–H4（現行挙動の再現試験）
+# Storage tests：H2安全性回帰＋H1/H3/H4不具合再現
 
 ## A. 総括・作業基準
 
-- 開始HEAD：`7abb5959cba64b102bfcc3168d4be8fb560619b5`、branch `main`。
-- 開始時dirty：既存のFactory Reset、UI、site、docs、host runner変更等を保持。
-  `test/storage-fault-injection` branchは作成せず、stash／破棄／commit／pushなし。
-- 今回の追加は`tests/run_storage_fault.ps1`と`tests/storage_fault/`のみ。
-- H1–H4はS3/C5/C6のStandard容量を使ったhost試験で再現。
-- **PASSは既知の不具合挙動を期待どおり観測した意味。修正済み・安全性合格ではない。**
-- 実機書込み、電源断試験、本番コード修正は実施していない。
+- H2修正開始HEAD：`cde0168670f77d620354e7d7fe3eb6aced828657`、branch `main`、開始時clean。
+- 既存テストを変更前に実行し、S3/C5/C6すべてでH2を再現した。
+- 本番変更は`src/main.cpp`のWi-Fi保存失敗分岐1行だけ。
+  通常commitと同じ`if (!configOutputsAllowed()) panic();`を失敗応答前に追加した。
+- **H2のPASS SAFETYは安全性回帰合格。H1/H3/H4のREPROは未修正不具合の再現成功。**
+  suite全体のPASSは、すべての問題が修正されたことを意味しない。
+- commit／push／実機書込み／電源断試験は実施していない。
+- 初回故障注入作業の基準HEADは`7abb5959cba64b102bfcc3168d4be8fb560619b5`。
+  その時点のdirty作業ツリーを保持してテストを追加した履歴は、今回の開始状態と区別する。
 
 ## 実行方法
 
@@ -38,8 +40,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_storage_fault.ps1
 | H4対照 | 別のallocate失敗点 | JSON構文は有効だがschema不正、Wi-Fi保存HTTP400、active不変 | 問題なし（この分岐のみ） |
 | H1復旧 | rename直後の最初のactive openだけ失敗 | HTTP400、diskはstagedと完全一致する新設定、RAM defaults、出力禁止。loadConfigで新設定復旧 | 再現成功 |
 | H1後続上書き | 上記→実GET handler→取得defaultsの再保存 | HTTP200で正常な新設定をdefaultsへ上書き。再loadでもdefaults | 再現成功 |
-| H2通常commit対照 | HID保持＋両backend pending＋Engine Wait、rename後open失敗 | HTTP400、出力禁止、jobs=0、pending破棄、HID解除、入力discard=1 | 問題なし（この分岐のみ） |
-| H2 Wi-Fi | 同条件で実Wi-Fi PUT handler | HTTP400、出力禁止なのにjobs=1、両pending残存。tick再開でMIDI 1件送信、HID保持、入力discard=0 | 再現成功 |
+| H2通常commit対照 | HID保持＋両backend pending＋Engine Wait、rename後open失敗 | HTTP400、出力禁止、jobs=0、pending破棄、不要MIDI=0、HID解除、入力discard=1 | 安全性回帰PASS |
+| H2 Wi-Fi | 同条件で実Wi-Fi PUT handler | 通常commitと同じ停止結果。HTTP応答前の取消も確認 | 安全性回帰PASS |
+| H2入力検証対照 | 不正SSID型 | HTTP400、renameなし、active/RAM保持、panicなし、再起動予約なし | 対照PASS |
+| H2書込失敗対照 | pending writeを1回だけ失敗 | HTTP400、renameなし、active/RAM保持、panicなし、再起動予約なし | 対照PASS |
+| H2成功対照 | 故障なし | HTTP200、panic、SSID更新、750ms後の再起動予約、既存応答文を維持 | 対照PASS |
 
 ## C. 各問題の詳細
 
@@ -113,7 +118,7 @@ RAMのSSID・Action数がdefaults、出力禁止であることを確認する�
 限界：再起動はloadConfigによるモデルであり、プロセス／SDK全体の再起動ではない。
 ブラウザーDOMは実行せず、実GET JSONから再保存する操作を再現。
 
-### H2：Wi-Fi失敗時panic漏れ
+### H2：Wi-Fi失敗時panic漏れの修正・安全性回帰
 
 構成：本番Engine／MIDI backend／Keyboard backendをリンク。
 BLE経路でHID Usage4を実際にfake transportへ送信し押下状態を作る。
@@ -124,16 +129,25 @@ transportを一時書込不能にしてUsage5とMIDIをキューに残し、Engi
 毎回機械抽出し、そのコードをそのままコンパイルする。handlerの条件分岐を
 テスト側で手書きし直していない。抽出形式が変われば生成を失敗させる。
 
-Wi-Fiでは出力禁止になってもjob=1、MIDI/HID pendingが残る。
-transportを復旧して本番backendsTickを呼ぶとMIDI 1件と押下HID reportが送信される。
-通常commitではjob=0、pendingが破棄され、tickで空HID reportが送られる。
-入力discard関数はcounterで代用し、呼ばれるかどうかを比較する。
+修正前：Wi-Fiでは出力禁止になってもjob=1、MIDI/HID pendingが残り、
+transport復旧後にMIDI 1件と押下HID reportが送信された。入力discard=0。
+通常commitではjob=0、pending破棄、空HID report、入力discard=1だった。
+この結果を`h2-before.log`に記録してから本番コードを修正した。
 
-原因：`src/main.cpp:99`は保存失敗ですぐreturn、通常commitの`:155`には
-出力不可の場合のpanicがある。`:302`のbackend tickはConfig出力許可と独立。
-Engineの新規実行・Rotation送信のguardだけではbackendキューを停止できない。
+原因：従来の`src/main.cpp:99`は保存失敗ですぐreturn、通常commitの`:155`には
+出力不可の場合のpanicがあった。`:302`のbackend tickはConfig出力許可と独立。
+今回`:99`に同じ条件のpanicを追加し、既存のEngine取消・backend破棄・HID解除要求・
+入力discardを再利用した。保存関数・Engine・backend実装は変更していない。
 
-修正後の期待：適用失敗で出力不可に移行した場合、両handlerで同じ取消・HID解除要求。
+修正後：両handlerでjob=0、pendingなし、不要MIDI=0、HID全キー／modifier解除、
+入力discard=1、HTTP400と既存エラーメッセージ、再起動予約なしをassert。
+HTTP adapterのbeforeSend hookで、応答時点で取消・キュー破棄・discardが
+済んでいることもassertする。HIDの実送信はtransport復旧後のtickで確認する。
+入力discard関数はcounterで代用する。
+
+追加対照：不正SSID型とpending write失敗は出力許可を維持し、jobとpendingを残す。
+余計なpanicを行わず、旧active/RAMとHTTP400／メッセージを保持する。
+成功時はHTTP200／`Saved. Restarting.`、既存panic、`millis()+750`予約を確認する。
 限界：WebServer/TCP/Wi-Fi stack、入力FreeRTOS queue、実Bluetooth通信はfake。
 loop全体は実行せず、本番loopが行うbackend tickを明示呼出しする。
 HID解除をホストへ送信するロジックまでは確認するが、実接続先への到達保証ではない。
@@ -142,48 +156,49 @@ HID解除をホストへ送信するロジックまでは確認するが、実�
 
 - `tests/run_storage_fault.ps1`：独立runner、S3/C5/C6を順番にcompile/run。
 - `tests/storage_fault/generate.py`：実handler/helper抽出、ArduinoJson shim、source hash。
-- `tests/storage_fault/tests.cpp`：H3→H4→H1→H2、対照ケースを含むcharacterization。
-- `tests/storage_fault/LittleFS.h`：パス限定exists-open故障、rename直後のactive-open故障。
+- `tests/storage_fault/tests.cpp`：H3→H4→H1のcharacterization、H2安全性回帰と対照。
+- `tests/storage_fault/LittleFS.h`：パス限定exists-open故障、rename直後のactive-open故障、pending限定write失敗。
 - `tests/storage_fault/json_fault.h`：公開Allocator、対象encode内の単発N回目故障、観測値。
 - `tests/storage_fault/model_adapter.cpp`：実encode呼出しのscope wrapper。
-- `tests/storage_fault/http_adapter.h`：route登録、request引数、response status/bodyの収集。
+- `tests/storage_fault/http_adapter.h`：route登録、request引数、response status/body収集、応答前の状態検査hook。
 - `tests/storage_fault/reset_sdk.h`と4つのSDK header：journal試験用NVS absent adapter。
   想定外のerase／format／NVS writeには例外を出し、誤った経路を通らないようにする。
 - 本README：結果・再現条件・引継ぎ。
 
-既存host fake／runnerは今回変更しない。productのsrc・WebUI・API仕様・formatも変更なし。
+既存host fake／runnerは今回変更しない。本番変更はWi-Fi失敗分岐の1行だけ。
+WebUI・API仕様・format・Config/Action容量は変更なし。新しい本番状態・キューは追加なし。
 test includeパス・wrapper・allocatorは専用runnerだけに設定。
 本番PlatformIO環境へ故障注入用define／include／sourceを追加していない。
 
 ## E. 回帰・ビルド
 
-- 既存`tests/run_host.ps1`：成功。Factory Reset、通常storage／Engine／backend／Rotation、
-  Capabilitiesを含む。既存runnerに含まれるC3の試験も実行されたが、C3対応作業ではない。
-- 新規runner：S3/C5/C6すべてcharacterization成功。
-- Standard firmware build：S3/C5/C6すべて成功（合計2分52秒）。
+- 修正前runner：S3/C5/C6すべてH2不具合再現成功。
+- 修正後runner：S3/C5/C6すべてH2安全性回帰・3種のWi-Fi対照成功。
+  H1/H3/H4も引き続き未修正不具合の再現成功。
+- 既存`tests/run_host.ps1`：全suite成功。
+- Standard firmware build：S3/C5/C6すべて成功（合計2分1.599秒）。
 - `tests/check_image.py --env xiao_esp32s3 xiao_esp32c5 xiao_esp32c6`：すべて成功。
-  partition、image配置、Flashサイズ、機種、USB descriptor gatingを確認。
-- 最終fault-test生成時の全src/web SHA256と作業終了時ファイルが一致。
+- 本番build設定にtest include/defineなし。3機種のfirmware.mapにも
+  storage_fault／FaultDocument／jsonFault／rawEncodeChain／FaultFS／pendingWriteFailuresなし。
+- `git diff --check`：成功（改行コードに関するGitの注意表示のみ）。
 - 実機試験：未検証。
 
-ログ：`%LOCALAPPDATA%\Temp\opencode\storage-fault-existing-host.log`、
-`storage-fault-new.log`、`storage-fault-standard-build.log`。
+今回のログ：`%LOCALAPPDATA%\Temp\opencode\h2-before.log`、`h2-after.log`、
+`h2-host.log`、`h2-build.log`。
 
 ## F. 次の修正へ
 
 推奨順序：
-1. H2：Wi-Fi適用失敗時のpanicを通常commitと同じ条件で実行。
-2. H3：確実な不存在とI/O失敗を区別。
-3. H4：各encode直後のoverflow確認、GETの不完全成功防止。
-4. H1：commit済み適用失敗状態と復旧導線、復旧前の上書き可否を設計。
+1. H3：確実な不存在とI/O失敗を区別。SDKのエラー取得方法とjournalへの適用範囲を先に確認。
+2. H4：各encode直後のoverflow確認、GETの不完全成功防止。
+3. H1：commit済み適用失敗状態と復旧導線、復旧前の上書き可否を設計。
 
-H2/H3/H4は局所的な修正候補。H1は「ディスクに新設定はあるが使えない」状態を
+H2は今回修正済み。H3/H4は局所的な修正候補。H1は「ディスクに新設定はあるが使えない」状態を
 どう表示・回復するかの判断が必要。二重ConfigやHTTP非同期化は前提としない。
 
-修正後の安全性テストは現行不具合をassertする本suiteとは別に扱うこと。
+H2安全性回帰とH1/H3/H4の現行不具合をassertするテストを区別すること。
 移行先の期待値：H3はIoError／停止、H4は欠落設定を成功させない、
-H1は誤上書き不可または明示確認、H2は取消と解除要求あり。
-このREADMEの期待値は設計候補であり、修正後テストが合格したという報告ではない。
+H1は誤上書き不可または明示確認。これら未修正項目の期待値は設計候補。
 
 追加調査：実ESP32 allocator特性、SDKの同期エラー伝達、Flash電断時の永続性。
-今回はH1–H4の論理経路の再現を完了し、修正・実機検証は未着手。
+H2修正・host安全性検証を完了。H1/H3/H4修正・実機検証は未着手。
