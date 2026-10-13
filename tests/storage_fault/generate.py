@@ -10,8 +10,10 @@ root = Path(__file__).resolve().parents[2]
 out = Path(sys.argv[1])
 out.mkdir(parents=True, exist_ok=True)
 source = (root / 'src/main.cpp').read_text(encoding='utf-8')
-routes = [('/api/wifi', 'HTTP_PUT'), ('/api/config', 'HTTP_GET'),
-          ('/api/config/commit', 'HTTP_POST')]
+routes = [('/api/wifi', 'HTTP_PUT'), ('/api/wifi', 'HTTP_GET'), ('/api/config', 'HTTP_GET'),
+          ('/api/config/begin', 'HTTP_POST'), ('/api/config/chain', 'HTTP_PUT'),
+          ('/api/config/rotation', 'HTTP_PUT'), ('/api/config/commit', 'HTTP_POST'),
+          ('/api/factory-reset', 'HTTP_GET'), ('/api/factory-reset', 'HTTP_POST')]
 chunks = []
 locations = []
 for path, method in routes:
@@ -23,6 +25,10 @@ for path, method in routes:
     chunks.append(match.group())
     locations.append({'route': path, 'method': method, 'line': source.count('\n', 0, match.start()) + 1})
 panic = re.findall(r'^void panic\(\).*$', source, re.M)
+restart = re.findall(r'^  web\.on\("/api/restart".*$', source, re.M)
+if len(restart) != 1:
+    raise RuntimeError('Restart extraction changed')
+chunks += restart
 if len(panic) != 1:
     raise RuntimeError('panic extraction changed; review required')
 helpers = []

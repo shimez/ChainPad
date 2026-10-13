@@ -18,8 +18,8 @@ foreach ($chip in @('S3','C5','C6')) {
     $args += $sources | ForEach-Object { "`"$root\$_`"" }
     $args += "/I`"$root\tests\probe_platform`""
     $args += '/DCHAINPAD_STORAGE_FAULT=1'
-    $command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($args -join ' ') + " && `"$build\fault_$chip.exe`" && `"$build\fault_$chip.exe`" --blank-boot"
-    Write-Output "Storage tests: H2/H3/H4 safety regression + H1 UNFIXED characterization: $chip Standard"
+    $command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($args -join ' ') + " && `"$build\fault_$chip.exe`" && `"$build\fault_$chip.exe`" --blank-boot && `"$build\fault_$chip.exe`" --h1-reboot && `"$build\fault_$chip.exe`" --h1-persistent"
+    Write-Output "Storage tests: H1/H2/H3/H4 safety regression: $chip Standard"
     & cmd.exe /d /c $command
     if ($LASTEXITCODE -ne 0) { throw "Storage fault tests failed: $chip" }
 }

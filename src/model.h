@@ -111,6 +111,7 @@ enum class ConfigStorageState : uint8_t { Missing, Ready, UnsupportedVersion, Co
 ConfigStorageState configStorageState();
 const char* configStorageStateName();
 bool configOutputsAllowed();
+bool configCommittedApplyFailed();
 bool decodeRotation(JsonVariantConst root, EncoderRotationSettings& out, String& error);
 // losslessWire emits exact numeric JSON literals for float32 endpoints. Use it
 // when serializing; false keeps variants numeric for in-memory validation.

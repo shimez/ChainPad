@@ -16,6 +16,7 @@
 </form>
 <p id="message" role="status">設定を読み込み中…</p>
 <details><summary>Maintenance / Factory Reset</summary>
+<button id="wifiRestart">Restart</button>
 <p>Wi-Fi・OSC・Action・Rotation・本体のBluetoothペアリング情報をすべて削除し、自動再起動します。Wi-Fi再設定と、PC側のBluetooth登録解除・再ペアリングが必要です。</p>
 <button id="factoryReset">すべての設定を初期化…</button>
 <p>WebUIが開けない場合は、<a href="https://shimez.github.io/ChainPad/installer/">Web Installer</a>の「Erase device」を選んで再インストールしてください。</p></details>
@@ -27,7 +28,8 @@
 const $=id=>document.getElementById(id);
 function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);}
 async function api(method,body){const response=await fetch('/api/wifi',{method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const data=await response.json();if(!response.ok)throw Error(data.message||'設定に失敗しました。');return data;}
-api('GET').then(data=>{$('ssid').value=data.ssid;$('password').value=data.password;$('save').disabled=false;message('パスワードのないWi-Fiでは空欄にしてください。');}).catch(()=>message('設定を読み込めません。ChainPad-Setupへの接続を確認して画面を開き直してください。',true));
+api('GET').then(data=>{$('ssid').value=data.ssid;$('password').value=data.password;$('save').disabled=false;message('パスワードのないWi-Fiでは空欄にしてください。');}).catch(error=>message(error.message||'設定を読み込めません。ChainPad-Setupへの接続を確認して画面を開き直してください。',true));
+$('wifiRestart').onclick=async()=>{try{const response=await fetch('/api/restart',{method:'POST'});const data=await response.json();if(!response.ok)throw Error(data.message||'Restartに失敗しました。');message(data.message);}catch(error){message(error.message,true);}};
 $('wifi').onsubmit=async event=>{event.preventDefault();$('save').disabled=true;message('保存中…');try{await api('PUT',{ssid:$('ssid').value,password:$('password').value});$('ssid').disabled=true;$('password').disabled=true;message('保存しました。本体を再起動しています。\n再起動後は接続先のWi-Fiに戻ってChainPadを使用してください。設定をやり直す場合はChainPad-Setupに再接続してください。');}catch(error){message(error.message,true);$('save').disabled=false;}};
 </script>
 </html>

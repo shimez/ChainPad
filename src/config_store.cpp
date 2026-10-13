@@ -11,8 +11,15 @@ namespace {
 constexpr char ACTIVE[] = "/config.records";
 constexpr char STAGED[] = "/pending.records";
 bool mounted = false;
-// Only loadConfig failures set this latch; commit/apply failures remain H1.
+// Boot reads and committed-but-unapplied settings have separate causes.
 bool bootReadLocked = false;
+bool committedApplyFailed = false;
+constexpr char APPLY_FAILED[] = "Settings saved to storage, but runtime apply failed. Outputs disabled. Do not resave; Restart required.";
+bool saveLocked(String& error) {
+  if (committedApplyFailed) { error = APPLY_FAILED; return true; }
+  if (bootReadLocked) { error = "Boot settings read failed; reload or restart before saving"; return true; }
+  return false;
+}
 uint32_t generation = 0, transaction = 0;
 uint8_t nextChain = 0;
 uint8_t stagedPressCount = 0;
@@ -110,15 +117,16 @@ ConfigStorageState inspect(String& error) {
 }
 }
 bool configStorageMounted() { return mounted; }
+bool configCommittedApplyFailed() { return committedApplyFailed; }
 ConfigStorageState configStorageState() { return storageState; }
 const char* configStorageStateName() {
   const char* names[] = {"missing", "ready", "unsupportedVersion", "corrupt", "ioError"};
   return names[unsigned(storageState)];
 }
-bool configOutputsAllowed() { return storageState == ConfigStorageState::Ready || storageState == ConfigStorageState::Missing; }
+bool configOutputsAllowed() { return !committedApplyFailed && (storageState == ConfigStorageState::Ready || storageState == ConfigStorageState::Missing); }
 uint32_t beginConfigSave(const String& json, String& error) {
   transaction = 0; rotationStaged = false;
-  if (bootReadLocked) { error = "Boot settings read failed; reload or restart before saving"; return 0; }
+  if (saveLocked(error)) return 0;
   if (!mount(error)) return 0;
   if (json.length() > 2048) { error = "Network request too large"; return 0; }
   JsonDocument doc; NetworkSettings network;
@@ -138,6 +146,7 @@ uint32_t beginConfigSave(const String& json, String& error) {
   transaction = generation; error = ""; return transaction;
 }
 bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& error) {
+  if (saveLocked(error)) { transaction = 0; return false; }
   error = "Invalid or expired configuration transaction";
   if (!transaction || token != transaction || id != nextChain || id >= INPUT_COUNT) return false;
   if (json.length() > MAX_RECORD_BYTES) { error = "Chain request too large"; transaction = 0; return false; }
@@ -159,13 +168,19 @@ bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& er
 }
 bool commitConfigSave(uint32_t token, String& error) {
   auto& config = activeConfig();
+  if (saveLocked(error)) { transaction = 0; return false; }
   error = "Incomplete or expired configuration transaction";
   if (!transaction || token != transaction || nextChain != INPUT_COUNT || !rotationStaged) return false;
   transaction = 0;
   if (!scan(STAGED, false, error)) return false;
   // LittleFS rename-over-existing is atomic, including across power loss.
   if (!LittleFS.rename(STAGED, ACTIVE)) { error = "LittleFS commit failed"; return false; }
-  if (!scan(ACTIVE, true, error)) { defaults(); storageState = ConfigStorageState::IoError; rotationRuntime.apply(config.encoderRotation, false); error = "Committed settings read failed; restart required"; return false; }
+  if (!scan(ACTIVE, true, error)) {
+    committedApplyFailed = true;
+    defaults(); storageState = ConfigStorageState::IoError;
+    rotationRuntime.apply(config.encoderRotation, false);
+    error = APPLY_FAILED; return false;
+  }
   storageState = ConfigStorageState::Ready;
   rotationRuntime.apply(config.encoderRotation);
   error = ""; return true;
@@ -177,7 +192,7 @@ bool loadConfig(String& message) {
   rotationRuntime.restart(config.encoderRotation, false);
   storageState = inspect(message);
   if (storageState == ConfigStorageState::Missing) {
-    if (bootReadLocked) { storageState = ConfigStorageState::IoError; message = "Previously unreadable settings now absent; recovery required"; return false; }
+    if (bootReadLocked || committedApplyFailed) { storageState = ConfigStorageState::IoError; message = "Previously unreadable settings now absent; recovery required"; return false; }
     message = "Factory config: all chains empty"; return true;
   }
   if (storageState != ConfigStorageState::Ready) {
@@ -187,12 +202,13 @@ bool loadConfig(String& message) {
   }
   if (!scan(ACTIVE, false, message) || !scan(ACTIVE, true, message)) { defaults(); storageState = ConfigStorageState::Corrupt; bootReadLocked = true; return false; }
   bootReadLocked = false;
+  committedApplyFailed = false;
   rotationRuntime.restart(config.encoderRotation);
   message = "Loaded LittleFS settings"; return true;
 }
 bool saveWifiConfig(const String& json, String& error) {
   auto& config = activeConfig();
-  if (bootReadLocked) { error = "Boot settings read failed; reload or restart before saving"; return false; }
+  if (saveLocked(error)) return false;
   if (!configOutputsAllowed()) { error = "Settings unavailable: Wi-Fi save cannot replace existing settings"; return false; }
   // Also invalidate any prior staging when this full-config rewrite fails.
   transaction = 0;
@@ -224,6 +240,7 @@ bool saveWifiConfig(const String& json, String& error) {
   return commitConfigSave(token, error);
 }
 bool stageConfigRotation(uint32_t token, const String& json, String& error) {
+  if (saveLocked(error)) { transaction = 0; return false; }
   error = "Invalid or expired rotation transaction";
   if (!transaction || token != transaction || nextChain != INPUT_COUNT || rotationStaged) return false;
   if (json.length() > MAX_RECORD_BYTES) { transaction = 0; error = "Rotation request too large"; return false; }

@@ -94,6 +94,7 @@ void setupWeb() {
     web.send_P(200, "text/html; charset=utf-8", WEB_UI);
   });
   web.on("/api/wifi", HTTP_GET, [] {
+    if (configCommittedApplyFailed()) { result(503, "Stored settings require reload. Outputs disabled; Restart required."); return; }
     JsonDocument doc; doc["ssid"] = activeConfig().ssid; doc["password"] = activeConfig().password;
     jsonResponse(200, doc);
   });
@@ -111,6 +112,7 @@ void setupWeb() {
   });
   web.on("/api/config", HTTP_GET, [] {
     if (resetGuard()) return;
+    if (configCommittedApplyFailed()) { result(503, "Stored settings require reload. Outputs disabled; Restart required."); return; }
     // Same checked encoder in both passes; retain only one record at a time.
     JsonDocument doc; String part;
     auto record = [&](uint8_t index) {

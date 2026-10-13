@@ -5,7 +5,9 @@
 #include "engine.h"
 #include "backend_internal.h"
 #include "rotation_runtime.h"
+#include "rotation_sender.h"
 #include "LittleFS.h"
+#include "reset_sdk.h"
 #include "http_adapter.h"
 #include <iostream>
 #include <stdexcept>
@@ -15,6 +17,12 @@
 #include <fstream>
 #include <limits>
 #include <cmath>
+#include <new>
+namespace scratchFault {size_t size=0;int failures=0;}
+void* operator new(std::size_t size,const std::nothrow_t&) noexcept {
+  if(scratchFault::size==size){++scratchFault::failures;return nullptr;}
+  try{return ::operator new(size);}catch(...){return nullptr;}
+}
 using namespace chimera;
 #define CHECK(x) do{if(!(x))throw std::runtime_error(std::string(__FILE__)+":"+std::to_string(__LINE__)+" " #x);}while(0)
 namespace transportFake {
@@ -45,6 +53,8 @@ uint32_t stage(const Config& c){
 }
 void seed(const Config& c){
   jsonFault::arm("",0);stringFault::arm();storageFault::clearFaults();String e;
+  scratchFault::size=0;scratchFault::failures=0;
+  if(configCommittedApplyFailed())CHECK(loadConfig(e));
   auto t=stage(c);CHECK(commitConfigSave(t,e));CHECK(loadConfig(e));
 }
 Config fixture(int variant=0){
@@ -135,24 +145,80 @@ void h3(){
   CHECK(loadConfig(e));
   std::cout<<"PASS SAFETY H3 pending/done stat-open-read-corrupt errors stop, markers retained, tmp ignored; erased initial boot/non-erased/read-error/missing partition\n";
 }
+void pendingWork();
 void h1(){
-  Config old=fixture(),next=old;next.oscPort=9200;strcpy(next.ssid,"new-on-disk");
-  for(bool restart:{true,false}){
-    seed(old);auto previous=disk();auto t=stage(next);auto expected=*storageFault::files.at("/pending.records");storageFault::failAfterRename=true;
-    web.request("/api/config/commit",HTTP_POST,"",t);
-    CHECK(web.status==400&&storageFault::injected==1);CHECK(disk()!=previous);
-    auto committed=disk();CHECK(committed==expected);CHECK(committed.find("new-on-disk")!=std::string::npos);
-    CHECK(config.chains[0].count==0&&config.ssid[0]==0&&!configOutputsAllowed());
-    if(restart){String e;CHECK(loadConfig(e));CHECK(config.oscPort==9200&&config.chains[0].count==16);CHECK(disk()==committed);}
-    else {
-      web.request("/api/config",HTTP_GET);CHECK(web.status==200);
-      JsonDocument d;CHECK(!deserializeJson(d,web.body));Config fromUI;String e;CHECK(decodeConfig(d.as<JsonVariantConst>(),fromUI,e));
-      CHECK(fromUI.chains[0].count==0);t=stage(fromUI);web.request("/api/config/commit",HTTP_POST,"",t);
-      CHECK(web.status==200&&disk()!=committed);CHECK(loadConfig(e));CHECK(config.chains[0].count==0&&config.ssid[0]==0);
+  Config old=fixture(6),next=old;next.oscPort=9200;strcpy(next.ssid,"new-on-disk");
+  const char* names[]={"open","header","first-chain","middle-chain","last-chain","rotation","last-newline","trailing-data","chain-scratch","rotation-scratch","JSON-allocation"};
+  for(bool wifi:{false,true})for(int fault=0;fault<11;++fault){
+    seed(old);auto previous=disk();auto t=stage(next);std::string expected;
+    storageFault::beforeRename=[&]{expected=*storageFault::files.at("/pending.records");};
+    storageFault::afterRename=[&]{
+      if(fault==0)storageFault::activeReadFailures=1;
+      else if(fault<7){
+        std::vector<size_t> records{0};for(size_t i=0;i<expected.size();++i)if(expected[i]=='\n')records.push_back(i+1);
+        CHECK(records.size()==31);
+        const int record=fault==1?0:fault==2?1:fault==3?14:fault==4?28:29;
+        storageFault::activeReadLimit=fault==6?expected.size()-1:records[record]+3;
+      }else if(fault==7)storageFault::trailingActive=true;
+      else if(fault==8)scratchFault::size=sizeof(Chain);
+      else if(fault==9)scratchFault::size=sizeof(EncoderRotationSettings);
+      else jsonFault::arm("all",1);
+    };
+    pendingWork();rotationPublish(1);CHECK(rotationPendingCount()>0);
+    restartAt=0;const int renames=storageFault::renames;
+    web.beforeSend=[&](int code){CHECK(code==400&&configCommittedApplyFailed()&&!configOutputsAllowed());CHECK(engine.activeCount()==0&&rotationPendingCount()==0);CHECK(!midiQueued(Transport::Ble)&&!keyboardQueued(Transport::Ble)&&transportFake::discarded==1);};
+    web.request(wifi?"/api/wifi":"/api/config/commit",wifi?HTTP_PUT:HTTP_POST,wifi?"{\"ssid\":\"new-on-disk\",\"password\":\"\"}":"",t);
+    web.beforeSend={};
+    // Storage commit and failed activation are independent assertions.
+    CHECK(storageFault::renames==renames+1&&!storageFault::files.count("/pending.records"));
+    CHECK(!expected.empty()&&disk()==expected&&disk()!=previous);
+    CHECK(web.status==400&&web.body.find("saved to storage")!=std::string::npos&&web.body.find("Restart")!=std::string::npos);
+    CHECK(config.chains[0].count==0&&config.ssid[0]==0&&restartAt==0);
+    CHECK(fault<8?storageFault::injected>0:fault<10?scratchFault::failures>0:jsonFault::failures>0);
+    jsonFault::arm("",0);scratchFault::size=0;storageFault::clearFaults();
+    CHECK(configCommittedApplyFailed()); // Removing the fault is not recovery.
+    transportFake::writable=true;for(int i=0;i<4;++i)backendsTick(0);
+    CHECK(transportFake::midi.empty()&&!transportFake::hid.empty());
+    const auto released=transportFake::hid.back();CHECK(released.modifiers==0&&std::all_of(std::begin(released.keys),std::end(released.keys),[](uint8_t key){return key==0;}));
+    for(const char* path:{"/api/config","/api/wifi"}){web.request(path,HTTP_GET);CHECK(web.status==503&&!web.chunked&&web.body.find("schemaVersion")==std::string::npos&&web.body.find("ssid")==std::string::npos);}
+    JsonDocument request,network;CHECK(encodeNetwork(next,network));request["schemaVersion"]=2;request["network"]=network;request["replaceUnsupported"]=true;
+    web.request("/api/config/begin",HTTP_POST,json(request).c_str());CHECK(web.status==400);
+    web.request("/api/config/chain",HTTP_PUT,"{}",t);CHECK(web.status==400);
+    web.request("/api/config/rotation",HTTP_PUT,"{}",t);CHECK(web.status==400);
+    web.request("/api/config/commit",HTTP_POST,"",t);CHECK(web.status==400);
+    web.request("/api/wifi",HTTP_PUT,"{\"ssid\":\"overwrite\",\"password\":\"\"}");CHECK(web.status==400);
+    CHECK(disk()==expected&&storageFault::renames==renames+1&&restartAt==0&&!configOutputsAllowed());
+    String e;
+    if(fault==0){
+      // No new persistent provenance is introduced. Keep the H1 latch through
+      // same-process Missing/Unsupported and through failed recovery scans.
+      storageFault::files.erase("/config.records");CHECK(!loadConfig(e)&&configCommittedApplyFailed());
+      storageFault::files["/config.records"]=std::make_shared<std::string>("{\"storageVersion\":3}\n");
+      CHECK(!loadConfig(e)&&configStorageState()==ConfigStorageState::UnsupportedVersion&&configCommittedApplyFailed());
+      CHECK(!beginConfigSave(json(request),e));
+      storageFault::files["/config.records"]=std::make_shared<std::string>(expected);
+      storageFault::readFailurePath="/config.records";CHECK(!loadConfig(e)&&configCommittedApplyFailed());storageFault::clearFaults();
+      storageFault::failActiveOpenAt=3; // header inspection + full validation succeed; apply open fails
+      CHECK(!loadConfig(e)&&storageFault::injected==1&&configCommittedApplyFailed()&&!configOutputsAllowed());storageFault::clearFaults();
+      web.request("/api/restart",HTTP_POST);CHECK(web.status==200&&restartAt==millis()+750&&configCommittedApplyFailed());restartAt=0;
+      web.request("/api/factory-reset",HTTP_GET);CHECK(web.status==200);
+      auto commits=resetFault::commits;web.request("/api/factory-reset",HTTP_POST,"{\"confirm\":\"factory-reset\"}");
+      CHECK(web.status==202&&resetFault::intent==0&&resetFault::commits==commits+1&&factoryResetBlocked());
+      // Test acceptance only; destructive reset/retry flow is in platform suite.
+      resetFault::intent=-1;CHECK(factoryResetBoot()==ResetBoot::Normal);restartAt=0;
+      std::ofstream(".pio/storage-fault-tests/h1-active.records")<<expected;
     }
-    std::cout<<"REPRO H1 post-rename active-open failure: HTTP400, disk=new, RAM=defaults, outputsAllowed=0; "
-             <<(restart?"loadConfig (reboot model) recovers new":"actual GET + subsequent save destroys healthy new config")<<"\n";
+    CHECK(loadConfig(e)&&!configCommittedApplyFailed()&&configOutputsAllowed());
+    CHECK(config.chains[0].count==16&&String(config.ssid)=="new-on-disk"&&disk()==expected);
+    web.request("/api/config",HTTP_GET);CHECK(web.status==200&&web.finished);
+    web.request("/api/wifi",HTTP_GET);CHECK(web.status==200&&web.body.find("new-on-disk")!=std::string::npos);
+    std::cout<<"PASS SAFETY H1 "<<(wifi?"Wi-Fi ":"commit ")<<names[fault]<<": rename=1/new bytes retained; pre-response panic; GET503/write lock; full load unlocks\n";
   }
+  // Pre-commit failures must never claim the new settings were saved.
+  for(bool rename:{false,true}){seed(old);auto previous=disk();auto t=stage(next);auto renames=storageFault::renames;
+    if(rename)storageFault::renameFailure=true;else storageFault::files.at("/pending.records")->pop_back();
+    web.request("/api/config/commit",HTTP_POST,"",t);CHECK(web.status==400&&!configCommittedApplyFailed()&&configOutputsAllowed());
+    CHECK(disk()==previous&&storageFault::renames==renames&&web.body.find("saved to storage")==std::string::npos);storageFault::clearFaults();}
 }
 void pendingWork(){
   engine.cancelAll();transportFake::writable=true;backendsPanic();for(int i=0;i<4;++i)backendsTick(0);
@@ -191,7 +257,7 @@ void h2(){
     CHECK(restartAt==(success?millis()+750:0));
     JsonDocument response;CHECK(!deserializeJson(response,web.body));
     CHECK(response["ok"].as<bool>()==success);
-    const char* expected=success?"Saved. Restarting.":scenario<2?"Committed settings read failed; restart required":scenario==2?"Invalid network settings":"LittleFS write failed";
+    const char* expected=success?"Saved. Restarting.":scenario<2?"Settings saved to storage, but runtime apply failed. Outputs disabled. Do not resave; Restart required.":scenario==2?"Invalid network settings":"LittleFS write failed";
     CHECK(response["message"]==expected);
     if(!stop){CHECK(disk()==before);CHECK(config.chains[0].count==1&&String(config.ssid)=="before");}
     if(success){CHECK(String(config.ssid)=="after");CHECK(disk()!=before);}
@@ -318,6 +384,24 @@ void h4(){
   std::cout<<"PASS SAFETY H4 normal max16+16/long strings/C0 escaping/float endpoints/negative zero/Wi-Fi restart/save-reload\n";
 }
 int main(int argc,char** argv){try{
+  if(argc==2&&(std::string(argv[1])=="--h1-reboot"||std::string(argv[1])=="--h1-persistent")){
+    const bool persistent=std::string(argv[1])=="--h1-persistent";
+    std::ifstream file(".pio/storage-fault-tests/h1-active.records");CHECK(file.good());
+    const std::string saved((std::istreambuf_iterator<char>(file)),std::istreambuf_iterator<char>());
+    storageFault::files["/config.records"]=std::make_shared<std::string>(saved);registerHandlers();String e;
+    CHECK(!configCommittedApplyFailed());
+    if(persistent){
+      storageFault::openFailurePath="/config.records";CHECK(!loadConfig(e)&&!loadConfig(e)&&!configOutputsAllowed());
+      storageFault::clearFaults();
+      // H3 semantics stay unchanged after a real process restart.
+      web.request("/api/config",HTTP_GET);CHECK(web.status==200&&!configCommittedApplyFailed());
+      JsonDocument d,n;encodeNetwork(config,n);d["schemaVersion"]=2;d["network"]=n;
+      CHECK(!beginConfigSave(json(d),e)&&!saveWifiConfig("{\"ssid\":\"bad\",\"password\":\"\"}",e));CHECK(disk()==saved);
+    }
+    CHECK(loadConfig(e)&&configOutputsAllowed()&&!configCommittedApplyFailed());
+    CHECK(String(config.ssid)=="new-on-disk"&&config.chains[0].count==16&&disk()==saved);
+    std::cout<<"PASS SAFETY H1 fresh-process "<<(persistent?"persistent read failure uses H3 lock, then full recovery":"restart recovers committed new Config")<<"\n";return 0;
+  }
   if(argc==2&&std::string(argv[1])=="--blank-boot"){
     // Separate process: mounted cache and boot-read latch start at power-on values.
     probeFake::clear();probeFake::mounted=false;probeFake::erased=true;
@@ -328,5 +412,5 @@ int main(int argc,char** argv){try{
     return 0;
   }
   registerHandlers();h3();h4();h1();h2();
-  std::cout<<"PASS H2/H3/H4 safety regression; H1 characterization reproduced (UNFIXED)\n";
+  std::cout<<"PASS H1/H2/H3/H4 safety regression\n";
 }catch(const std::exception& e){std::cerr<<"FAIL "<<e.what()<<"\n";return 1;}}

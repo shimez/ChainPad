@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdexcept>
 using namespace chimera;
+namespace chimera { bool configCommittedApplyFailed(){return false;} } // Healthy GET benchmark, no storage linked.
 HttpAdapter web;
 bool resetGuard(){return false;}
 void result(int,const String&){throw std::runtime_error("GET failed");}

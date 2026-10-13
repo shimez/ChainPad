@@ -1,8 +1,23 @@
-# Storage tests：H2/H3/H4安全性回帰＋H1不具合再現
+# Storage tests：H1/H2/H3/H4安全性回帰
 
 ## A. 総括・作業基準
 
-### H4修正（現在）
+### H1修正（現在）
+
+- 開始HEAD：`b134b6fcac961d70fc7007a7e5cd6e77093a0534`、`main`、開始時clean。
+- **H1/H2/H3/H4はすべて安全性回帰。以下の旧REPRO記録は修正前の履歴。**
+- `committedApplyFailed`はrename成功後のactive適用失敗だけで設定。
+  H3の`bootReadLocked`と原因を分け、begin/chain/rotation/commit/Wi-Fi保存の禁止条件を共有。
+- Config/Wi-Fi GETはH1中503。H3由来GETの既存動作は変更しない。
+- HTTP400は維持し、ストレージ保存済み・実行時適用失敗・出力停止・再保存せずRestartを明記。
+- 障害解除、GET、再保存、Missing、Unsupported、replaceUnsupportedでは解除しない。
+  active全件検証と全件適用が成功したloadConfigでのみ解除する。
+- defaults/panic/Rotation停止/HID解除は既存動作。新規Note Off、自動再起動、backupなし。
+- Wi-Fi専用画面にはRestartがなかったためMaintenanceに追加。503のサーバーメッセージを表示。
+  Configuratorの復旧ボタンは既存のままConfig loadと独立して利用可能。
+- commit／push／実機書込みなし。
+
+### H4修正時の記録
 
 - 開始HEAD：`2d689ad84c0b58f46c25109f07ce59280bc93a46`、`main`、開始時clean。
 - ArduinoJson 7.4.2、SDK・形式・Config/Action容量・WebUIを維持。
@@ -68,8 +83,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run_storage_fault.ps1
 | H4 GET | 全60文字列化、encode両巡の失敗 | 事前500／送信時stop、欠落した正常完了JSONなし、active/RAM不変 | 安全性回帰PASS |
 | H4 writer | reserve/concat・途中・末尾・短いescape書込 | sticky失敗、部分Stringを返さない | 安全性回帰PASS |
 | H4 WebUI | 実api/load＋500/切断/不正JSON | 既存編集状態を置換しない。正常16+16は採用 | 安全性回帰PASS |
-| H1復旧 | rename直後の最初のactive openだけ失敗 | HTTP400、diskはstagedと完全一致する新設定、RAM defaults、出力禁止。loadConfigで新設定復旧 | 再現成功 |
-| H1後続上書き | 上記→実GET handler→取得defaultsの再保存 | HTTP200で正常な新設定をdefaultsへ上書き。再loadでもdefaults | 再現成功 |
+| H1適用失敗 | 通常commit/Wi-Fi × open/header/Chain位置/Rotation/末尾/scratch/JSON allocation | rename=1、pending消失、新active byte一致を独立assert。HTTP400、RAM defaults、応答前panic、出力禁止 | 安全性回帰PASS |
+| H1後続要求 | Config/Wi-Fi GET、begin/stage/commit、replaceUnsupported | GET503、保存拒否、追加rename/restartなし、active保持 | 安全性回帰PASS |
+| H1復旧 | 同一process Missing/Unsupported、検証成功後の適用open失敗、正常load | 失敗中ラッチ継続、正常な全件loadのみ解除 | 安全性回帰PASS |
+| H1再起動 | 保存済みactiveを別processでload | 正常復旧。永続障害はH3保存ロック、H3 GET仕様を維持 | 安全性回帰PASS |
 | H2通常commit対照 | HID保持＋両backend pending＋Engine Wait、rename後open失敗 | HTTP400、出力禁止、jobs=0、pending破棄、不要MIDI=0、HID解除、入力discard=1 | 安全性回帰PASS |
 | H2 Wi-Fi | 同条件で実Wi-Fi PUT handler | 通常commitと同じ停止結果。HTTP応答前の取消も確認 | 安全性回帰PASS |
 | H2入力検証対照 | 不正SSID型 | HTTP400、renameなし、active/RAM保持、panicなし、再起動予約なし | 対照PASS |
@@ -93,7 +110,7 @@ Configはload時の判定/open/read/破損失敗により`bootReadLocked`を設�
 正常activeの検証pass＋適用pass成功後だけ解除。Missingは初回のみ許可し、
 失敗を記録した後のMissingではロックを維持する。
 未対応version単独では新たなロックを作らず、従来の明示置換を維持する。
-保存中の失敗ではこのラッチを設定しないのでH1は未修正、H2は維持される。
+保存中の失敗ではこのbootラッチを設定しない。H1は別ラッチで保護し、H2は維持される。
 
 pending/doneは同じ5byte `FR1:1`〜`FR1:3`の内容検査と三値probeを使う。
 mount不能かつ非FF／読込不能はError。確認済み全FFはjournal不存在として初回起動可能。
@@ -164,6 +181,31 @@ hostは64-bit。ESP32の標準pool境界に合わせ`ARDUINOJSON_POOL_CAPACITY=1
 
 ### H1：commit済み／適用失敗／後続上書き
 
+#### 現在の安全性回帰
+
+S3/C5/C6各対象で通常commit/Wi-Fi各11箇所、計22ケース。
+active open、header、最初/中間/最後のChain、Rotation、最終改行の短読込、末尾検査、
+Chain/Rotation scratchのnothrow new、JSONの最初のallocationをrename後だけ失敗させる。
+末尾検査はFile adapterが余分なbyteを返す（active自体は書き換えない）。EOFとread errorの
+完全識別を試験したという意味ではない。
+
+beforeRenameでpending全byteを記録。rename回数、pendingパス消失、active byte一致と旧activeとの差を
+HTTP結果と独立してassert。HTTP400の保存確定済み説明、defaults、出力停止、応答前のjob/queue破棄を検査。
+Rotation未送信破棄、後続backend tickでHID解除、MIDI追加送信なしも確認。
+fault解除後もGET503、実begin/chain/rotation/commit/Wi-Fi handler拒否、replaceUnsupported拒否を検査。
+
+Missing/Unsupported、永続read failure、header＋全件検証成功後のapply open failureでもラッチを保持。
+正常loadでのみ解除し、新ConfigのSSID/Actionと正常GETを確認。
+`--h1-reboot`と`--h1-persistent`は別processで保存済みactiveを読み、RAM latchを持ち越さない起動を試験。
+永続障害後はH3の保存ロックを確認し、H3由来GETは従来どおり200であることも確認。
+
+Restart handler、Factory Reset状態取得/受付はH1中にも成功。NVS intent=0とcommitをassert。
+消去本体の順序/中断復旧は既存reset platform suiteが担当する。H1試験自体では消去を実行しない。
+WebUIは既存api/load/saveConfigを実行し、503でdefaults/credentialsを採用しないこと、
+既存編集内容の再保存拒否・エラー表示、status/Restart/Factory Resetの到達性を確認する。
+
+#### 修正前の再現記録
+
 構成：旧Configを保存してからSSIDとOSC portを変更した新Configをstage。
 rename成功時に、次のactive openだけを1回失敗させる。
 実commit handlerからHTTP400を確認し、diskとrename前pendingの全byte一致を検査する。
@@ -176,11 +218,10 @@ RAMのSSID・Action数がdefaults、出力禁止であることを確認する�
 
 原因：`src/config_store.cpp:171–174`でrename後に失敗可能な再読込を行い、
 失敗時にdefaultsへ戻す。GETはRAMを返し、beginはdiskヘッダー検査だけで許可する。
-現在の保護は出力禁止と通常commit handlerのpanic、新activeが読めれば再起動復旧。
+修正前の保護は出力禁止と通常commit handlerのpanic、新activeが読めれば再起動復旧だった。
 
-修正後の期待：commit済み適用失敗を明示し、復旧前のdefaults誤上書きを防止。
-限界：再起動はloadConfigによるモデルであり、プロセス／SDK全体の再起動ではない。
-ブラウザーDOMは実行せず、実GET JSONから再保存する操作を再現。
+上記の旧REPROを、現在は保存ロック/GET拒否/再起動復旧の安全性回帰に置換した。
+SDK/Flash/電源断/物理通信の実機検証は未実施。
 
 ### H2：Wi-Fi失敗時panic漏れの修正・安全性回帰
 
@@ -220,7 +261,7 @@ HID解除をホストへ送信するロジックまでは確認するが、実�
 
 - `tests/run_storage_fault.ps1`：独立runner、S3/C5/C6を順番にcompile/run。
 - `tests/storage_fault/generate.py`：実handler/helper抽出、ArduinoJson shim、source hash。
-- `tests/storage_fault/tests.cpp`：H2/H3/H4安全性回帰、H1のcharacterizationと対照。
+- `tests/storage_fault/tests.cpp`：H1/H2/H3/H4安全性回帰と対照。
 - `tests/storage_fault/string_fault.h`：String reserve/concatのrecord単位故障。
 - `tests/storage_fault/webui_get.cjs`：既存WebUIの失敗応答受理防止。
 - `tests/storage_fault/benchmark.py/.cpp`：H3 HEADとworktreeのGET比較（git show、checkout不要）。
@@ -240,6 +281,26 @@ test includeパス・wrapper・allocatorは専用runnerだけに設定。
 本番PlatformIO環境へ故障注入用define／include／sourceを追加していない。
 
 ## E. 回帰・ビルド
+
+### H1修正結果
+
+- 基準host/fault suite：PASS（`h1-research-host.log` / `h1-research-fault.log`）。
+- 修正後S3/C5/C6 fault suite：H1 22ケース＋precommit対照/別process復旧、H2/H3/H4すべてPASS。
+- 通常host suite（Factory Reset含む）、WebUI Maintenance/Presets/Rotation Preview：PASS。
+- H1/H4 WebUI取得・保存失敗・復旧UI検査：PASS。
+- S3/C5/C6 Standardビルド・image/partition検査：すべてPASS。
+- 3機種firmware.mapでH1参照APIのリンク、故障注入symbol/objectの非混入を確認。
+- `git diff --check`：PASS。
+
+| Standard | RAM bytes（H4比） | Flash bytes（H4比） |
+|---|---:|---:|
+| S3 | 95,708（±0） | 1,348,278（+800） |
+| C5 | 65,392（±0） | 1,626,229（+740） |
+| C6 | 141,220（±0） | 1,572,628（+746） |
+
+H4比較元は`h4-build.log`。Config/Action構造体・容量・形式は変更なし。
+ラッチはbool一つ、リンク後RAM総量は不変。動的heap最大使用量の実機計測は未実施。
+- ログ：`%LOCALAPPDATA%\Temp\opencode\h1-after-fault.log`、`h1-after-host.log`、`h1-build.log`。
 
 ### H4修正結果
 
@@ -313,15 +374,10 @@ Config/Action容量・保存形式は不変。実機検証は未実施。
 今回のログ：`%LOCALAPPDATA%\Temp\opencode\h2-before.log`、`h2-after.log`、
 `h2-host.log`、`h2-build.log`。
 
-## F. 次の修正へ
+## F. 残る実機確認
 
-残るH1：commit済み適用失敗状態と復旧導線、復旧前の上書き可否を設計。
-
-H2/H3/H4は修正済み。H1は「ディスクに新設定はあるが使えない」状態を
-どう表示・回復するかの判断が必要。二重ConfigやHTTP非同期化は前提としない。
-
-H2/H3/H4安全性回帰とH1の現行不具合をassertするテストを区別すること。
-H1の移行先の期待値は誤上書き不可または明示確認（未修正、設計候補）。
-
-追加調査：実ESP32 allocator特性、SDKの同期エラー伝達、Flash電断時の永続性。
-H1修正・実機検証は未着手。H3実機では初回boot、ストレージ回復後Restart、reset中断再開を確認する。
+H1〜H4はhost安全性回帰化済み。実ESP32 allocator特性、SDKの同期エラー伝達、
+Flash電断時の永続性は別途実機で確認する。
+H1ラッチは揮発状態。完全再起動後の真のAbsentと初回起動を識別する永続markerは追加しない。
+HID解除の到達、送信済みMIDI Note Onの外部残留、Wi-Fi新credentialsでのRestart復旧を確認する。
+H3の初回boot・ストレージ回復後Restart・reset中断再開、H4の低heap時GET切断も実機未検証。
