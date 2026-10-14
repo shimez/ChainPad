@@ -98,5 +98,10 @@ const Presets = (() => {
     if (!int(group,0,12)) fail('Key PresetはキーまたはEncoder Pushで使用してください。');
     return {format:'chainpad-key-preset',version:1,chains:[0,1].map(input=>({input,actions:clone(config.chains.find(c=>c.input===group*2+input).actions)}))};
   }
-  return {read,full,key,duplicateDestinations};
+  function readBuiltin(raw, capabilities) {
+    // Reuse full validation, but neither validate nor apply source networking.
+    const parsed=read({...raw,network:{oscHost:'0.0.0.0',oscPort:9000}},'full',capabilities);
+    return {chains:parsed.config.chains,encoderRotation:parsed.config.encoderRotation};
+  }
+  return {read,full,key,duplicateDestinations,readBuiltin};
 })();

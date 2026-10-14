@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "_site"
 CHIPS = ("s3", "c3", "c6", "c5")
-FIRMWARE_PATHS = ("src", "web", "include", "lib", "boards", "platformio.ini", "partitions*.csv", "scripts/build.py")
+FIRMWARE_PATHS = ("src", "web", "include", "lib", "boards", "platformio.ini", "partitions*.csv", "scripts/build.py", "scripts/builtin_config.py")
 
 
 def firmware_changed(commit):

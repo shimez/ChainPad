@@ -384,6 +384,45 @@ void h4(){
   std::cout<<"PASS SAFETY H4 normal max16+16/long strings/C0 escaping/float endpoints/negative zero/Wi-Fi restart/save-reload\n";
 }
 int main(int argc,char** argv){try{
+  if(argc==2&&std::string(argv[1]).find("--builtin-")==0){
+    const std::string mode=argv[1];String error;probeFake::clear();registerHandlers();
+    if(mode=="--builtin-upgrade"){
+      for(const char* name:{"default","user","empty"}){
+        std::ifstream file(std::string(".pio/storage-fault-tests/builtin-")+name+".records");CHECK(file.good());
+        const std::string saved((std::istreambuf_iterator<char>(file)),std::istreambuf_iterator<char>());
+        storageFault::files["/config.records"]=std::make_shared<std::string>(saved);
+        CHECK(loadConfig(error)&&configOutputsAllowed()&&disk()==saved&&storageFault::renames==0);
+        if(std::string(name)=="default"){
+          web.request("/api/config",HTTP_GET);CHECK(web.status==200);
+          JsonDocument d;CHECK(!deserializeJson(d,web.body));CHECK(d["chains"][0]["actions"][0]["usage"]==30);
+        }else CHECK(config.chains[0].count==(std::string(name)=="user"?16:0));
+      }
+      storageFault::files.clear();CHECK(loadConfig(error));
+      web.request("/api/config",HTTP_GET);JsonDocument d;CHECK(!deserializeJson(d,web.body));
+      CHECK(d["chains"][0]["actions"][0]["usage"]==4); // New Default applies only to Missing.
+      CHECK(storageFault::files.empty()&&storageFault::renames==0);
+    }else if(mode=="--builtin-reset"){
+      storageFault::files["/factory-reset.done"]=std::make_shared<std::string>("FR1:1");
+      CHECK(factoryResetBoot()==ResetBoot::Complete&&!factoryResetBlocked());
+      CHECK(loadConfig(error)&&configOutputsAllowed()&&config.chains[0].count==1);
+      CHECK(storageFault::files.size()==1&&!storageFault::files.count("/config.records"));
+      web.request("/api/config",HTTP_GET);CHECK(web.status==200);
+      std::ofstream(".pio/storage-fault-tests/builtin-reset.json")<<web.body;
+    }else{
+      if(mode=="--builtin-chain-oom")scratchFault::size=sizeof(Chain);
+      else if(mode=="--builtin-rotation-oom")scratchFault::size=sizeof(EncoderRotationSettings);
+      else if(mode=="--builtin-json-oom")jsonFault::arm("all",1);
+      else throw std::runtime_error("Unknown builtin mode");
+      CHECK(!loadConfig(error)&&!configOutputsAllowed()&&configStorageState()==ConfigStorageState::IoError);
+      CHECK(scratchFault::failures>0||jsonFault::failures>0);
+      scratchFault::size=0;jsonFault::arm("",0);
+      CHECK(!loadConfig(error)); // Missing after failure cannot unlock H3.
+      CHECK(!saveWifiConfig("{\"ssid\":\"bad\",\"password\":\"\"}",error));
+      for(const auto& c:config.chains)CHECK(c.count==0);
+      CHECK(storageFault::files.empty()&&storageFault::renames==0);
+    }
+    std::cout<<"PASS "<<mode<<": Default only on healthy Missing; no automatic storage writes\n";return 0;
+  }
   if(argc==2&&(std::string(argv[1])=="--h1-reboot"||std::string(argv[1])=="--h1-persistent")){
     const bool persistent=std::string(argv[1])=="--h1-persistent";
     std::ifstream file(".pio/storage-fault-tests/h1-active.records");CHECK(file.good());
@@ -407,7 +446,20 @@ int main(int argc,char** argv){try{
     probeFake::clear();probeFake::mounted=false;probeFake::erased=true;
     CHECK(factoryResetBoot()==ResetBoot::Normal);String error;
     CHECK(loadConfig(error)&&configStorageState()==ConfigStorageState::Missing&&configOutputsAllowed());
-    CHECK(storageFault::files.empty()&&config.chains[0].count==0);
+    CHECK(storageFault::files.empty()&&config.chains[0].count==1&&storageFault::renames==0);
+    registerHandlers();web.request("/api/config",HTTP_GET);CHECK(web.status==200);
+    std::ofstream(".pio/storage-fault-tests/builtin-boot.json")<<web.body;
+    auto token=stage(config);CHECK(commitConfigSave(token,error));
+    std::ofstream(".pio/storage-fault-tests/builtin-default.records")<<disk();
+    // A user save replaces the unsaved builtin; subsequent boots keep every byte.
+    auto custom=fixture();seed(custom);auto saved=disk();
+    web.request("/api/config",HTTP_GET);auto snapshot=web.body;
+    CHECK(loadConfig(error)&&disk()==saved);
+    web.request("/api/config",HTTP_GET);CHECK(web.status==200&&web.body==snapshot);
+    CHECK(config.chains[0].count==16&&config.oscPort==9100);
+    std::ofstream(".pio/storage-fault-tests/builtin-user.records")<<disk();
+    Config empty;seed(empty);
+    std::ofstream(".pio/storage-fault-tests/builtin-empty.records")<<disk();
     std::cout<<"PASS SAFETY H3 fresh process: erased unmountable settings -> normal reset flow -> initial Config mount/format\n";
     return 0;
   }

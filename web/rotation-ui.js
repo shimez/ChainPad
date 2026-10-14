@@ -47,7 +47,6 @@ const RotationEditor = (() => {
     $('rotationPreviewPosition').max=r.rangeSteps;
     const encoder=selected>=26,valueMode=config.encoderRotation.mode==='rotationValue';
     $('encoderSettings').hidden=!encoder;
-    $('encoderRuntime').hidden=!encoder;
     $('rotationValueEditor').hidden=!encoder||!valueMode;
     $('actionChainEditor').hidden=encoder&&valueMode;
     $('title').textContent=encoder?'Rotation Direction':names[Math.floor(selected/2)];
@@ -76,7 +75,9 @@ const RotationEditor = (() => {
       field('Boundary',r.boundary,v=>r.boundary=v,{options:[['stop','🛑Stop（停止する）'],['wrap','🔄Wrap（ループする）']]}));
     const list=$('rotationOutputs');list.replaceChildren();
     r.outputs.forEach((o,i)=>{
-      const card=node('article');card.className='panel';card.append(node('h3',`Output ${i+1}`));
+      const card=node('article');card.className='panel';
+      const heading=node('div');heading.className='output-heading';
+      heading.append(node('h3',`Output ${i+1}`),button('削除',()=>{r.outputs.splice(i,1);changed();render();}));card.append(heading);
       const fields=node('div');fields.className='fields';
       const kind=o.protocol==='midi'?'midi':o.type;
       fields.append(field('Output Type',kind,v=>{r.outputs[i]=v==='midi'?{protocol:'midi',message:'cc',transport:capabilities.defaultMidiTransport,channel:1,number:7,start:0,end:127}:{protocol:'osc',transport:'wifi',type:v,address:o.address||'/avatar/parameters/Value',start:0,end:v==='float'?1:127};render();},{options:[['int','🛜OSC Int'],['float','🛜OSC Float'],['midi','🎹MIDI CC']]}));
@@ -91,7 +92,7 @@ const RotationEditor = (() => {
       }
       const limits=kind==='midi'?{min:0,max:127}:kind==='int'?{min:-2147483648,max:2147483647}:{float:true,min:-3.4028234663852886e38,max:3.4028234663852886e38};
       fields.append(field('Start',o.start,v=>o.start=v,limits),field('End',o.end,v=>o.end=v,limits));
-      card.append(fields,button('Outputを削除',()=>{r.outputs.splice(i,1);changed();render();}));list.append(card);
+      card.append(fields);list.append(card);
     });
     refresh();
   }
@@ -116,8 +117,7 @@ const RotationEditor = (() => {
       node('li','Boundaryは「Start・Endから更に回したときの動作」を設定します')
     );
     $('rotationSummary').before(parameterHelp);
-    const runtime=$('rotationRuntime').closest('section');runtime.id='encoderRuntime';runtime.classList.remove('status');runtime.hidden=true;
-    editor.prepend(settings,value);editor.append(runtime);
+    editor.prepend(settings,value);
     $('rotationAdd').disabled=true;
     $('rotationAdd').onclick=()=>{if(saving||config.encoderRotation.rotationValue.outputs.length>=16)return;config.encoderRotation.rotationValue.outputs.push({protocol:'osc',transport:'wifi',address:'/avatar/parameters/Value',type:'int',start:0,end:127});changed();render();};
     $('rotationPreviewPosition').oninput=()=>{previewPosition=$('rotationPreviewPosition').value===''?NaN:Number($('rotationPreviewPosition').value);refresh();};

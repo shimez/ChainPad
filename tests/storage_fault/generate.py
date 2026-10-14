@@ -41,6 +41,14 @@ for signature in ['void jsonResponse', 'void result', 'bool resetGuard']:
 json_header = root / '.pio/libdeps/xiao_esp32s3/ArduinoJson/src/ArduinoJson.h'
 adapter = root / 'tests/storage_fault/json_fault.h'
 (out / 'ArduinoJson.h').write_text(f'#pragma once\n#include "{json_header.as_posix()}"\n#include "{adapter.as_posix()}"\n', encoding='utf-8')
+# A second executable models a firmware update whose builtin Default changed.
+# Production source is verbatim; only its local generated data differs.
+(out / 'config_store_alternate.cpp').write_text((root / 'src/config_store.cpp').read_text(encoding='utf-8'), encoding='utf-8')
+original = (root / 'src/builtin_config_data.h').read_text(encoding='utf-8')
+alternate = original.replace('"usage":30', '"usage":4')
+if original == alternate:
+    raise RuntimeError('Review changed-Default fixture: expected KEY1 usage 30')
+(out / 'builtin_config_data.h').write_text(alternate, encoding='utf-8')
 manifest = {'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
             'handlers': locations,
             'sha256': {p: hashlib.sha256((root / p).read_bytes()).hexdigest()

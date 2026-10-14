@@ -1,10 +1,12 @@
 """Embed the configurator; support nested Windows toolchain archives."""
 from pathlib import Path
 from urllib.parse import quote
+import runpy
 
 Import("env")
 
 root = Path(env.subst("$PROJECT_DIR"))
+runpy.run_path(str(root / 'scripts/builtin_config.py'))['generate']()
 favicon = 'data:image/svg+xml,' + quote((root / 'web/favicon.svg').read_text(encoding='utf-8'), safe='')
 asset = '#pragma once\n#include <Arduino.h>\n'
 for filename, symbol in (("index.html", "WEB_UI"), ("wifi.html", "WIFI_UI")):
@@ -12,6 +14,7 @@ for filename, symbol in (("index.html", "WEB_UI"), ("wifi.html", "WIFI_UI")):
     html = html.replace('href="favicon.svg"', 'href="' + favicon + '"')
     html = html.replace('<script src="maintenance.js"></script>', '<script>\n' + (root / 'web/maintenance.js').read_text(encoding='utf-8') + '\n</script>')
     if filename == "index.html":
+        html = html.replace('<script src="builtin-config-data.js"></script>', '<script>\n' + (root / 'web/builtin-config-data.js').read_text(encoding='utf-8') + '\n</script>')
         html = html.replace('<script src="rotation-ui.js"></script>', '<script>\n' + (root / "web/rotation-ui.js").read_text(encoding="utf-8") + '\n</script>')
         html = html.replace('<script src="action-ui.js"></script>', '<script>\n' + (root / "web/action-ui.js").read_text(encoding="utf-8") + '\n</script>')
         html = html.replace('<script src="presets.js"></script>', '<script>\n' + (root / "web/presets.js").read_text(encoding="utf-8") + '\n</script>')

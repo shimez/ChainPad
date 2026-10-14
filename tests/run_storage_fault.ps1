@@ -4,6 +4,8 @@ $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.e
 $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if (-not $vs) { throw 'Visual Studio C++ Build Tools required' }
 $build = Join-Path $root '.pio\storage-fault-tests'
+& "$root\.venv\Scripts\python.exe" "$root\scripts\builtin_config.py" --check
+if ($LASTEXITCODE -ne 0) { throw 'Builtin data is stale' }
 & "$root\.venv\Scripts\python.exe" "$root\tests\storage_fault\generate.py" $build
 if ($LASTEXITCODE -ne 0) { throw 'Handler extraction failed' }
 $json = Join-Path $root '.pio\libdeps\xiao_esp32s3\ArduinoJson\src'
@@ -22,6 +24,18 @@ foreach ($chip in @('S3','C5','C6')) {
     Write-Output "Storage tests: H1/H2/H3/H4 safety regression: $chip Standard"
     & cmd.exe /d /c $command
     if ($LASTEXITCODE -ne 0) { throw "Storage fault tests failed: $chip" }
+    foreach ($mode in @('--builtin-reset','--builtin-chain-oom','--builtin-rotation-oom','--builtin-json-oom')) {
+        & "$build\fault_$chip.exe" $mode
+        if ($LASTEXITCODE -ne 0) { throw "Builtin fault test failed: $chip $mode" }
+    }
+    & node "$root\tests\test_builtin_config.cjs" --firmware
+    if ($LASTEXITCODE -ne 0) { throw "Builtin consistency failed: $chip" }
+    $alternateArgs = $args | ForEach-Object {
+        $_.Replace("$root\src\config_store.cpp", "$build\config_store_alternate.cpp").Replace("fault_$chip.exe", "builtin_upgrade_$chip.exe")
+    }
+    $alternateCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($alternateArgs -join ' ') + " && `"$build\builtin_upgrade_$chip.exe`" --builtin-upgrade"
+    & cmd.exe /d /c $alternateCommand
+    if ($LASTEXITCODE -ne 0) { throw "Changed Default firmware regression failed: $chip" }
 }
 & node "$root\tests\storage_fault\webui_get.cjs"
 if ($LASTEXITCODE -ne 0) { throw 'Config GET WebUI safety regression failed' }

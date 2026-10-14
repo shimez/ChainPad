@@ -2,6 +2,7 @@
 #include "json_wire.h"
 #include "rotation_runtime.h"
 #include "storage_probe.h"
+#include "builtin_config_data.h"
 #include <LittleFS.h>
 #include <memory>
 #include <new>
@@ -98,6 +99,30 @@ void defaults() {
   config.encoderRotation.axis = RotationAxis{};
   config.encoderRotation.outputCount = 0;
 }
+// Only called for a verified Missing active file, never as error recovery.
+// Decode one record at a time; no second Config or full-document allocation.
+bool applyBuiltinDefault(String& error) {
+  auto& config = activeConfig();
+  static_assert(sizeof(builtin::chains) / sizeof(*builtin::chains) == INPUT_COUNT, "Builtin input count");
+  JsonDocument doc;
+  std::unique_ptr<Chain> chain(new (std::nothrow) Chain);
+  if (!chain) { error = "Not enough RAM for builtin chain"; return false; }
+  uint8_t pressCount = 0;
+  for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
+    if (deserializeJson(doc, builtin::chains[i]) || !decodeChain(doc.as<JsonVariantConst>(), i, *chain, error)) return false;
+    if (i < 26) {
+      if (!(i % 2)) pressCount = chain->count;
+      else if (pressCount + chain->count > MAX_KEY_ACTIONS) return false;
+    }
+    config.chains[i].assign(*chain);
+  }
+  chain.reset();
+  std::unique_ptr<EncoderRotationSettings> rotation(new (std::nothrow) EncoderRotationSettings);
+  if (!rotation) { error = "Not enough RAM for builtin rotation"; return false; }
+  if (deserializeJson(doc, builtin::rotation) || !decodeRotation(doc.as<JsonVariantConst>(), *rotation, error)) return false;
+  config.encoderRotation = *rotation;
+  return true;
+}
 ConfigStorageState inspect(String& error) {
   if (!mount(error)) return ConfigStorageState::IoError;
   const auto presence = probeSettingsFile(ACTIVE);
@@ -193,7 +218,12 @@ bool loadConfig(String& message) {
   storageState = inspect(message);
   if (storageState == ConfigStorageState::Missing) {
     if (bootReadLocked || committedApplyFailed) { storageState = ConfigStorageState::IoError; message = "Previously unreadable settings now absent; recovery required"; return false; }
-    message = "Factory config: all chains empty"; return true;
+    if (!applyBuiltinDefault(message)) {
+      defaults(); storageState = ConfigStorageState::IoError; bootReadLocked = true;
+      message = "Builtin Default could not be loaded; outputs disabled"; return false;
+    }
+    rotationRuntime.restart(config.encoderRotation);
+    message = "Builtin Default loaded (not saved)"; return true;
   }
   if (storageState != ConfigStorageState::Ready) {
     // Unsupported-version replacement remains an explicit supported operation.
