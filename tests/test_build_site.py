@@ -101,6 +101,49 @@ class PagesTests(unittest.TestCase):
         self.assertEqual(fetch.call_count, 1)
         self.assertEqual(result.read_text().strip(), "rebuild=true")
 
+    def test_old_four_board_release_forces_rebuild(self):
+        old = json.loads(self.payloads["build.json"])
+        old["files"].append({"path": "firmware/ChainPad-ESP32-C3.bin", "chipFamily": "ESP32-C3"})
+        metadata = json.dumps(old).encode()
+        result = Path(self.temp.name) / "github-output"
+        with patch.object(site, "fetch", return_value=metadata) as fetch, patch.object(site, "firmware_changed", return_value=False), patch.object(site, "reuse_published") as reuse, patch.dict(site.os.environ, {"GITHUB_OUTPUT": str(result)}):
+            site.prepare("https://example.invalid/")
+        self.assertEqual(result.read_text().strip(), "rebuild=true")
+        self.assertEqual(fetch.call_count, 1)
+        reuse.assert_not_called()
+        with patch.object(site, "fetch", side_effect=lambda base, path: self.payloads[path]):
+            with self.assertRaisesRegex(ValueError, "file set"):
+                site.reuse_published("https://example.invalid/", metadata)
+
+    def test_reuse_removes_stale_c3_binary(self):
+        stale = self.output / 'firmware/ChainPad-ESP32-C3.bin'
+        stale.parent.mkdir(parents=True)
+        stale.write_bytes(b'old C3 binary')
+        self.reuse()
+        self.assertFalse(stale.exists())
+        self.assertEqual({b['chipFamily'] for b in json.loads((self.output / 'manifest.json').read_bytes())['builds']}, {'ESP32-S3', 'ESP32-C5', 'ESP32-C6'})
+
+    def test_packaging_excludes_c3_even_when_built(self):
+        root = Path(self.temp.name) / 'source'
+        (root / 'src').mkdir(parents=True)
+        (root / 'src/main.cpp').write_text('doc["version"] = "test";')
+        for chip in ('s3', 'c3', 'c6', 'c5'):
+            target = root / f'.pio/build/xiao_esp32{chip}/firmware.factory.bin'
+            target.parent.mkdir(parents=True)
+            image = bytearray(0x10001)
+            image[0x2000 if chip == 'c5' else 0] = image[0x10000] = 0xe9
+            target.write_bytes(image)
+        stale = self.output / 'firmware/ChainPad-ESP32-C3.bin'
+        stale.parent.mkdir(parents=True)
+        stale.write_bytes(b'old C3 binary')
+        with patch.object(site, 'ROOT', root), patch.object(site, 'OUTPUT', self.output), patch.object(site, 'copy_site'), patch.object(site.subprocess, 'check_output', return_value='a' * 40):
+            site.main()
+        self.assertFalse(stale.exists())
+        expected = {'ESP32-S3', 'ESP32-C5', 'ESP32-C6'}
+        self.assertEqual({b['chipFamily'] for b in json.loads((self.output / 'manifest.json').read_bytes())['builds']}, expected)
+        self.assertEqual({f['chipFamily'] for f in json.loads((self.output / 'build.json').read_bytes())['files']}, expected)
+        self.assertEqual(len(list((self.output / 'firmware').glob('*.bin'))), 3)
+
     def test_real_git_changes_distinguish_site_and_device_ui(self):
         root = Path(self.temp.name) / "repo"
         root.mkdir()

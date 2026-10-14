@@ -1,5 +1,7 @@
 # Rotation Value Phase C: Runtime and input routing
 
+> C3は現在、対応・Web Installer配布を一時停止中です。以下のC3検証結果は過去の記録です。
+
 `RotationRuntime` owns a saved Axis snapshot, Current Position and active flag.
 It is separate from Config and is never serialized. It has no transport, Output
 dispatch, Latest-State queue or Generation implementation (those belong to Phase D).

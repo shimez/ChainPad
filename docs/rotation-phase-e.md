@@ -1,5 +1,7 @@
 # Rotation Value Phase E
 
+> C3は現在、対応・Web Installer配布を一時停止中です。以下のC3検証結果は過去の記録です。
+
 ## Configurator
 
 - Encoder Mode、Range Steps、Initial Position、Stop / Wrapを編集。

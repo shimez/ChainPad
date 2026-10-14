@@ -1,5 +1,7 @@
 # Note On→Off / KeyDown→Up / All Notes On→Off
 
+> C3は現在、対応・Web Installer配布を一時停止中です。以下のC3検証結果は過去の記録です。
+
 ## 仕様
 
 - MIDI `message: "noteOnOff"` / `"allNotesOnOff"`、HID `message: "keyDownUp"`を追加。それぞれ1 Actionとして数える。

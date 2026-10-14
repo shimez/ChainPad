@@ -1,5 +1,7 @@
 # Factory Reset（安定版ベース）
 
+> C3は現在、対応・Web Installer配布を一時停止中です。以下のC3検証結果は過去の記録です。
+
 基準：main `7abb5959cba64b102bfcc3168d4be8fb560619b5`。
 Mini容量変更／HTTP試作は使用せず、同期HTTPと通常のConfig保存・読込形式を維持する。
 

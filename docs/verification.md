@@ -1,5 +1,7 @@
 # Phase 1 検証記録
 
+> C3は現在、対応・Web Installer配布を一時停止中です。以下は過去の検証記録であり、ビルドPASSは実機動作保証を意味しません。
+
 ## 0.3.0 LittleFS保存（2026-10-04）
 
 - 保存先をLittleFSの唯一の内部形式へ変更。旧形式の読み込み・移行・fallbackコードなし。NetworkとEvent単位で処理し、Config全体の複製・全体JSONのデバイスRAM展開を廃止。

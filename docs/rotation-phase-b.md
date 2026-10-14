@@ -1,5 +1,7 @@
 # Rotation Value: Phase B (storage and Preset boundary)
 
+> C3は現在、対応・Web Installer配布を一時停止中です。以下のC3記載は過去の開発・検証記録です。
+
 This phase integrates settings only. Rotation Position, Generation, pending sends,
 mapping Preview and the dedicated editor are not implemented here. Capacity is
 **16 Outputs for evaluation**, not the final product limit.

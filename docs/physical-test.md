@@ -1,5 +1,7 @@
 # Phase 1 実機受入テスト
 
+> 現在の対応機種はS3/C5/C6です。C3は対応・Web Installer配布を一時停止中です。以下のC3手順は再対応に向けた開発検証用に保持しています。
+
 対象: XIAO ESP32S3 / ESP32C3 / ESP32C6 / ESP32C5、現行ChainOSCPad PCB、Windows PC。PoC2のC6での確認結果とは別に記録します。以下のUSB検証はS3のみ対象です。
 
 実機観測記録：[C6 Standard：208 ActionsでのWebUI連続再読込＋キー連打](c6-standard-http-load-observation.md)（2026-10-12）。高負荷時の一時的なHTTP応答停止として記録し、現時点では改修対象としません。

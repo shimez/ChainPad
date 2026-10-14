@@ -1,5 +1,7 @@
 # Rotation Value Phase D — Latest-State sender
 
+> C3は現在、対応・Web Installer配布を一時停止中です。以下のC3検証結果は過去の記録です。
+
 Phase D implementation and the C6 checks below are complete. Phase C baseline:
 `1f6934e`; work started from clean `4e59f44`. No Phase E editor/Preview or encoder
 acquisition changes. Output capacity remains provisional, not product-qualified.

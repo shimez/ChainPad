@@ -12,7 +12,8 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "_site"
-CHIPS = ("s3", "c3", "c6", "c5")
+# Public installer targets. C3 remains a build/test target, but is not distributed.
+CHIPS = ("s3", "c6", "c5")
 FIRMWARE_PATHS = ("src", "web", "include", "lib", "boards", "platformio.ini", "partitions*.csv", "scripts/build.py", "scripts/builtin_config.py")
 
 
@@ -38,7 +39,7 @@ def reuse_published(base, metadata):
     manifest = json.loads(manifest_data)
     expected = {f"firmware/ChainPad-ESP32-{chip.upper()}.bin": f"ESP32-{chip.upper()}" for chip in CHIPS}
     files = info["files"]
-    if len(files) != 4 or {f["path"] for f in files} != set(expected):
+    if len(files) != len(CHIPS) or {f["path"] for f in files} != set(expected):
         raise ValueError("Published firmware file set is incomplete")
     builds = [{"chipFamily": expected[f["path"]], "parts": [{"path": f["path"], "offset": 0}]} for f in files]
     if sorted(manifest["builds"], key=lambda b: b["chipFamily"]) != sorted(builds, key=lambda b: b["chipFamily"]):
@@ -57,13 +58,17 @@ def reuse_published(base, metadata):
         target = OUTPUT / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
+    (OUTPUT / "firmware/ChainPad-ESP32-C3.bin").unlink(missing_ok=True)
 
 
 def prepare(base):
     # Compare to what is actually deployed, not merely the previous push. This also
     # covers queued site updates following a failed firmware deployment.
     metadata = fetch(base, "build.json")
-    rebuild = firmware_changed(json.loads(metadata)["commit"])
+    info = json.loads(metadata)
+    expected = {f"firmware/ChainPad-ESP32-{chip.upper()}.bin" for chip in CHIPS}
+    targets_changed = len(info["files"]) != len(CHIPS) or {f["path"] for f in info["files"]} != expected
+    rebuild = targets_changed or firmware_changed(info["commit"])
     if not rebuild:
         reuse_published(base, metadata)
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
@@ -90,6 +95,7 @@ def main():
     OUTPUT.mkdir(exist_ok=True)
     copy_site()
     (OUTPUT / "firmware").mkdir(exist_ok=True)
+    (OUTPUT / "firmware/ChainPad-ESP32-C3.bin").unlink(missing_ok=True)
     builds, files = [], []
     for chip in CHIPS:
         family = f"ESP32-{chip.upper()}"

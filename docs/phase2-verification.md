@@ -1,5 +1,7 @@
 # Phase 2 verification
 
+> C3は現在、対応・Web Installer配布を一時停止中です。以下のC3検証結果は過去の記録です。
+
 ## 自動・ブラウザ検証
 
 - FirmwareホストテストPASS: Wait中のRelease・別キー・再入力、連続Wait、0 ms、millis周回、32実行上限時の部分実行防止、取消、LittleFS保存・復元。

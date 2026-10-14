@@ -56,11 +56,12 @@ Press／Releaseは独立した設定です。Note OffやKeyUpは自動追加さ�
 | ボード       | OSC   | MIDI／Keyboard HID |
 | ------------ | ----- | ------------------ |
 | XIAO ESP32S3 | Wi-Fi | USB／Bluetooth LE  |
-| XIAO ESP32C3 | Wi-Fi | Bluetooth LE       |
 | XIAO ESP32C6 | Wi-Fi | Bluetooth LE       |
 | XIAO ESP32C5 | Wi-Fi | Bluetooth LE       |
 
-C3／C6／C5のUSBは書き込み・コンソール用で、USB MIDI／HIDには対応しません。
+C6／C5のUSBは書き込み・コンソール用で、USB MIDI／HIDには対応しません。
+
+XIAO ESP32C3は動作上の問題により対応を一時停止しています。Web Installerからはインストールできません。開発用のビルド・検査は継続しています。
 
 ### 自作する方へ
 

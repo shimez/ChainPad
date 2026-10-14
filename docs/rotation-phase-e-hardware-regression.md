@@ -1,5 +1,7 @@
 # Phase E後 C3 / C5 / C6実機Regression
 
+> C3は現在、対応・Web Installer配布を一時停止中です。以下の実機調査記録は問題の追跡・再対応のために保持しています。
+
 ## 範囲・記録規則
 
 - 開始時ソース: `47625b2`。S3のConfig / NimBLE host PSRAM配置変更後の非S3実機を確認する。

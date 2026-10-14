@@ -1,5 +1,7 @@
 # シリアルでのLittleFS・RAM診断
 
+> C3は対応・Web Installer配布を一時停止中です。以下のC3記載は開発・問題調査用です。
+
 USBシリアルモニターを115200 baudで開きます。S3はUSB CDC、C3/C6/C5はUSB Serial/JTAGです。接続待ちで起動を止めません。
 
 | 入力（小文字） | 動作 |

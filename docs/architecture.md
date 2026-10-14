@@ -1,5 +1,7 @@
 # Phase 2 Architecture
 
+> C3は動作上の問題により対応・Web Installer配布を一時停止しています。以下のC3記載は、継続してビルド・検査する開発用実装の説明です。
+
 ## Input / Action境界
 
 `inputs.cpp` だけが `hardware.h` を参照します。キーはrow-majorでKEY 01=ROW0/COL0、KEY 12=ROW3/COL2。非選択行はopen-drain HIGHで開放します。
