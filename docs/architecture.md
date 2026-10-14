@@ -10,7 +10,11 @@
 
 ## APキャプティブポータル
 
+保存済みSSIDが空の場合は、起動時に`ChainPad-Setup`をAP専用モードで開始します。SSIDがある場合はSTAのみで保存済みWi-Fiへの接続を試み、30秒接続できなければSTAの自動再接続を停止し、AP専用モードへ切り替えて設定を受け付けます。接続後に切断が30秒続いた場合も同様です。認証失敗・AP不在・IP未取得は接続未完了として同じ期限を使います。待機はloopの非ブロッキング判定で、保存済み設定は消去・変更しません。AP専用モードは再起動まで維持します。ルータ復旧後はMaintenanceのRestart、またはWi-Fi設定保存後の再起動で接続を再試行してください。C6でAP＋STA時にSSIDが見えない事象の切り分けのため、STAの再接続とAPを併用しない方式です。実機のSSID広告・接続確認は別途必要です。
+
 Setup APの起動成功後、Arduino DNSServerのワイルドカード応答（TTL 0）でドメイン名をAP IPへ解決します。このバージョンのDNSServerはAsyncUDPで処理するためloopでのDNSポーリングは不要です。
+
+LEDはSetup APの起動成功後に500ms点灯・500ms消灯を繰り返します。STA接続待ち・切断後のAP起動待機中は、100ms点灯→100ms消灯→100ms点灯→700ms消灯の短い2回点滅です。Wi-Fi接続済みでは通常点灯し、入力時に短く消灯します。AP起動失敗では短い2回点滅を維持し、DNS開始失敗だけの場合はAPが起動済みなので500ms周期の点灯・消灯です。入力初期化失敗時の消灯は維持します。スマートフォンの一覧にSSIDが現れるまでには、端末側のスキャンによる遅延があり得ます。
 
 AP側へのHTTP GETではルートと未知のパス（Android/Apple/Windowsの接続確認URLを含む）から `http://<AP IP>/?setup=wifi` に302リダイレクトします。接続先local IPでAPアクセスを判定し、STA側の未知パスと未知の `/api/` は404を維持します。ポータルは `web/wifi.html` のWi-Fi専用画面で、SSID・パスワード・保存して再起動ボタンのみを表示します。`GET /api/wifi` はSSID/Passwordを返し、`PUT /api/wifi` は現行設定のWi-Fi情報だけを更新・検証・保存し、成功時に再起動します。通常のConfiguratorはSTA側のルートまたは `/configurator` から開けます。DNS開始結果はstatusの `captivePortal` に返します。OSによる自動表示は端末設定に依存するため、HTTPのAP IP直接入力でも利用できます。
 

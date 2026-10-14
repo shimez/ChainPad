@@ -3,6 +3,7 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <DNSServer.h>
+#include "wifi_setup_flow.h"
 #include "model.h"
 #include "json_wire.h"
 #include "rotation_runtime.h"
@@ -22,6 +23,8 @@ namespace {
 WebServer web(80);
 DNSServer portalDns;
 bool portalReady = false;
+bool setupApReady = false;
+chimera::WifiSetupFlow wifiSetupFlow;
 bool apRequest() { return web.client().localIP() == WiFi.softAPIP(); }
 void redirectToSetup() {
   web.sendHeader("Cache-Control", "no-store");
@@ -252,6 +255,20 @@ void setupWeb() {
   web.begin();
 }
 }
+void updateSetupPortal(WifiSetupFlow::Change change) {
+  if (change == WifiSetupFlow::Change::StartPortal) {
+    memoryPhase("wifi/softAP");
+    WiFi.setAutoReconnect(false);
+    WiFi.disconnect(true, false); // Stop STA without erasing credentials.
+    if (WiFi.mode(WIFI_AP) && WiFi.softAP("ChainPad-Setup", "chimera-pad")) {
+      setupApReady = true;
+      portalDns.setTTL(0);
+      portalReady = portalDns.start(53, "*", WiFi.softAPIP());
+      if (!portalReady) bootMessage += " / Captive DNS failed";
+    } else bootMessage += " / Setup AP failed";
+    memoryCheckpoint("wifi/AP-DNS-ready");
+  }
+}
 void setup() {
   beginMemoryDiagnostics();
   console.begin(115200);
@@ -269,17 +286,11 @@ void setup() {
   memoryCheckpoint("backends/ready");
   WiFi.persistent(false);
   memoryPhase("wifi/mode");
-  WiFi.mode(WIFI_AP_STA);
+  WiFi.mode(WIFI_STA);
   memoryCheckpoint("wifi/mode-ready");
-  memoryPhase("wifi/softAP");
-  if (WiFi.softAP("ChainPad-Setup", "chimera-pad")) {
-    portalDns.setTTL(0);
-    portalReady = portalDns.start(53, "*", WiFi.softAPIP());
-    if (!portalReady) bootMessage += " / Captive DNS failed";
-  } else bootMessage += " / Setup AP failed";
-  memoryCheckpoint("wifi/AP-DNS-ready");
   WiFi.setAutoReconnect(true);
   if (config.ssid[0]) WiFi.begin(config.ssid, config.password);
+  updateSetupPortal(wifiSetupFlow.begin(config.ssid[0] != 0, millis()));
   memoryCheckpoint("wifi/STA-requested");
   MDNS.begin("chainpad"); MDNS.addService("http", "tcp", 80);
   memoryCheckpoint("mdns/ready");
@@ -291,7 +302,7 @@ void setup() {
   memoryCheckpoint(inputReady ? "inputs/ready" : "inputs/FAILED");
   memoryPhase("loop");
    console.println("ChainPad / Project Chimera Phase 2"); console.println(bootMessage);
-  console.println("Setup: ChainPad-Setup / http://192.168.4.1");
+  console.println("Setup AP: when unconfigured or disconnected for 30s / http://192.168.4.1");
   console.println("Diagnostics: m=snapshot, d=toggle 5s + save logging, ?=help (115200 baud)");
 }
 void loop() {
@@ -318,6 +329,7 @@ void loop() {
     } else if (command == '?') console.println("m=snapshot; h=startup/allocations/stacks; d=toggle 5s + save logging (default OFF); bytes; file -1=absent -2=open failed");
   }
   uint32_t now = millis();
+  updateSetupPortal(wifiSetupFlow.tick(WiFi.status() == WL_CONNECTED, now));
   if (!maintenanceRecovery) backendsTick(now);
   uint32_t overflows = inputOverflows();
   if (overflows != observedOverflows) {
@@ -332,7 +344,10 @@ void loop() {
     }
   } else if (restartAt && static_cast<int32_t>(now - restartAt) >= 0) ESP.restart();
   if (!restartAt && !factoryResetBlocked() && configOutputsAllowed()) rotationSendTick();
-  bool led = WiFi.status() == WL_CONNECTED ? now - lastActivity > 50 : now % 1000 < 500;
+  const uint32_t ledPhase = now % 1000;
+  bool led = setupApReady ? ledPhase < 500 :
+             WiFi.status() == WL_CONNECTED ? now - lastActivity > 50 :
+             ledPhase < 100 || (ledPhase >= 200 && ledPhase < 300);
   setStatusLed(inputReady && led);
   if (diagnosticsEnabled && now - lastDiagnostics >= 5000) {
     lastDiagnostics = now; printDiagnostics(console, "periodic");

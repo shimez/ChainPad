@@ -10,6 +10,9 @@ New-Item -ItemType Directory -Force $build | Out-Null
 $resetCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /std:c++17 /EHsc /utf-8 /I`"$root\src`" /Fe:`"$build\factory_reset_tests.exe`" /Fo`"$build\\`" `"$root\tests\host\factory_reset_tests.cpp`" && `"$build\factory_reset_tests.exe`""
 & cmd.exe /d /c $resetCommand
 if ($LASTEXITCODE -ne 0) { throw 'Factory Reset tests failed' }
+$wifiCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /std:c++17 /EHsc /utf-8 /I`"$root\src`" /Fe:`"$build\wifi_setup_tests.exe`" /Fo`"$build\\`" `"$root\tests\host\wifi_setup_tests.cpp`" && `"$build\wifi_setup_tests.exe`""
+& cmd.exe /d /c $wifiCommand
+if ($LASTEXITCODE -ne 0) { throw 'Wi-Fi setup flow tests failed' }
 $platformCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /std:c++17 /EHsc /utf-8 /I`"$root\tests\reset_platform`" /I`"$root\tests\probe_platform`" /I`"$root\src`" /Fe:`"$build\factory_reset_platform_tests.exe`" /Fo`"$build\\`" `"$root\tests\host\factory_reset_platform_tests.cpp`" `"$root\src\factory_reset.cpp`" `"$root\src\storage_probe.cpp`" `"$root\tests\probe_platform\probe_stat.cpp`" && `"$build\factory_reset_platform_tests.exe`""
 & cmd.exe /d /c $platformCommand
 if ($LASTEXITCODE -ne 0) { throw 'Factory Reset platform tests failed' }
