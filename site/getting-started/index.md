@@ -6,7 +6,7 @@
 
 ### 1-1. ChainPadのLEDについて
 
-ChainPadのエンコーダーのLEDは、ChainPadの状態によって点灯状態が変化します。
+ChainPadのエンコーダーのLEDは、ChainPadの状態によって点灯状態が変化します。<br>
 ChainPadの状態とLEDの状態の対応表は以下の通りです
 
 | ChainPadの状態                             | LEDの状態                   |
@@ -40,6 +40,8 @@ ChainPadにUSBケーブルを接続して電源を供給すると（PC接続も�
 
 - AP名：`ChainPad-Setup`
 - パスワード：`chimera-pad`
+
+> ChainPadの無線APモードでのパスワードは固定されています。
 
 接続するとChainPadのWi-Fi設定画面が表示されます。
 Wi-Fi設定画面が自動表示されない場合は<http://192.168.4.1/> を開いてください。
@@ -82,6 +84,8 @@ Windowsの場合 chainpad.local でのアクセスができない場合があり
 3. 表示された IPAddress を確認する
 
 上記手順でChainPadのアドレスが確認できない場合はスマートフォンで<http://chainpad.local>にアクセスし、一番上のカード（枠）に表示されているIPアドレスを確認してください。
+
+> ChainPadの設定画面は認証機能がありません。ChainPadと同じネットワークに接続している人が設定変更可能です。自宅など不特定多数が利用しない環境で使用して下さい
 
 ## 5. 設定を行う
 
