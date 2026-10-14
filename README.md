@@ -83,4 +83,4 @@ XIAO ESP32C3は動作上の問題により対応を一時停止しています�
 | [不具合報告・相談](https://github.com/shimez/ChainPad/issues) | GitHub Issues                                                                              |
 | [Third-Party Notices](THIRD_PARTY_NOTICES.md)                 | 参考実装・依存ライブラリの情報                                                             |
 
-Encoderの回転量に応じて値を扱う**Rotation Valueは開発中**です。現在はPosition更新まで対応しており、OSC／MIDIへの値の送信と専用編集UIは未実装です。
+**Rotation Value（回転量モード）**では、Encoderの回転量に応じた値をOSC／MIDI CCで送信できます。Configuratorの専用UIで回転範囲・初期位置・境界動作・各Outputの出力範囲を設定でき、ブラウザ上のPreviewで出力値を確認できます。
