@@ -107,9 +107,11 @@ bool parseAction(JsonVariantConst j, Action& a) {
   } else if (p == "keyboard") {
     a.protocol = Protocol::Keyboard;
     String m = j["message"] | "";
-    if (m != "keyDown" && m != "keyUp" && m != "keyDownUp" && m != "releaseAll") return false;
-    a.keyMessage = m == "keyDown" ? KeyMessage::Down : m == "keyUp" ? KeyMessage::Up : m == "keyDownUp" ? KeyMessage::DownUp : KeyMessage::ReleaseAll;
-    if (!integer(j["usage"], 4, 115) || !integer(j["modifiers"], 0, 255)) return false;
+    if (m != "keyDown" && m != "keyUp" && m != "keyDownUp" && m != "releaseAll" && m != "consumer") return false;
+    a.keyMessage = m == "keyDown" ? KeyMessage::Down : m == "keyUp" ? KeyMessage::Up : m == "keyDownUp" ? KeyMessage::DownUp : m == "consumer" ? KeyMessage::Consumer : KeyMessage::ReleaseAll;
+    if (m == "consumer") {
+      if (!integer(j["usage"], 0, 255) || !consumerUsage(j["usage"].as<unsigned>()) || !integer(j["modifiers"], 0, 0)) return false;
+    } else if (!integer(j["usage"], 4, 115) || !integer(j["modifiers"], 0, 255)) return false;
     a.usage = j["usage"]; a.modifiers = j["modifiers"];
   } else return false;
   // Normalize saved/imported S3 configs for BLE-only hardware as well as
@@ -247,7 +249,7 @@ template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocum
         j["channel"] = a.channel; j["number"] = a.number; j["value"] = a.value;
       } else {
         j["protocol"] = "keyboard"; j["usage"] = a.usage; j["modifiers"] = a.modifiers;
-        j["message"] = a.keyMessage == KeyMessage::Down ? "keyDown" : a.keyMessage == KeyMessage::Up ? "keyUp" : a.keyMessage == KeyMessage::DownUp ? "keyDownUp" : "releaseAll";
+         j["message"] = a.keyMessage == KeyMessage::Down ? "keyDown" : a.keyMessage == KeyMessage::Up ? "keyUp" : a.keyMessage == KeyMessage::DownUp ? "keyDownUp" : a.keyMessage == KeyMessage::Consumer ? "consumer" : "releaseAll";
       }
     }
     // Includes optional members (holdMs/transport) and copied strings: losing

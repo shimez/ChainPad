@@ -33,6 +33,9 @@ namespace chimera {
 void transportsBegin(){}void transportsTick(){}
 bool midiReady(Transport){return true;}bool keyboardReady(Transport){return true;}
 uint32_t midiEpoch(Transport){return 1;}uint32_t keyboardEpoch(Transport){return 1;}
+bool consumerReady(Transport){return true;}
+uint32_t consumerEpoch(Transport){return 1;}
+bool consumerWrite(Transport,uint16_t){return transportFake::writable;}
 bool midiWrite(Transport,uint8_t s,uint8_t,uint8_t){if(!transportFake::writable)return false;transportFake::midi.push_back(s);return true;}
 bool keyboardWrite(Transport,const KeyboardReport& r){if(!transportFake::writable)return false;transportFake::hid.push_back(r);return true;}
 SendResult oscDispatch(const Action&){return SendResult::Accepted;}

@@ -11,6 +11,19 @@ config.chains[1].actions=[{protocol:'keyboard',transport:'usb',delayMs:0,message
 config.chains[27].actions=[{protocol:'osc',transport:'wifi',delayMs:0,address:'/test',type:'string',value:'hello'}];
 const normalized=v=>JSON.parse(JSON.stringify(v));
 const full=P.full(config);
+const consumerConfig=normalized(config);
+consumerConfig.chains[0].actions=Object.keys(P.consumerNames).map(usage=>({protocol:'keyboard',transport:'usb',delayMs:0,message:'consumer',usage:Number(usage),modifiers:0}));
+const consumerFull=P.full(consumerConfig);
+assert.deepEqual(normalized(P.read(consumerFull,'full',usb).config.chains[0]),consumerConfig.chains[0]);
+assert(P.read(consumerFull,'full',ble).config.chains[0].actions.every(a=>a.transport==='ble'));
+assert.deepEqual(normalized(P.read(P.key(consumerConfig,0),'key',usb).chains[0]),consumerConfig.chains[0]);
+for(const patch of [{usage:104},{usage:0},{usage:0x2f},{usage:233.5},{usage:'233'},{modifiers:2},{holdMs:0},{transport:'both'}]){
+  const invalid=normalized(consumerFull);Object.assign(invalid.chains[0].actions[0],patch);
+  assert.throws(()=>P.read(invalid,'full',usb));
+}
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../web/action-ui.js'),'utf8'),context);
+for(const a of consumerConfig.chains[0].actions)assert(context.actionSummary(a).includes(P.consumerNames[a.usage]));
+console.log('PASS Consumer Control: seven operations, Full/Key round-trip, BLE normalization, invalid usage/modifier/hold/transport rejection, summaries');
 const paired=P.full(config);
 paired.chains[0].actions=[{protocol:'midi',transport:'both',delayMs:0,message:'noteOnOff',channel:1,number:60,value:100},
   {protocol:'keyboard',transport:'usb',delayMs:0,message:'keyDownUp',usage:104,modifiers:2}];

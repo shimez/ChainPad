@@ -17,6 +17,7 @@ ChainPadは、複数の操作を組み合わせて実行できる、12キー＋�
 | **OSC**          | Wi-FiでOSCメッセージを送信。VRChatのアバターパラメーターなど、OSCに対応する機能を操作 |
 | **MIDI**         | Note On／Off・Control Changeで、音楽ソフトやVRChatのMIDI対応ワールドを操作            |
 | **Keyboard HID** | キーボード入力・ショートカットで、OBSのシーン切り替えやマイクのミュートなどを操作     |
+| **Consumer Control HID** | 音量UP／DOWN、スピーカーミュート、再生／一時停止、曲送り・曲戻し・停止を操作（[設定方法](docs/consumer-control.md)） |
 
 利用するアプリ・ワールド側でも、受信設定や機能の対応が必要です。
 

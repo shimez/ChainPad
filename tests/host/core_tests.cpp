@@ -32,6 +32,8 @@ uint32_t epoch[2] = {};
 struct Midi { Transport transport; uint8_t status, a, b; };
 std::vector<Midi> midi;
 std::vector<KeyboardReport> hid;
+std::vector<uint16_t> consumer;
+bool consumerSubscribed = true;
 }
 namespace chimera {
 void transportsBegin() {}
@@ -40,6 +42,12 @@ bool midiReady(Transport t) { return fake::connected[transportIndex(t)]; }
 bool keyboardReady(Transport t) { return midiReady(t); }
 uint32_t midiEpoch(Transport t) { return fake::epoch[transportIndex(t)]; }
 uint32_t keyboardEpoch(Transport t) { return midiEpoch(t); }
+bool consumerReady(Transport t) { return fake::consumerSubscribed && midiReady(t); }
+uint32_t consumerEpoch(Transport t) { return midiEpoch(t); }
+bool consumerWrite(Transport, uint16_t usage) {
+  if (!fake::writable) return false;
+  fake::consumer.push_back(usage); return true;
+}
 bool midiWrite(Transport t, uint8_t status, uint8_t a, uint8_t b) {
   if (!fake::writable || fake::midiWritesLeft == 0) return false;
   if (fake::midiWritesLeft > 0) --fake::midiWritesLeft;
@@ -55,7 +63,7 @@ void reset() {
   fake::midiWritesLeft = -1;
   fake::writable = true; fake::connected[0] = fake::connected[1] = true;
   ++fake::epoch[0]; ++fake::epoch[1]; settle();
-  fake::midi.clear(); fake::hid.clear();
+  fake::midi.clear(); fake::hid.clear(); fake::consumer.clear();
 }
 String encoded(const Config& source) {
   JsonDocument d; encodeConfig(source, d); String json; serializeJson(d, json); return json;
@@ -763,6 +771,61 @@ void timedPairTests() {
   reset(); engine.cancelAll(); config = Config{}; hostMillis = savedClock;
   std::cout << "PASS timed pairs: hold after send / wrap / whole-set On-hold-Off / snapshot / persistence\n";
 }
+void consumerTests() {
+  String error; JsonDocument doc; Chain chain;
+  for (unsigned usage : {0xe9u,0xeau,0xe2u,0xcdu,0xb5u,0xb6u,0xb7u}) {
+    chain.count=1; auto& a=chain.actions[0];a.protocol=Protocol::Keyboard;a.transport=Transport::Usb;
+    a.keyMessage=KeyMessage::Consumer;a.usage=usage;a.modifiers=0;a.delayMs=0;
+    assert(encodeChain(chain,0,doc));assert(doc["actions"][0]["message"]=="consumer");
+    Chain decoded;assert(decodeChain(doc.as<JsonVariantConst>(),0,decoded,error));
+    assert(decoded.actions[0].keyMessage==KeyMessage::Consumer&&decoded.actions[0].usage==usage);
+    doc["actions"][0]["modifiers"]=2;assert(!decodeChain(doc.as<JsonVariantConst>(),0,decoded,error));
+    doc["actions"][0]["modifiers"]=0;doc["actions"][0]["holdMs"]=0;assert(!decodeChain(doc.as<JsonVariantConst>(),0,decoded,error));
+    doc["actions"][0].remove("holdMs");doc["actions"][0]["usage"]=104;assert(!decodeChain(doc.as<JsonVariantConst>(),0,decoded,error));
+    for(auto t:{Transport::Usb,Transport::Ble}) {
+      reset();a.transport=t;
+      assert(dispatch(a,0)==SendResult::Accepted);settle();
+      assert((fake::consumer==std::vector<uint16_t>{uint16_t(usage),0}));
+      assert(fake::hid.empty());
+      assert(dispatch(a,0)==SendResult::Accepted);settle();
+      assert(fake::consumer.size()==4&&fake::consumer[2]==usage&&fake::consumer[3]==0);
+    }
+  }
+  Config saved; saved.chains[0].assign(chain);assert(saveSource(saved,error));auto snapshot=encoded(saved);
+  assert(loadConfig(error)&&encoded(config)==snapshot);
+  Action a=chain.actions[0];a.transport=Transport::Ble;reset();
+  // Separate keyboard and Consumer reports/subscriptions: held keys survive.
+  Action key;key.protocol=Protocol::Keyboard;key.transport=Transport::Ble;key.keyMessage=KeyMessage::Down;key.usage=104;
+  assert(dispatch(key,0)==SendResult::Accepted);settle();const auto hidCount=fake::hid.size();
+  assert(dispatch(a,0)==SendResult::Accepted);settle();assert(fake::hid.size()==hidCount);
+  fake::consumerSubscribed=false;assert(dispatch(a,0)==SendResult::Unavailable);
+  key.keyMessage=KeyMessage::Up;assert(dispatch(key,0)==SendResult::Accepted);settle();
+  fake::consumerSubscribed=true;settle();reset();
+  fake::writable=false;
+  for(int i=0;i<32;++i)assert(dispatch(a,0)==SendResult::Accepted);
+  assert(dispatch(a,0)==SendResult::Failed&&fake::consumer.empty());
+  fake::writable=true;for(int i=0;i<80;++i)backendsTick(0);
+  assert(fake::consumer.size()==64);for(size_t i=0;i<64;i+=2)assert(fake::consumer[i]==a.usage&&fake::consumer[i+1]==0);
+  // Panic after a transmitted press must retry neutral, never replay the press.
+  reset();assert(dispatch(a,0)==SendResult::Accepted);assert(fake::consumer.size()==1);
+  fake::writable=false;backendsPanic();settle();assert(fake::consumer.size()==1);
+  fake::writable=true;settle();assert((fake::consumer==std::vector<uint16_t>{a.usage,0,0})); // USB and BLE neutral
+  // Disconnect/epoch change drops stale work and releases on a fresh session.
+  reset();fake::writable=false;assert(dispatch(a,0)==SendResult::Accepted);
+  fake::connected[1]=false;settle();++fake::epoch[1];fake::connected[1]=true;fake::writable=true;settle();
+  assert((fake::consumer==std::vector<uint16_t>{0}));
+  // Release All also cancels Consumer work on the selected transport.
+  reset();assert(dispatch(a,0)==SendResult::Accepted);
+  key.keyMessage=KeyMessage::ReleaseAll;assert(dispatch(key,0)==SendResult::Accepted);settle();
+  assert((fake::consumer==std::vector<uint16_t>{a.usage,0}));
+  reset();engine.cancelAll();config=Config{};config.chains[0].count=2;
+  config.chains[0].actions[0]=a;config.chains[0].actions[1]=a;
+  engine.trigger({0,0});assert(engine.activeCount()==1);
+  for(int i=0;i<20;++i){backendsTick(millis());engine.tick(millis());}
+  assert(engine.activeCount()==0&&(fake::consumer==std::vector<uint16_t>{a.usage,0,a.usage,0}));
+  reset();config=Config{};
+  std::cout<<"PASS Consumer Control: codec/save-load, seven usages/USB/BLE, press-release, subscription, queue capacity, panic, reconnect, Release All, engine ordering\n";
+}
 int main() {
   rotationTests();
   configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests(); sharedSlotsTests();
@@ -771,5 +834,6 @@ int main() {
   rotationSenderTests();
   pairedActionTests();
   timedPairTests();
+  consumerTests();
   std::cout << "All firmware host tests passed.\n";
 }

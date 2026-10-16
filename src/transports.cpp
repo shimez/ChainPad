@@ -4,6 +4,7 @@
 #include <USB.h>
 #include <USBMIDI.h>
 #include <USBHIDKeyboard.h>
+#include <USBHIDConsumerControl.h>
 #include <tusb.h>
 #endif
 #include <NimBLEDevice.h>
@@ -15,11 +16,15 @@ namespace {
 #if CHAINPAD_HAS_USB
 USBMIDI usbMidi("ChainPad MIDI");
 USBHIDKeyboard usbKeyboard; // Registers the standard Arduino report descriptor.
+USBHIDConsumerControl usbConsumer;
 #endif
 constexpr char MIDI_SERVICE[] = "03B80E5A-EDE8-4B33-A751-6CE34EC4C700";
 constexpr char MIDI_CHAR[] = "7772E5DB-3868-4112-A1A9-F2669D106BF3";
 NimBLECharacteristic* midiCharacteristic = nullptr;
 NimBLECharacteristic* keyboardInput = nullptr;
+NimBLECharacteristic* consumerInput = nullptr;
+std::atomic<bool> consumerSubscribed{false};
+std::atomic<uint32_t> consumerGeneration{0};
 std::atomic<bool> midiSubscribed{false}, keyboardSubscribed{false};
 std::atomic<uint32_t> midiGeneration{0}, keyboardGeneration{0}, usbGeneration{0};
 class ServerCallbacks : public NimBLEServerCallbacks {
@@ -28,6 +33,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   }
   void onDisconnect(NimBLEServer*, NimBLEConnInfo&, int) override {
     midiSubscribed = false; keyboardSubscribed = false;
+    consumerSubscribed = false; ++consumerGeneration;
     ++midiGeneration; ++keyboardGeneration;
   }
 } serverCallbacks;
@@ -44,6 +50,7 @@ class SubscriptionCallbacks : public NimBLECharacteristicCallbacks {
 };
 SubscriptionCallbacks midiCallbacks(midiSubscribed, midiGeneration);
 SubscriptionCallbacks keyboardCallbacks(keyboardSubscribed, keyboardGeneration);
+SubscriptionCallbacks consumerCallbacks(consumerSubscribed, consumerGeneration);
 // F13..F24 are in the keyboard usage range through 0x73.
 const uint8_t reportMap[] = {
   0x05,0x01, 0x09,0x06, 0xa1,0x01, 0x85,0x01,
@@ -53,7 +60,11 @@ const uint8_t reportMap[] = {
   0x95,0x05, 0x75,0x01, 0x05,0x08, 0x19,0x01, 0x29,0x05, 0x91,0x02,
   0x95,0x01, 0x75,0x03, 0x91,0x01,
   0x95,0x06, 0x75,0x08, 0x15,0x00, 0x25,0x73,
-  0x05,0x07, 0x19,0x00, 0x29,0x73, 0x81,0x00, 0xc0
+  0x05,0x07, 0x19,0x00, 0x29,0x73, 0x81,0x00, 0xc0,
+  // Consumer page, report 2: one little-endian 16-bit usage; zero releases it.
+  0x05,0x0c, 0x09,0x01, 0xa1,0x01, 0x85,0x02,
+  0x15,0x00, 0x26,0xff,0x03, 0x19,0x00, 0x2a,0xff,0x03,
+  0x75,0x10, 0x95,0x01, 0x81,0x00, 0xc0
 };
 }
 void transportsBegin() {
@@ -64,7 +75,7 @@ void transportsBegin() {
     if (id == ARDUINO_USB_STARTED_EVENT || id == ARDUINO_USB_STOPPED_EVENT ||
         id == ARDUINO_USB_SUSPEND_EVENT || id == ARDUINO_USB_RESUME_EVENT) ++usbGeneration;
   });
-  usbMidi.begin(); usbKeyboard.begin(); USB.begin();
+  usbMidi.begin(); usbKeyboard.begin(); usbConsumer.begin(); USB.begin();
 #endif
 
   memoryPhase("ble/init");
@@ -98,6 +109,10 @@ void transportsBegin() {
   keyboardInput->setCallbacks(&keyboardCallbacks);
   const KeyboardReport neutral;
   keyboardInput->setValue(reinterpret_cast<const uint8_t*>(&neutral), sizeof(neutral));
+  consumerInput = hid->getInputReport(2);
+  consumerInput->setCallbacks(&consumerCallbacks);
+  const uint8_t consumerNeutral[] = {0, 0};
+  consumerInput->setValue(consumerNeutral, sizeof(consumerNeutral));
   const uint8_t leds = 0;
   hid->getOutputReport(1)->setValue(&leds, sizeof(leds));
   hid->setBatteryLevel(100);
@@ -137,6 +152,22 @@ bool keyboardReady(Transport t) {
   if (t == Transport::Usb) return tud_mounted() && !tud_suspended();
 #endif
   return t == Transport::Ble && keyboardSubscribed.load();
+}
+bool consumerReady(Transport t) {
+#if CHAINPAD_HAS_USB
+  if (t == Transport::Usb) return tud_mounted() && !tud_suspended();
+#endif
+  return t == Transport::Ble && consumerSubscribed.load();
+}
+uint32_t consumerEpoch(Transport t) { return t == Transport::Usb ? usbGeneration.load() : consumerGeneration.load(); }
+bool consumerWrite(Transport t, uint16_t usage) {
+  if (!consumerReady(t)) return false;
+  const uint8_t report[] = {uint8_t(usage), uint8_t(usage >> 8)};
+#if CHAINPAD_HAS_USB
+  if (t == Transport::Usb) return tud_hid_ready() && tud_hid_report(HID_REPORT_ID_CONSUMER_CONTROL, report, sizeof(report));
+#endif
+  consumerInput->setValue(report, sizeof(report));
+  return consumerInput->notify();
 }
 uint32_t midiEpoch(Transport t) { return t == Transport::Usb ? usbGeneration.load() : midiGeneration.load(); }
 uint32_t keyboardEpoch(Transport t) { return t == Transport::Usb ? usbGeneration.load() : keyboardGeneration.load(); }

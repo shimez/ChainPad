@@ -1,6 +1,7 @@
 // Shared file/Action validation for Key Presets and full configurations.
 // Runs in the browser; large import files never become firmware HTTP bodies.
 const Presets = (() => {
+  const consumerNames={233:'音量UP',234:'音量DOWN',226:'スピーカーミュート',205:'再生／一時停止',181:'次の曲',182:'前の曲',183:'停止'};
   const clone = value => JSON.parse(JSON.stringify(value));
   const fail = text => { throw Error(text); };
   const object = v => v && typeof v === 'object' && !Array.isArray(v);
@@ -30,7 +31,10 @@ const Presets = (() => {
       if (!['usb','ble','both'].includes(a.transport) || !['noteOn','noteOff','noteOnOff','cc'].includes(a.message) || !int(a.channel,1,16) || !int(a.number,0,127) || !int(a.value,['noteOn','noteOnOff'].includes(a.message)?1:0,127)) fail('MIDI Actionが不正です。');
       if (!capabilities.usbMidi && a.transport !== 'ble') { a.transport='ble'; changes.count++; }
     } else if (a.protocol === 'keyboard') {
-      if (!['usb','ble'].includes(a.transport) || !['keyDown','keyUp','keyDownUp','releaseAll'].includes(a.message) || !int(a.usage,4,115) || !int(a.modifiers,0,255)) fail('Keyboard Actionが不正です。');
+      if (!['usb','ble'].includes(a.transport) || !['keyDown','keyUp','keyDownUp','releaseAll','consumer'].includes(a.message)) fail('Keyboard Actionが不正です。');
+      if(a.message==='consumer'){
+        if(!int(a.usage,0,255)||!Object.hasOwn(consumerNames,a.usage)||a.modifiers!==0)fail('Consumer Control Actionが不正です。');
+      }else if(!int(a.usage,4,115)||!int(a.modifiers,0,255))fail('Keyboard Actionが不正です。');
       if (!capabilities.usbKeyboard && a.transport !== 'ble') { a.transport='ble'; changes.count++; }
     } else fail('未対応のActionです。');
     return a;
@@ -103,5 +107,5 @@ const Presets = (() => {
     const parsed=read({...raw,network:{oscHost:'0.0.0.0',oscPort:9000}},'full',capabilities);
     return {chains:parsed.config.chains,encoderRotation:parsed.config.encoderRotation};
   }
-  return {read,full,key,duplicateDestinations,readBuiltin};
+  return {read,full,key,duplicateDestinations,readBuiltin,consumerNames};
 })();

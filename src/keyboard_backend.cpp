@@ -12,6 +12,32 @@ struct State {
   uint32_t wakeAt = 0;
   void clear() { memset(held, 0, sizeof(held)); memset(modifiers, 0, sizeof(modifiers)); outbox.clear(); reset = true; waiting = false; }
 } states[2];
+struct ConsumerState {
+  Outbox<uint16_t> outbox;
+  bool connected = false, reset = true;
+  uint32_t epoch = 0;
+  void clear() { outbox.clear(); reset = true; }
+} consumers[2];
+void syncConsumer(unsigned i) {
+  auto& s = consumers[i]; const auto t = transportAt(i);
+  const bool ready = consumerReady(t); const auto epoch = consumerEpoch(t);
+  if (s.connected != ready || s.epoch != epoch) {
+    s.clear(); s.connected = ready; s.epoch = epoch;
+  }
+}
+void flushConsumer(unsigned i) {
+  syncConsumer(i);
+  auto& s = consumers[i]; const auto t = transportAt(i);
+  if (!s.connected) return;
+  if (s.reset) {
+    if (!consumerWrite(t, 0)) { ++transportRetries; return; }
+    s.reset = false; return;
+  }
+  if (s.outbox.size) {
+    if (!consumerWrite(t, s.outbox.front())) { ++transportRetries; return; }
+    s.outbox.pop();
+  }
+}
 void sync(unsigned i) {
   auto& s = states[i]; auto t = transportAt(i);
   bool ready = keyboardReady(t); uint32_t epoch = keyboardEpoch(t);
@@ -48,6 +74,20 @@ void flush(unsigned i) {
 }
 }
 SendResult keyboardDispatch(const Action& a) {
+  if (a.keyMessage == KeyMessage::Consumer) {
+    if (!consumerUsage(a.usage)) return SendResult::Failed;
+    const unsigned i = transportIndex(a.transport); syncConsumer(i);
+    auto& s = consumers[i];
+    if (!s.connected) return SendResult::Unavailable;
+    // Reserve down AND release atomically; never enqueue an orphaned press.
+    if (s.outbox.size + 2 > 64) { ++transportOverflows; return SendResult::Failed; }
+    s.outbox.push(a.usage); s.outbox.push(0); flushConsumer(i);
+    return SendResult::Accepted;
+  }
+  if (a.keyMessage == KeyMessage::ReleaseAll) {
+    consumers[transportIndex(a.transport)].clear();
+    flushConsumer(transportIndex(a.transport));
+  }
   unsigned i = transportIndex(a.transport); sync(i);
   auto& s = states[i];
   if (!s.connected) return SendResult::Unavailable;
@@ -91,7 +131,7 @@ SendResult keyboardDispatch(const Action& a) {
   flush(i);
   return SendResult::Accepted;
 }
-void keyboardTick() { flush(0); flush(1); }
-bool keyboardQueued(Transport t) { unsigned i = transportIndex(t); sync(i); return states[i].outbox.size != 0; }
-void keyboardPanic() { for (auto& s : states) s.clear(); }
+void keyboardTick() { flush(0); flush(1); flushConsumer(0); flushConsumer(1); }
+bool keyboardQueued(Transport t) { unsigned i = transportIndex(t); sync(i); syncConsumer(i); return states[i].outbox.size != 0 || consumers[i].outbox.size != 0; }
+void keyboardPanic() { for (auto& s : states) s.clear(); for (auto& s : consumers) s.clear(); }
 }

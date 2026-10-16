@@ -12,4 +12,7 @@ uint32_t midiEpoch(Transport t);
 uint32_t keyboardEpoch(Transport t);
 bool midiWrite(Transport t, uint8_t status, uint8_t data1, uint8_t data2);
 bool keyboardWrite(Transport t, const KeyboardReport& report);
+bool consumerReady(Transport t);
+uint32_t consumerEpoch(Transport t);
+bool consumerWrite(Transport t, uint16_t usage);
 }

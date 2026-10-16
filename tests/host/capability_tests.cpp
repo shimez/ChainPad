@@ -11,6 +11,7 @@ static_assert(!HAS_USB_MIDI && !HAS_USB_KEYBOARD, "C-series must be BLE-only");
 namespace {
 std::vector<uint8_t> midiStatuses;
 std::vector<KeyboardReport> reports;
+std::vector<uint16_t> consumers;
 }
 namespace chimera {
 void transportsBegin() {}
@@ -19,6 +20,9 @@ bool midiReady(Transport t) { return t == Transport::Ble; }
 bool keyboardReady(Transport t) { return t == Transport::Ble; }
 uint32_t midiEpoch(Transport) { return 0; }
 uint32_t keyboardEpoch(Transport) { return 0; }
+bool consumerReady(Transport t) { return t == Transport::Ble; }
+uint32_t consumerEpoch(Transport) { return 0; }
+bool consumerWrite(Transport t, uint16_t usage) { assert(t == Transport::Ble); consumers.push_back(usage); return true; }
 bool midiWrite(Transport t, uint8_t status, uint8_t, uint8_t) {
   assert(t == Transport::Ble); midiStatuses.push_back(status); return true;
 }
@@ -94,5 +98,12 @@ int main() {
   assert(engine.stats.accepted == 6 && engine.stats.skipped == 0);
   assert((midiStatuses == std::vector<uint8_t>{0x90, 0x80}));
   assert(reports.size() == 2 && reports[0].keys[0] == 104 && reports[1].keys[0] == 0);
-  std::cout << "PASS " << HARDWARE_NAME << ": capabilities / BLE normalization / save-load / press-release dispatch\n";
+  source=Config{};source.chains[0].count=1;auto& cc=source.chains[0].actions[0];
+  cc.protocol=Protocol::Keyboard;cc.transport=Transport::Usb;cc.keyMessage=KeyMessage::Consumer;cc.usage=0xe9;
+  assert(saveSource(source,error)&&loadConfig(error));
+  assert(config.chains[0].actions[0].transport==Transport::Ble);
+  consumers.clear();assert(dispatch(config.chains[0].actions[0],0)==SendResult::Accepted);
+  for(int i=0;i<10;++i)backendsTick(0);
+  assert((consumers==std::vector<uint16_t>{0xe9,0}));
+  std::cout << "PASS " << HARDWARE_NAME << ": capabilities / BLE normalization / save-load / press-release / Consumer Control\n";
 }

@@ -17,7 +17,11 @@ enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait };
 enum class OscType : uint8_t { Int, Float, Bool, String };
 enum class MidiMessage : uint8_t { NoteOn, NoteOff, CC, AllNotesOn, AllNotesOff, NoteOnOff, AllNotesOnOff };
 inline bool allNotes(MidiMessage m) { return m == MidiMessage::AllNotesOn || m == MidiMessage::AllNotesOff || m == MidiMessage::AllNotesOnOff; }
-enum class KeyMessage : uint8_t { Down, Up, ReleaseAll, DownUp };
+enum class KeyMessage : uint8_t { Down, Up, ReleaseAll, DownUp, Consumer };
+inline bool consumerUsage(unsigned usage) {
+  return usage == 0xe9 || usage == 0xea || usage == 0xe2 || usage == 0xcd ||
+    usage == 0xb5 || usage == 0xb6 || usage == 0xb7;
+}
 
 // delayMs stores Wait duration or paired-action holdMs; other Actions use zero.
 struct Action {
@@ -41,7 +45,7 @@ struct Action {
 struct Chain { uint8_t count = 0; Action actions[MAX_ACTIONS]; };
 inline bool pairedAction(const Action& a) {
   return (a.protocol == Protocol::Midi && (a.message == MidiMessage::NoteOnOff || a.message == MidiMessage::AllNotesOnOff)) ||
-    (a.protocol == Protocol::Keyboard && a.keyMessage == KeyMessage::DownUp);
+    (a.protocol == Protocol::Keyboard && (a.keyMessage == KeyMessage::DownUp || a.keyMessage == KeyMessage::Consumer));
 }
 // Press grows from the front, Release from the back of the SAME 16-slot pool.
 // Logical indexing preserves each Event's configured order without moving its peer.
