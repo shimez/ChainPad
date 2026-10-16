@@ -76,16 +76,21 @@ Bluetoothで『ChainPad Chimera』とペアリングしてください。
 
 ブラウザで<http://chainpad.local>にアクセスすることで、ChainPadの設定画面が表示されます。
 
+> ChainPadの設定画面は認証機能がありません。ChainPadと同じネットワークに接続している人が設定変更可能です。<br>
+> 自宅など不特定多数が利用しない環境で使用して下さい
+
 Windowsの場合 chainpad.local でのアクセスができない場合があります。
-その場合、以下の手順でChainPadのIPアドレスを確認し、 http://IPアドレス でアクセスしてください。
+その場合、以下いずれかの手順でChainPadのIPアドレスを確認し、 http://IPアドレス でアクセスしてください。
+
+### 4-1. スマートフォンを利用してIPアドレスを確認する
+
+スマートフォンで<http://chainpad.local>にアクセスし、一番上の枠に表示されているIP Addressを確認する
+
+### 4-2. PowerShellを利用してIPアドレスを確認する
 
 1. スタートメニューから「Windows PowerShell」を起動する
 2. 起動したPowerShellで「Resolve-DnsName chainpad.local」コマンドを投入する
 3. 表示された IPAddress を確認する
-
-上記手順でChainPadのアドレスが確認できない場合はスマートフォンで<http://chainpad.local>にアクセスし、一番上のカード（枠）に表示されているIPアドレスを確認してください。
-
-> ChainPadの設定画面は認証機能がありません。ChainPadと同じネットワークに接続している人が設定変更可能です。自宅など不特定多数が利用しない環境で使用して下さい
 
 ## 5. 設定を行う
 
@@ -98,6 +103,9 @@ VRChatで使用する場合、OSC Portは通常変更する必要はありませ
 ### 5-2. Keyへのアクションの登録
 
 設定したいKEYを選択し、「+ Add Action」ボタンを押すことでアクションを追加可能です。
+
+キーの並びは画像のようになっています
+![ChainPadのキー配置図。12個のキーは3列×4行で、上から順に「1・2・3」「4・5・6」「7・8・9」「10・11・12」と並んでいます。各行は左から右へ番号が増えます。](images/chainpad-key-layout.png)
 
 #### (1)OSC
 
