@@ -397,7 +397,7 @@ int main(int argc,char** argv){try{
         CHECK(loadConfig(error)&&configOutputsAllowed()&&disk()==saved&&storageFault::renames==0);
         if(std::string(name)=="default"){
           web.request("/api/config",HTTP_GET);CHECK(web.status==200);
-          JsonDocument d;CHECK(!deserializeJson(d,web.body));CHECK(d["chains"][0]["actions"][0]["usage"]==30);
+          JsonDocument d;CHECK(!deserializeJson(d,web.body));CHECK(d["chains"][0]["actions"][0]["usage"]==36); // Saved Default KEY1: 7.
         }else CHECK(config.chains[0].count==(std::string(name)=="user"?16:0));
       }
       storageFault::files.clear();CHECK(loadConfig(error));

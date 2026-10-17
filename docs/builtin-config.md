@@ -7,9 +7,10 @@ Configuratorの「設定ファイル Import / Export」からDefault / Emptyを�
 Wi-Fi・OSC送信先は、フォーム上の未保存編集も含めて保持します。
 本体への保存・適用は通常の「保存・適用」で行います。ファイルImportの既存動作は変更しません。
 
-- Default：BLE-HID。KEY1〜10は1〜0、KEY11は`-`、KEY12はShift＋`-`。
-  JIS配列ではKEY12は`=`（US配列では`_`）。押下はKeyDown、解放はKeyUp。
-  Encoder PushはEnterの押下・解放、CW/CCWはRight/LeftのKeyDown→Up。
+- Default：BLE-HID。KEY1〜12は`7・8・9／4・5・6／1・2・3／0・.・Enter`。
+  押下はKeyDown、解放はKeyUp。Enterに修飾キーはありません。
+  Encoder Pushはスピーカーミュート（Pressのみ）、CW/CCWは音量UP/DOWN。
+  Encoderの各ActionはConsumer Controlの押下→解除です。
 - Empty：28 ChainのActionsをすべて空にします。
 - 両方ともRotationはAction Chain、rangeSteps=20、initialPosition=0、stop、Outputsなし。
 

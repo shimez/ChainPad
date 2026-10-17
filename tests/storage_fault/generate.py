@@ -45,9 +45,9 @@ adapter = root / 'tests/storage_fault/json_fault.h'
 # Production source is verbatim; only its local generated data differs.
 (out / 'config_store_alternate.cpp').write_text((root / 'src/config_store.cpp').read_text(encoding='utf-8'), encoding='utf-8')
 original = (root / 'src/builtin_config_data.h').read_text(encoding='utf-8')
-alternate = original.replace('"usage":30', '"usage":4')
+alternate = original.replace('"usage":36', '"usage":4')
 if original == alternate:
-    raise RuntimeError('Review changed-Default fixture: expected KEY1 usage 30')
+    raise RuntimeError('Review changed-Default fixture: expected KEY1 usage 36')
 (out / 'builtin_config_data.h').write_text(alternate, encoding='utf-8')
 manifest = {'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
             'handlers': locations,
