@@ -1,4 +1,5 @@
 #include "inputs.h"
+#include "hid_trace.h"
 #include "diagnostics.h"
 #include "hardware.h"
 #include <esp_timer.h>
@@ -32,8 +33,11 @@ void ARDUINO_ISR_ATTR encoderInterrupt() {
   portEXIT_CRITICAL_ISR(&encoderMux);
 }
 void emit(uint8_t id, uint32_t now) {
+  hidtrace::record(hidtrace::Input, 255, id);
   InputEvent event{id, now};
-  if (xQueueSend(events, &event, 0) != pdTRUE) ++overflows;
+  if (xQueueSend(events, &event, 0) != pdTRUE) {
+    ++overflows; hidtrace::record(hidtrace::InputDropped, 255, id);
+  } else hidtrace::record(hidtrace::InputQueued, 255, id);
 }
 struct Switch {
   bool candidate = false, stable = false;

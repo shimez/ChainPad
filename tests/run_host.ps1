@@ -29,6 +29,16 @@ $command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($args -j
 & cmd.exe /d /c $command
 if ($LASTEXITCODE -ne 0) { throw 'Firmware host tests failed' }
 
+# Compile the production recorder with a minimal clock/Print/critical-section adapter.
+$traceArgs = @('/nologo','/std:c++17','/EHsc','/utf-8','/DCHAINPAD_HID_TRACE=1',"/I`"$root\tests\hid_trace`"", "/I`"$root\src`"", "/Fe:`"$build\hid_trace_tests.exe`"", "/Fo`"$build\\`"", "`"$root\tests\hid_trace\tests.cpp`"", "`"$root\src\hid_trace.cpp`"")
+$traceCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($traceArgs -join ' ') + " && `"$build\hid_trace_tests.exe`""
+& cmd.exe /d /c $traceCommand
+if ($LASTEXITCODE -ne 0) { throw 'HID trace recorder tests failed' }
+$enabledArgs = @('/DCHAINPAD_HID_TRACE=1',"/I`"$root\tests\hid_trace`"") + $args + "`"$root\src\hid_trace.cpp`""
+$enabledCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($enabledArgs -join ' ') + " && `"$build\core_tests.exe`""
+& cmd.exe /d /c $enabledCommand
+if ($LASTEXITCODE -ne 0) { throw 'Trace-enabled firmware host tests failed' }
+
 $bleSources = @('tests\host\capability_tests.cpp','src\rotation.cpp','src\model.cpp','src\config_store.cpp','src\engine.cpp','src\backends.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
 $bleSources += 'src\rotation_runtime.cpp'
 $bleSources += 'src\rotation_sender.cpp'

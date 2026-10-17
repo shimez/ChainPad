@@ -1,4 +1,5 @@
 #include "diagnostics.h"
+#include "hid_trace.h"
 #include "model.h"
 #include "rotation_runtime.h"
 #include "rotation_sender.h"
@@ -77,6 +78,9 @@ void printMemoryDiagnostics(Print& out) {
   }
 }
 void printDiagnostics(Print& out, const char* reason) {
+#if CHAINPAD_HID_TRACE
+  if (hidtrace::active()) return;
+#endif
   auto& config = activeConfig();
   // Capture RAM before filesystem queries and printing allocate temporary buffers.
   multi_heap_info_t ram{}, psram{};

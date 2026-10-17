@@ -1,4 +1,5 @@
 #include "transports.h"
+#include "hid_trace.h"
 #include "diagnostics.h"
 #if CHAINPAD_HAS_USB
 #include <USB.h>
@@ -34,23 +35,36 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   void onDisconnect(NimBLEServer*, NimBLEConnInfo&, int) override {
     midiSubscribed = false; keyboardSubscribed = false;
     consumerSubscribed = false; ++consumerGeneration;
+#if CHAINPAD_HID_TRACE
+    hidtrace::record(hidtrace::Disconnect, 1, 0, 0, consumerGeneration.load());
+#endif
     ++midiGeneration; ++keyboardGeneration;
   }
 } serverCallbacks;
 class SubscriptionCallbacks : public NimBLECharacteristicCallbacks {
  public:
-  SubscriptionCallbacks(std::atomic<bool>& s, std::atomic<uint32_t>& g) : subscribed(s), generation(g) {}
+  SubscriptionCallbacks(std::atomic<bool>& s, std::atomic<uint32_t>& g, bool consumer = false) : subscribed(s), generation(g), isConsumer(consumer) {}
  private:
   std::atomic<bool>& subscribed;
   std::atomic<uint32_t>& generation;
+  bool isConsumer;
   void onSubscribe(NimBLECharacteristic*, NimBLEConnInfo&, uint16_t value) override {
     subscribed = (value & 1) != 0;
     ++generation;
+#if CHAINPAD_HID_TRACE
+    if (isConsumer) hidtrace::record(hidtrace::Subscribe, 1, 0, 0, generation.load(), value);
+#endif
   }
+#if CHAINPAD_HID_TRACE
+  void onStatus(NimBLECharacteristic*, NimBLEConnInfo& info, int code) override {
+    // No payload/record identity is provided. id here is the connection handle.
+    if (isConsumer) hidtrace::record(hidtrace::Status, 1, 0, info.getConnHandle(), generation.load(), code);
+  }
+#endif
 };
 SubscriptionCallbacks midiCallbacks(midiSubscribed, midiGeneration);
 SubscriptionCallbacks keyboardCallbacks(keyboardSubscribed, keyboardGeneration);
-SubscriptionCallbacks consumerCallbacks(consumerSubscribed, consumerGeneration);
+SubscriptionCallbacks consumerCallbacks(consumerSubscribed, consumerGeneration, true);
 // F13..F24 are in the keyboard usage range through 0x73.
 const uint8_t reportMap[] = {
   0x05,0x01, 0x09,0x06, 0xa1,0x01, 0x85,0x01,
@@ -166,8 +180,16 @@ bool consumerWrite(Transport t, uint16_t usage) {
 #if CHAINPAD_HAS_USB
   if (t == Transport::Usb) return tud_hid_ready() && tud_hid_report(HID_REPORT_ID_CONSUMER_CONTROL, report, sizeof(report));
 #endif
+#if CHAINPAD_HID_TRACE
+  const uint32_t id = hidtrace::context(1);
+  hidtrace::record(hidtrace::NotifyCall, 1, usage, id, consumerGeneration.load());
+#endif
   consumerInput->setValue(report, sizeof(report));
-  return consumerInput->notify();
+  const bool result = consumerInput->notify();
+#if CHAINPAD_HID_TRACE
+  hidtrace::record(hidtrace::NotifyReturn, 1, usage, id, consumerGeneration.load(), result);
+#endif
+  return result;
 }
 uint32_t midiEpoch(Transport t) { return t == Transport::Usb ? usbGeneration.load() : midiGeneration.load(); }
 uint32_t keyboardEpoch(Transport t) { return t == Transport::Usb ? usbGeneration.load() : keyboardGeneration.load(); }

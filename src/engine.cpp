@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "hid_trace.h"
 #include "rotation_runtime.h"
 
 namespace chimera {
@@ -12,6 +13,8 @@ bool Engine::advance(Invocation& job, uint32_t now) {
   while (job.next < chain.count) {
     const uint8_t index = job.next++;
     const auto& action = chain.actions[index];
+    if (action.protocol == Protocol::Keyboard && action.keyMessage == KeyMessage::Consumer)
+      hidtrace::record(hidtrace::Dispatch, action.transport == Transport::Usb ? 0 : 1, action.usage, job.input, 0, index);
     const bool wait = action.protocol == Protocol::Wait;
     auto result = wait ? SendResult::Accepted : dispatch(action, now);
     stats.lastInput = job.input; stats.lastAction = index; stats.lastResult = result;
@@ -35,6 +38,7 @@ bool Engine::trigger(const InputEvent& event) {
   // Reject the whole new invocation before emitting any prefix Actions.
   // Chains without Wait or paired sends remain executable when slots are full.
   if (needsSlot && running == MAX_RUNNING) {
+    hidtrace::record(hidtrace::ChainRejected, 255, event.input);
     ++stats.rejectedChains; stats.lastInput = event.input;
     stats.lastAction = 0; stats.lastResult = SendResult::Busy; return false;
   }

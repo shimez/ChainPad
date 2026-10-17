@@ -18,6 +18,7 @@
 #include "factory_reset.h"
 #include "web_assets.h"
 
+#include "hid_trace.h"
 using namespace chimera;
 namespace {
 WebServer web(80);
@@ -304,6 +305,9 @@ void setup() {
    console.println("ChainPad / Project Chimera Phase 2"); console.println(bootMessage);
   console.println("Setup AP: when unconfigured or disconnected for 30s / http://192.168.4.1");
   console.println("Diagnostics: m=snapshot, d=toggle 5s + save logging, ?=help (115200 baud)");
+#if CHAINPAD_HID_TRACE
+  console.println("HID TRACE: 1=start counters, 2=start events, 0=stop, p=dump (controls are silent)");
+#endif
 }
 void loop() {
   static uint32_t observedOverflows = 0;
@@ -311,6 +315,11 @@ void loop() {
   // At most one command per loop, so pasted input cannot monopolize execution.
   if (console.available() > 0) {
     const int command = console.read();
+#if CHAINPAD_HID_TRACE
+    if (hidtrace::command(command) || hidtrace::active()) {
+      // Recording controls are silent. Suppress diagnostic console output while active.
+    } else
+#endif
     if (command == 'm') {
       console.printf("inputsReady=%u\n", unsigned(inputReady));
       console.printf("Boot: %s\nWi-Fi mode=%u status=%u AP=%s STA=%s\n", bootMessage.c_str(),
@@ -339,6 +348,7 @@ void loop() {
     if (configOutputsAllowed()) engine.tick(now);
     InputEvent event;
     for (unsigned budget = 0; budget < 16 && nextInput(event); ++budget) {
+      hidtrace::record(hidtrace::InputConsumed, 255, event.input);
       if (configOutputsAllowed()) engine.trigger(event);
       lastActivity = now;
     }
@@ -349,8 +359,15 @@ void loop() {
              WiFi.status() == WL_CONNECTED ? now - lastActivity > 50 :
              ledPhase < 100 || (ledPhase >= 200 && ledPhase < 300);
   setStatusLed(inputReady && led);
-  if (diagnosticsEnabled && now - lastDiagnostics >= 5000) {
+  if (diagnosticsEnabled && now - lastDiagnostics >= 5000
+#if CHAINPAD_HID_TRACE
+      && !hidtrace::active()
+#endif
+  ) {
     lastDiagnostics = now; printDiagnostics(console, "periodic");
   }
   delay(1);
+#if CHAINPAD_HID_TRACE
+  hidtrace::dumpTick(console);
+#endif
 }

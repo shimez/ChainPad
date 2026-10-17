@@ -1,4 +1,5 @@
 #include "backend_internal.h"
+#include "hid_trace.h"
 
 namespace chimera {
 namespace {
@@ -16,13 +17,42 @@ struct ConsumerState {
   Outbox<uint16_t> outbox;
   bool connected = false, reset = true;
   uint32_t epoch = 0;
-  void clear() { outbox.clear(); reset = true; }
+#if CHAINPAD_HID_TRACE
+  uint32_t ids[64]{}; // Sidecar only; original FIFO/report layout is unchanged.
+#endif
+  uint32_t frontId() const {
+#if CHAINPAD_HID_TRACE
+    return ids[outbox.head];
+#else
+    return 0;
+#endif
+  }
+  void push(unsigned i, uint16_t usage) {
+#if CHAINPAD_HID_TRACE
+    const uint32_t id = hidtrace::nextId();
+    ids[(outbox.head + outbox.size) % 64] = id;
+#else
+    const uint32_t id = 0;
+#endif
+    outbox.push(usage);
+    hidtrace::record(hidtrace::Push, i, usage, id, epoch, outbox.size);
+  }
+  void clear(unsigned i, int reason) {
+    hidtrace::record(hidtrace::Reset, i, outbox.size, 0, epoch, reason);
+#if CHAINPAD_HID_TRACE
+    for (unsigned n = 0; n < outbox.size; ++n) {
+      const unsigned slot = (outbox.head + n) % 64;
+      hidtrace::record(hidtrace::Discard, i, outbox.entries[slot], ids[slot], epoch, 1);
+    }
+#endif
+    outbox.clear(); reset = true;
+  }
 } consumers[2];
 void syncConsumer(unsigned i) {
   auto& s = consumers[i]; const auto t = transportAt(i);
   const bool ready = consumerReady(t); const auto epoch = consumerEpoch(t);
   if (s.connected != ready || s.epoch != epoch) {
-    s.clear(); s.connected = ready; s.epoch = epoch;
+    s.clear(i, 1); s.connected = ready; s.epoch = epoch;
   }
 }
 void flushConsumer(unsigned i) {
@@ -30,11 +60,19 @@ void flushConsumer(unsigned i) {
   auto& s = consumers[i]; const auto t = transportAt(i);
   if (!s.connected) return;
   if (s.reset) {
+    hidtrace::record(hidtrace::Neutral, i, 0, 0, s.epoch);
+#if CHAINPAD_HID_TRACE
+    hidtrace::context(i, 0);
+#endif
     if (!consumerWrite(t, 0)) { ++transportRetries; return; }
     s.reset = false; return;
   }
   if (s.outbox.size) {
+#if CHAINPAD_HID_TRACE
+    hidtrace::context(i, s.frontId());
+#endif
     if (!consumerWrite(t, s.outbox.front())) { ++transportRetries; return; }
+    hidtrace::record(hidtrace::Pop, i, s.outbox.front(), s.frontId(), s.epoch, s.outbox.size - 1);
     s.outbox.pop();
   }
 }
@@ -75,17 +113,29 @@ void flush(unsigned i) {
 }
 SendResult keyboardDispatch(const Action& a) {
   if (a.keyMessage == KeyMessage::Consumer) {
-    if (!consumerUsage(a.usage)) return SendResult::Failed;
+    if (!consumerUsage(a.usage)) {
+      hidtrace::record(hidtrace::ActionRejected, transportIndex(a.transport), a.usage, 0, 0, 1);
+      return SendResult::Failed;
+    }
     const unsigned i = transportIndex(a.transport); syncConsumer(i);
     auto& s = consumers[i];
-    if (!s.connected) return SendResult::Unavailable;
+    if (!s.connected) {
+      hidtrace::record(hidtrace::ActionRejected, i, a.usage, 0, s.epoch, 2);
+      return SendResult::Unavailable;
+    }
     // Reserve down AND release atomically; never enqueue an orphaned press.
-    if (s.outbox.size + 2 > 64) { ++transportOverflows; return SendResult::Failed; }
-    s.outbox.push(a.usage); s.outbox.push(0); flushConsumer(i);
+    if (s.outbox.size + 2 > 64) {
+      ++transportOverflows;
+      hidtrace::record(hidtrace::Overflow, i, a.usage, 0, s.epoch, s.outbox.size);
+      hidtrace::record(hidtrace::ActionRejected, i, a.usage, 0, s.epoch, 3);
+      return SendResult::Failed;
+    }
+    hidtrace::record(hidtrace::ActionAccepted, i, a.usage, 0, s.epoch);
+    s.push(i, a.usage); s.push(i, 0); flushConsumer(i);
     return SendResult::Accepted;
   }
   if (a.keyMessage == KeyMessage::ReleaseAll) {
-    consumers[transportIndex(a.transport)].clear();
+    consumers[transportIndex(a.transport)].clear(transportIndex(a.transport), 2);
     flushConsumer(transportIndex(a.transport));
   }
   unsigned i = transportIndex(a.transport); sync(i);
@@ -133,5 +183,5 @@ SendResult keyboardDispatch(const Action& a) {
 }
 void keyboardTick() { flush(0); flush(1); flushConsumer(0); flushConsumer(1); }
 bool keyboardQueued(Transport t) { unsigned i = transportIndex(t); sync(i); syncConsumer(i); return states[i].outbox.size != 0 || consumers[i].outbox.size != 0; }
-void keyboardPanic() { for (auto& s : states) s.clear(); for (auto& s : consumers) s.clear(); }
+void keyboardPanic() { for (auto& s : states) s.clear(); for (unsigned i = 0; i < 2; ++i) consumers[i].clear(i, 3); }
 }

@@ -1,4 +1,5 @@
 #include "model.h"
+#include "hid_trace.h"
 #include "rotation_runtime.h"
 #include "rotation_sender.h"
 #include "engine.h"
@@ -772,6 +773,9 @@ void timedPairTests() {
   std::cout << "PASS timed pairs: hold after send / wrap / whole-set On-hold-Off / snapshot / persistence\n";
 }
 void consumerTests() {
+#if CHAINPAD_HID_TRACE
+  hidtrace::command('2'); // Run the same wire-order assertions with recording active.
+#endif
   String error; JsonDocument doc; Chain chain;
   for (unsigned usage : {0xe9u,0xeau,0xe2u,0xcdu,0xb5u,0xb6u,0xb7u}) {
     chain.count=1; auto& a=chain.actions[0];a.protocol=Protocol::Keyboard;a.transport=Transport::Usb;
@@ -824,6 +828,9 @@ void consumerTests() {
   for(int i=0;i<20;++i){backendsTick(millis());engine.tick(millis());}
   assert(engine.activeCount()==0&&(fake::consumer==std::vector<uint16_t>{a.usage,0,a.usage,0}));
   reset();config=Config{};
+#if CHAINPAD_HID_TRACE
+  hidtrace::command('0');
+#endif
   std::cout<<"PASS Consumer Control: codec/save-load, seven usages/USB/BLE, press-release, subscription, queue capacity, panic, reconnect, Release All, engine ordering\n";
 }
 int main() {
