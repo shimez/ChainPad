@@ -12,6 +12,7 @@ body{color:var(--text)}button,input,select{background:var(--field)}button.primar
 <style>
 header,main{max-width:1280px;padding-left:16px;padding-right:16px}
 .fields{align-items:start}.fields>label{align-content:start;min-width:0}.fields>label>input,.fields>label>select{height:42px;min-width:0}
+.fields.hid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.fields.hid>.hint{grid-column:1/-1;margin:0}
 .header-controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-left:auto}
 .output-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.output-heading h3{margin:0}
 #rotationDuplicates+h3{border-top:1px solid var(--line);margin-top:28px;padding-top:24px}
@@ -140,12 +141,8 @@ if(a.protocol==='midi'){
     const hint=document.createElement('p');hint.className='hint';hint.textContent='保存済み設定のアクティブなChainにあるNote On / Note Offを収集します。Rotation Value中のCW / CCW Chainは対象外です。元のTransportに従い、送信先ごとにChannel＋Noteの重複を除外します。過去の送信履歴は追跡しません。';fields.append(hint);
   }else fields.append(control('Channel',a.channel,null,v=>a.channel=v,'number',1,16),control(a.message==='cc'?'Controller':'Note',a.number,null,v=>a.number=v,'number',0,127),control(a.message==='cc'?'Value':'Velocity',a.value,null,v=>a.value=v,'number',['noteOn','noteOnOff'].includes(a.message)?1:0,127));
 }
-if(a.protocol==='keyboard'){fields.append(control('Message',a.message,[['keyDown','KeyDown'],['keyUp','KeyUp'],['keyDownUp','KeyDown→Up'],['consumer','Consumer Control'],['releaseAll','Release All']],v=>{const previous=a.message;a.message=v;if(v!=='keyDownUp')delete a.holdMs;if(v==='consumer'){a.usage=233;a.modifiers=0;}else if(previous==='consumer'){a.usage=104;a.modifiers=0;}renderActions();}));if(a.message==='consumer'){
-  fields.append(control('Consumer Control（押下→解除）',a.usage,Object.entries(Presets.consumerNames),v=>a.usage=Number(v)));
-}else if(a.message!=='releaseAll'){
-  fields.append(control(`キー（${keyboardLayout==='jis'?'JIS':'ASCII / US'}配列 / HID Usage）`,a.usage,Array.from({length:112},(_,k)=>{const u=k+4;return [u,`${usageNames[u]} (0x${u.toString(16).padStart(2,'0')})`];}),v=>a.usage=Number(v)));
-}}
-if((a.protocol==='midi'&&['noteOnOff','allNotesOnOff'].includes(a.message))||(a.protocol==='keyboard'&&a.message==='keyDownUp'))fields.append(control(a.protocol==='keyboard'?'DownからUpまでの待ち時間 (ms)':'OnからOffまでの待ち時間 (ms)',a.holdMs??0,null,v=>a.holdMs=v,'number',0,86400000));
+if(a.protocol==='keyboard')hidFields(fields,a);
+if((a.protocol==='midi'&&['noteOnOff','allNotesOnOff'].includes(a.message))||(a.protocol==='keyboard'&&a.message==='keyDownUp'))fields.append(control(a.protocol==='keyboard'?'押下時間 (ms)':'OnからOffまでの待ち時間 (ms)',a.holdMs??0,null,v=>a.holdMs=v,'number',0,86400000));
 detail.append(fields);if(a.protocol==='keyboard'&&['keyDown','keyDownUp'].includes(a.message)){const mods=document.createElement('div');mods.className='modifiers';['L Ctrl','L Shift','L Alt','L GUI','R Ctrl','R Shift','R Alt','R GUI'].forEach((name,bit)=>{const label=document.createElement('label');const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!(a.modifiers&(1<<bit));cb.onchange=()=>{a.modifiers=cb.checked?a.modifiers|(1<<bit):a.modifiers&~(1<<bit);changed();};label.append(cb,document.createTextNode(name));mods.append(label);});detail.append(mods);}
 });if(!actions.length){const p=document.createElement('p');p.className='hint';p.textContent='このEventにはActionがありません。';list.append(p);}updateActionSlots();}
 function selectInput(group){editingAction=-1;selected=group*2;$('keyPresetMenu').open=false;$('keyPresetMenu').hidden=group>=13;$('title').textContent=names[group];$('event').replaceChildren();const labels=group===13?['↩️Clockwise（時計回り）','↪️CounterClockWise（反時計回り）']:['Press（押した時）','Release（離した時）'];labels.forEach((name,i)=>{const o=document.createElement('option');o.value=group*2+i;o.textContent=name;$('event').append(o);});[...$('inputs').children].forEach((b,i)=>b.classList.toggle('active',i===group));renderActions();RotationEditor.refresh();}

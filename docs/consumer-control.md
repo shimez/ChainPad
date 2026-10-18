@@ -1,7 +1,15 @@
 # HID Consumer Control
 
-ConfiguratorのActionで「HID」、Messageで「Consumer Control」を選択します。
+ConfiguratorのActionで「HID」、種類で「音量・メディア」を選択し、「操作」を指定します。
 1回のActionで押下と解除を送ります。JIS／ASCIIの表示設定には依存しません。
+PressとReleaseの両方に設定すると、押して離す1往復で2回実行されます。
+
+「種類」は画面上だけの分類です。キーボードはKeyDown／KeyUp／KeyDown→Up、
+音量・メディアは既存の`consumer`、HID全解除は既存の`releaseAll`として保存します。
+同じ種類の再選択では設定を初期化しません。別の種類へ切り替えると、
+音量・メディアは音量UP、キーボードはF13のKeyDown→Upへ初期化します。
+HID全解除では編集欄を隠し、既存codecが要求するusage/modifiersは104/0として保持します。
+種類切替では押下時間を削除し、Transportは保持します。既存JSONの表示だけでは設定を変更しません。
 
 | 操作 | Consumer Usage（page 0x0C） |
 |---|---:|

@@ -19,6 +19,28 @@ function actionSlots(){
   return {used:config.chains.find(c=>c.input===base).actions.length+config.chains.find(c=>c.input===base+1).actions.length,limit:16,label:'Press / Release合計'};
 }
 function updateActionSlots(){const s=actionSlots();$('actionSlots').textContent=`${s.label}: ${s.used} / ${s.limit} Actions`;$('add').disabled=s.used>=s.limit;}
+const consumerUsageOrder=[233,234,226,205,181,182,183];
+function hidKind(a){return a.message==='consumer'?'consumer':a.message==='releaseAll'?'releaseAll':'keyboard';}
+function setHidKind(a,kind){
+  if(hidKind(a)===kind)return;
+  delete a.holdMs;
+  // Release All still requires a valid keyboard usage/modifiers in the existing codec.
+  Object.assign(a,{message:kind==='keyboard'?'keyDownUp':kind,usage:kind==='consumer'?233:104,modifiers:0});
+}
+function hidFields(fields,a){
+  fields.classList.add('hid');
+  const kind=hidKind(a);
+  fields.append(control('種類',kind,[['keyboard','キーボード'],['consumer','音量・メディア'],['releaseAll','HID全解除']],v=>{setHidKind(a,v);renderActions();}));
+  if(kind==='consumer'){
+    fields.append(control('操作',a.usage,consumerUsageOrder.map(u=>[u,Presets.consumerNames[u]]),v=>a.usage=Number(v)));
+    const hint=document.createElement('p');hint.className='hint';hint.textContent='選択した操作をこのイベントで1回実行します。（押下→解除）';fields.append(hint);
+  }else if(kind==='releaseAll'){
+    const hint=document.createElement('p');hint.className='hint';hint.textContent='保持中のHIDキーをすべて解除します。';fields.append(hint);
+  }else{
+    fields.append(control('操作',a.message,[['keyDown','押す（KeyDown）'],['keyUp','離す（KeyUp）'],['keyDownUp','押して離す（KeyDown→Up）']],v=>{a.message=v;if(v!=='keyDownUp')delete a.holdMs;renderActions();}));
+    fields.append(control('キー（HID Usage）',a.usage,Array.from({length:112},(_,k)=>{const u=k+4;return [u,`${usageNames[u]} (0x${u.toString(16).padStart(2,'0')})`];}),v=>a.usage=Number(v)));
+  }
+}
 function actionSummary(a) {
   const transport={wifi:'Wi-Fi',usb:'USB',ble:'BLE',both:'USB + BLE'}[a.transport]||'';
   if(a.protocol==='wait')return `${a.delayMs} ms`;
@@ -30,11 +52,11 @@ function actionSummary(a) {
     if(a.message==='cc')return `CC · Ch ${a.channel} · Controller ${a.number} → ${a.value} · ${transport}`;
     return `${a.message==='noteOn'?'Note On':a.message==='noteOnOff'?'Note On→Off':'Note Off'} · Ch ${a.channel} · Note ${a.number} · Velocity ${a.value} · ${transport}${a.message==='noteOnOff'?` · 待ち時間 ${a.holdMs??0} ms`:''}`;
   }
-  if(a.message==='consumer')return `Consumer Control · ${Presets.consumerNames[a.usage]||'Unknown'} · ${transport}`;
-  if(a.message==='releaseAll')return `HID · Release All · ${transport}`;
+  if(a.message==='consumer')return `HID · ${transport} · ${Presets.consumerNames[a.usage]||'Unknown'} · 押下→解除`;
+  if(a.message==='releaseAll')return `HID · ${transport} · 全解除`;
   const mods=['L Ctrl','L Shift','L Alt','L GUI','R Ctrl','R Shift','R Alt','R GUI'].filter((_,bit)=>a.modifiers&(1<<bit));
   const key=usageNames[a.usage]||`Usage 0x${a.usage.toString(16)}`;
-  return `Keyboard · ${a.message==='keyDown'?'KeyDown':a.message==='keyDownUp'?'KeyDown→Up':'KeyUp'} · ${['keyDown','keyDownUp'].includes(a.message)&&mods.length?mods.join(' + ')+' + ':''}${key} · ${transport}${a.message==='keyDownUp'?` · 待ち時間 ${a.holdMs??0} ms`:''}`;
+  return `HID · ${transport} · ${['keyDown','keyDownUp'].includes(a.message)&&mods.length?mods.join(' + ')+' + ':''}${key} · ${a.message==='keyDown'?'押す':a.message==='keyDownUp'?'押して離す':'離す'}${a.message==='keyDownUp'?` · 押下時間 ${a.holdMs??0} ms`:''}`;
 }
 
 let editingAction=-1, cancelActionDrag=()=>{};
