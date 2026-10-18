@@ -37,7 +37,7 @@ function hidFields(fields,a){
   }else if(kind==='releaseAll'){
     const hint=document.createElement('p');hint.className='hint';hint.textContent='保持中のHIDキーをすべて解除します。';fields.append(hint);
   }else{
-    fields.append(control('操作',a.message,[['keyDown','押す（KeyDown）'],['keyUp','離す（KeyUp）'],['keyDownUp','押して離す（KeyDown→Up）']],v=>{a.message=v;if(v!=='keyDownUp')delete a.holdMs;renderActions();}));
+    fields.append(control('押し方',a.message,[['keyDown','押す（KeyDown）'],['keyUp','離す（KeyUp）'],['keyDownUp','押して離す（KeyDown→Up）']],v=>{a.message=v;if(v!=='keyDownUp')delete a.holdMs;renderActions();}));
     fields.append(control('キー（HID Usage）',a.usage,Array.from({length:112},(_,k)=>{const u=k+4;return [u,`${usageNames[u]} (0x${u.toString(16).padStart(2,'0')})`];}),v=>a.usage=Number(v)));
   }
 }

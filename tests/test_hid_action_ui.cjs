@@ -54,7 +54,7 @@ choose('種類','consumer');assert.deepEqual(a,action('consumer',233));
 choose('操作',226);assert.equal(a.usage,226);
 choose('種類','consumer');assert.equal(a.usage,226);
 choose('種類','keyboard');assert.deepEqual(a,action('keyDownUp'));
-choose('押下時間 (ms)',123);choose('操作','keyDown');assert(!('holdMs' in a));
+choose('押下時間 (ms)',123);choose('押し方','keyDown');assert(!('holdMs' in a));
 choose('種類','releaseAll');assert.deepEqual(a,action('releaseAll'));
 assert(!field('操作'));assert(!field('押下時間 (ms)'));
 assert(P.read(P.full(config),'full',ctx.capabilities)); // Release All's required fields remain codec-compatible.
