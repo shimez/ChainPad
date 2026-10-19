@@ -56,23 +56,34 @@ class PagesTests(unittest.TestCase):
         self.assertIn('href="getting-started/"', portal)
         self.assertNotIn("<!-- DOCUMENT_CONTENT -->", guide)
         self.assertFalse((self.output / "getting-started/index.md").exists())
+        manual = (self.output / "manual/index.html").read_text(encoding="utf-8")
+        self.assertIn("マニュアル — ChainPad", manual)
+        self.assertIn("<h1", manual)
+        self.assertIn('href="../getting-started/"', manual)
+        self.assertIn('href="manual/"', portal)
+        self.assertIn('href="../manual/"', guide)
+        self.assertNotIn("<!-- DOCUMENT_CONTENT -->", manual)
+        self.assertFalse((self.output / "manual/index.md").exists())
+        self.assertFalse((self.output / "manual/images/.gitkeep").exists())
 
     def test_guide_renders_markdown_and_copies_images(self):
         root = Path(self.temp.name) / "source"
-        guide = root / "site/getting-started"
-        (guide / "images").mkdir(parents=True)
-        (guide / "images/sample.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
-        (guide / "index.md").write_text('# Getting Started\n\n[TOC]\n\n## 接続\n\n![画像](images/sample.svg)\n\n```text\n<x>\n```\n\n| 項目 | 値 |\n| --- | --- |\n| A | B |\n', encoding="utf-8")
         (root / "scripts/templates").mkdir(parents=True)
-        (root / "scripts/templates/getting-started.html").write_text('<main><!-- DOCUMENT_CONTENT --></main>')
+        for page in ("getting-started", "manual"):
+            guide = root / "site" / page
+            (guide / "images").mkdir(parents=True)
+            (guide / "images/sample.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
+            (guide / "index.md").write_text('# Guide\n\n[TOC]\n\n## 接続\n\n![画像](images/sample.svg)\n\n```text\n<x>\n```\n\n| 項目 | 値 |\n| --- | --- |\n| A | B |\n', encoding="utf-8")
+            (root / f"scripts/templates/{page}.html").write_text('<main><!-- DOCUMENT_CONTENT --></main>')
         with patch.object(site, "ROOT", root), patch.object(site, "OUTPUT", self.output), patch.object(site.subprocess, "check_output", return_value="a" * 40):
             site.copy_site()
-        html = (self.output / "getting-started/index.html").read_text(encoding="utf-8")
-        self.assertIn('<div class="toc">', html)
-        self.assertIn("<table>", html)
-        self.assertIn("&lt;x&gt;", html)
-        self.assertIn('src="images/sample.svg"', html)
-        self.assertTrue((self.output / "getting-started/images/sample.svg").is_file())
+        for page in ("getting-started", "manual"):
+            html = (self.output / page / "index.html").read_text(encoding="utf-8")
+            self.assertIn('<div class="toc">', html)
+            self.assertIn("<table>", html)
+            self.assertIn("&lt;x&gt;", html)
+            self.assertIn('src="images/sample.svg"', html)
+            self.assertTrue((self.output / page / "images/sample.svg").is_file())
 
     def test_corrupt_binary_rejected(self):
         self.payloads[self.info["files"][0]["path"]] = b"corrupt"
