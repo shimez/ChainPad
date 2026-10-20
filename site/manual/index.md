@@ -10,10 +10,7 @@
 
 ![ChainPad 外観図](./images/chainpad-topview-image-guide.png)
 
-①～⑫：キースイッチ
-⑬：エンコーダー
-⑭：USB Type-Cポート
-⑮：BOOTボタン
+①～⑫：キー / ⑬：エンコーダー / ⑭：USB Type-Cポート / ⑮：BOOTボタン
 
 ### 1-2. Getting Startedについて
 
@@ -148,11 +145,12 @@ Encoder Modeでは、「Rotation Direction（回転方向モード）」と「Ro
 
 ![ChainPad WebUI Rotation Valueモード](./images/chainpad-webui-rotationvalue.png)
 
-「+ Add Output」を押すことで、出力するOSC/MIDI CCを追加できます。
-Start、Endに送信される値の開始値、終了値を設定してください。
+Linked Outputs欄で、出力するOSC/MIDI CCの設定を行います。<br>
+「+ Add Output」を押すことで、出力を追加できます。
+プロトコルの種類、Start、Endに送信される値の開始値、終了値などを設定してください。
 
 Preview（ブラウザ上でのOutputのテスト）欄ではOSC/MIDI出力される値をブラウザ上で確認することができます。<br>
-Preview Positionにエンコーダーのポジション（何クリック分回したか）を入力すると、OSC/MIDIで送信される値が表示されます。
+Preview Positionにエンコーダーのポジション（何クリック分回したか）を入力すると、OSC/MIDI CCで送信される値を実際に送信せず確認することが可能です。<br>
 
 ### 3-7. 保存ボタン
 
@@ -230,7 +228,8 @@ ChainPadでは、以下の目的でBluetoothを使用します
 - BLE-HID（Bluetoothを利用したキーボード操作）
 
 Windowsでは、BLE-MIDI機能を利用するためにはペアリング前にBLE-MIDIドライバーのインストールが必要な場合があります。<br>
-開発時の検証ではKORG社のBLE-MIDIドライバーでの動作を確認しました。
+開発時の検証ではKORG社のBLE-MIDIドライバーでの動作を確認しました。<br>
+BLE-MIDIドライバの導入、初回ペアリング手順については[Getting Started](../getting-started/)を参照してください
 
 ### 5-3. USB
 
@@ -242,8 +241,9 @@ ChainPadでは、以下の目的でUSBを使用します。
 
 ## 6. ファームウェア管理
 
-ChainPadのアップデートがあった場合はファームウェアの更新が可能です。<br>
-また、ChainPadと共通の基板を利用するChainOSCPadシリーズのファームウェアへの書き換えも可能です。<br>
+ChainPadのアップデートがあった場合、[Web Installer](../installer/)にてファームウェアの更新が可能です。<br>
+また、ChainPadと共通の基板を利用する[ChainOSCPadシリーズ](https://shimez.github.io/ChainOSCPad-Portal/)のファームウェアへの書き換えも可能です。<br>
+Web Installerを利用する際はEdge/Chromeを使用することを推奨します。<br>
 **ファームウェアの書き換えを行う際は、事前に全体設定のExportを行うことを推奨します。**
 
 1. Web Installerのページにアクセスし、「Connect」や「Install」のボタンを押す
