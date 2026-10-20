@@ -13,6 +13,7 @@ body{color:var(--text)}button,input,select{background:var(--field)}button.primar
 header,main{max-width:1280px;padding-left:16px;padding-right:16px}
 .fields{align-items:start}.fields>label{align-content:start;min-width:0}.fields>label>input,.fields>label>select{height:42px;min-width:0}
 .fields.hid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.fields.hid>.hint{grid-column:1/-1;margin:0}
+.fields>.action-note{grid-column:1/-1;order:1;margin:0}
 .header-controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-left:auto}
 .output-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.output-heading h3{margin:0}
 #rotationDuplicates+h3{border-top:1px solid var(--line);margin-top:28px;padding-top:24px}
@@ -138,7 +139,7 @@ if(a.protocol==='midi'){
   fields.append(control('Message',a.message,[['noteOn','Note On'],['noteOff','Note Off'],['noteOnOff','Note On→Off'],['cc','Control Change'],['allNotesOn','All Notes On'],['allNotesOff','All Notes Off'],['allNotesOnOff','All Notes On→Off']],v=>{actions[i]=bulk?{...defaults('midi'),message:v,value:['noteOn','noteOnOff','allNotesOn','allNotesOnOff'].includes(v)?127:0}:{...a,message:v,value:['noteOn','noteOnOff','allNotesOn','allNotesOnOff'].includes(v)?127:0};if(!['noteOnOff','allNotesOnOff'].includes(v))delete actions[i].holdMs;renderActions();}));
   if(bulk){
     if(a.message!=='allNotesOff')fields.append(control('Velocity',a.value,null,v=>a.value=v,'number',1,127));
-    const hint=document.createElement('p');hint.className='hint';hint.textContent='保存済み設定のアクティブなChainにあるNote On / Note Offを収集します。Rotation Value中のCW / CCW Chainは対象外です。元のTransportに従い、送信先ごとにChannel＋Noteの重複を除外します。過去の送信履歴は追跡しません。';fields.append(hint);
+    const hint=document.createElement('p');hint.className='hint action-note';hint.textContent='保存済み設定のアクティブなChainにあるNote On / Note Offを収集します。Rotation Value中のCW / CCW Chainは対象外です。元のTransportに従い、送信先ごとにChannel＋Noteの重複を除外します。過去の送信履歴は追跡しません。';fields.append(hint);
   }else fields.append(control('Channel',a.channel,null,v=>a.channel=v,'number',1,16),control(a.message==='cc'?'Controller':'Note',a.number,null,v=>a.number=v,'number',0,127),control(a.message==='cc'?'Value':'Velocity',a.value,null,v=>a.value=v,'number',['noteOn','noteOnOff'].includes(a.message)?1:0,127));
 }
 if(a.protocol==='keyboard')hidFields(fields,a);
