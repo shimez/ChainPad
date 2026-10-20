@@ -81,7 +81,7 @@ def copy_site():
     for page in ("getting-started", "manual"):
         source = ROOT / f"site/{page}/index.md"
         template = (ROOT / f"scripts/templates/{page}.html").read_text(encoding="utf-8")
-        content = markdown.markdown(source.read_text(encoding="utf-8"), extensions=["fenced_code", "tables", "toc", "sane_lists"], output_format="html")
+        content = markdown.markdown(source.read_text(encoding="utf-8"), extensions=["fenced_code", "tables", "toc", "sane_lists", "footnotes"], output_format="html")
         destination = OUTPUT / page / "index.html"
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(template.replace("<!-- DOCUMENT_CONTENT -->", content), encoding="utf-8")

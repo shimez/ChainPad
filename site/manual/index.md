@@ -59,7 +59,7 @@ Action Chainは、複数のActionを組み合わせ、順番に実行する仕�
 4.  3000ミリ秒待機（Wait）
 5.  HIDでF13キーを押して、OBSのシーンを切り替える（蓋絵解除）[^obs]
 
-[^obs]OBSの操作を行うにはOBS側でホットキーの設定が必要です
+[^obs]: OBSの操作を行うにはOBS側でホットキーの設定が必要です
 
 このように、Action Chainを使うことで複数の操作や時間差のある動作をまとめて実行できます。
 
@@ -251,5 +251,5 @@ Web Installerを利用する際はEdge/Chromeを使用することを推奨し�
 3. 画面の指示に従い、ファームウェアを書き込む
 4. ファームウェア書き換え後はBluetooth接続が不安定になる場合があります。PCのBluetooth設定で『ChainPad Chimera』を一旦削除し、改めて接続しなおしてください。
 
-[^1]「USB JTAG/serial debug unit」と書かれたシリアルポートが複数ある場合、ChainPadを抜き差しし、抜いている間表示が消えたポートを選択してください<br>
-[^2]「USB JTAG/serial debug unit」と書かれたシリアルポートがない場合や、書き込みに失敗した場合は、XIAOのBOOTボタンを押しながらUSBケーブルを接続してください。
+[^1]: 「USB JTAG/serial debug unit」と書かれたシリアルポートが複数ある場合、ChainPadを抜き差しし、抜いている間表示が消えたポートを選択してください
+[^2]: 「USB JTAG/serial debug unit」と書かれたシリアルポートがない場合や、書き込みに失敗した場合は、XIAOのBOOTボタンを押しながらUSBケーブルを接続してください。
