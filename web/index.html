@@ -38,7 +38,7 @@ main>section{min-width:0}
 <script>
 try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme==='dark')document.documentElement.dataset.theme=theme;}catch{}
 </script>
-<header><div class="header-row"><div><small>PROJECT CHIMERA · PHASE 2</small><h1>ChainPad</h1></div><div class="header-controls"><label class="theme-choice">キー表示 / Keyboard<select id="keyboardLayout"><option value="jis">JIS（日本語配列）</option><option value="ascii">ASCII（US配列）</option></select></label><label class="theme-choice">表示テーマ / Theme<select id="theme"><option value="dark">Dark</option><option value="light">Light</option></select></label></div></div></header>
+<header><div class="header-row"><div><small>CONFIGURATOR</small><h1>ChainPad</h1></div><div class="header-controls"><label class="theme-choice">キー表示 / Keyboard<select id="keyboardLayout"><option value="jis">JIS（日本語配列）</option><option value="ascii">ASCII（US配列）</option></select></label><label class="theme-choice">表示テーマ / Theme<select id="theme"><option value="dark">Dark</option><option value="light">Light</option></select></label></div></div></header>
 <main>
 <section class="status panel"><div id="connections">接続中…</div><dl class="system-info"><div><dt>製品名</dt><dd id="systemName">—</dd></div><div><dt>ハードウェア</dt><dd id="systemHardware">—</dd></div><div><dt>Version</dt><dd id="systemVersion">—</dd></div><div><dt>IP Address</dt><dd id="systemIp">—</dd></div><div><dt>mDNS</dt><dd><a href="http://chainpad.local/">http://chainpad.local/</a></dd></div></dl></section>
 <section class="status panel" id="storageRecovery" hidden><p>旧形式の設定が存在しますが、このFirmwareでは読み込めません。旧ファイルは保持され、設定出力は停止しています。置換すると旧設定は上書きされます。</p><button id="replaceUnsupported" class="danger">旧設定を置き換えてv2設定を保存</button></section>

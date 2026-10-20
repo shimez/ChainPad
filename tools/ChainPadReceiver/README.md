@@ -15,8 +15,8 @@ py -3.11 -m venv .venv
 
 1. OSCは既定で `0.0.0.0:9000`。FirmwareのOSC HostをこのPCのIPv4アドレスに設定します。Windows FirewallでこのPythonのプライベートネットワークUDP受信を許可します。
 2. **OS MIDI input → Refresh → ポート選択 → Open / Reconnect**。USBだけでなく、Windows側で公開されているBLE-MIDI入力もこの欄で受信します。表示ラベルを `USB MIDI` / `BLE MIDI` に設定しますが、ラベルは受信経路を切り替えるものではありません。複数ポートを同時に開けます。
-3. OS MIDI入力ポートを利用できない場合の補助経路として **Direct BLE-MIDI → Scan → ChainPad Chimera → Connect** を用意しています。これはBleakによる広告の検索・通知購読で、Windowsの接続済み機器一覧ではありません。HIDなどで既に接続され広告が停止している機器はScanに表示されない場合があります。
-4. BLE KeyboardはWindows側で `ChainPad Chimera` をペアリングします。Direct BLE-MIDIとHIDは同じPCで利用してください。接続・購読状態はConfiguratorにも表示されます。
+3. OS MIDI入力ポートを利用できない場合の補助経路として **Direct BLE-MIDI → Scan → ChainPad → Connect** を用意しています。これはBleakによる広告の検索・通知購読で、Windowsの接続済み機器一覧ではありません。HIDなどで既に接続され広告が停止している機器はScanに表示されない場合があります。
+4. BLE KeyboardはWindows側で `ChainPad` をペアリングします。Direct BLE-MIDIとHIDは同じPCで利用してください。接続・購読状態はConfiguratorにも表示されます。
 5. HID test areaにフォーカスするとKeyDown/KeyUpが表示されます。OBSのホットキー動作はOBS側でも確認してください。
 
 ## 表示の意味

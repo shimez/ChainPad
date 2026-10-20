@@ -93,7 +93,7 @@ void transportsBegin() {
 #endif
 
   memoryPhase("ble/init");
-  NimBLEDevice::init("ChainPad Chimera");
+  NimBLEDevice::init("ChainPad");
   memoryCheckpoint("ble/host-ready");
   memoryPhase("ble/services");
   NimBLEDevice::setSecurityAuth(true, false, true);
@@ -141,7 +141,7 @@ void transportsBegin() {
   advertisement.addServiceUUID(hid->getHidService()->getUUID());
   advertisement.setAppearance(0x03c1);
   NimBLEAdvertisementData response;
-  response.setName("ChainPad Chimera");
+  response.setName("ChainPad");
   auto* advertising = NimBLEDevice::getAdvertising();
   advertising->setAdvertisementData(advertisement);
   advertising->setScanResponseData(response);

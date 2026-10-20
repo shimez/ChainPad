@@ -71,11 +71,11 @@ WindowsでChainPadのBLE-MIDI機能を利用する場合、BLE-MIDI対応ドラ�
 
 MIDI送信機能、HID送信機能を利用するにはBluetoothのペアリングを行う必要があります。
 
-Bluetoothで『ChainPad Chimera』とペアリングしてください。
+Bluetoothで『ChainPad』とペアリングしてください。
 
 ※1 XIAO ESP32S3の場合はMIDI/HIDをUSB接続で利用することも可能です<br>
-※2 「すべてのデバイスを表示」を押さないと『ChainPad Chimera』が表示されない場合があります<br>
-※3 「すべてのデバイスを表示」を押しても『ChainPad Chimera』が表示されない場合、ChainPadに接続しているUSBケーブルを抜き差ししてください
+※2 「すべてのデバイスを表示」を押さないと『ChainPad』が表示されない場合があります<br>
+※3 「すべてのデバイスを表示」を押しても『ChainPad』が表示されない場合、ChainPadに接続しているUSBケーブルを抜き差ししてください
 
 ## 4. 動作確認を行う
 
@@ -221,7 +221,7 @@ ChainPadのアップデートがあった場合はファームウェアの更新
 1. Web Installerのページにアクセスし、「Connect」や「Install」のボタンを押す
 2. シリアルポートの一覧が表示されるため、「USB JTAG/serial debug unit」と書かれたポートを選択する
 3. 画面の指示に従い、ファームウェアを書き込む
-4. ファームウェア書き換え後はBluetooth接続が不安定になる場合があります。PCのBluetooth設定で『ChainPad Chimera』を一旦削除し、改めて接続しなおしてください。
+4. ファームウェア書き換え後はBluetooth接続が不安定になる場合があります。PCのBluetooth設定で『ChainPad』（旧名『ChainPad Chimera』）を一旦削除し、改めて接続しなおしてください。
 
 ※1「USB JTAG/serial debug unit」と書かれたシリアルポートが複数ある場合、ChainPadを抜き差しし、抜いている間表示が消えたポートを選択してください<br>
 ※2「USB JTAG/serial debug unit」と書かれたシリアルポートがない場合や、書き込みに失敗した場合は、XIAOのBOOTボタンを押しながらUSBケーブルを接続してください。

@@ -260,7 +260,7 @@ Web Installerを利用する際はEdge/Chromeを使用することを推奨し�
 1. Web Installerのページにアクセスし、「Connect」や「Install」のボタンを押す
 2. シリアルポートの一覧が表示されるため、「USB JTAG/serial debug unit」と書かれたポートを選択する ※1 ※2
 3. 画面の指示に従い、ファームウェアを書き込む
-4. ファームウェア書き換え後はBluetooth接続が不安定になる場合があります。PCのBluetooth設定で『ChainPad Chimera』を一旦削除し、改めて接続しなおしてください。
+4. ファームウェア書き換え後はBluetooth接続が不安定になる場合があります。PCのBluetooth設定で『ChainPad』（旧名『ChainPad Chimera』）を一旦削除し、改めて接続しなおしてください。
 
 ※1 「USB JTAG/serial debug unit」と書かれたシリアルポートが複数ある場合、ChainPadを抜き差しし、抜いている間表示が消えたポートを選択してください。<br>
 ※2 「USB JTAG/serial debug unit」と書かれたシリアルポートがない場合や、書き込みに失敗した場合は、XIAOのBOOTボタンを押しながらUSBケーブルを接続してください。
