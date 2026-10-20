@@ -61,7 +61,7 @@ ChainPadがWi-Fiに接続されるとエンコーダーのLEDが点灯状態と�
 
 WindowsでChainPadのBLE-MIDI機能を利用する場合、BLE-MIDI対応ドライバーが必要になる場合があります。
 
-KORGの「BLE-MIDI Driver」を使用して、ChainPadからMIDIメッセージを送信できることを確認しています。
+[KORG BLE-MIDI Driver](https://www.korg.com/jp/support/download/product/1/301/)を使用して、ChainPadからMIDIメッセージを送信できることを確認しています。
 
 ドライバーのインストール方法や対応OSについては、KORGの公式サイトを参照してください。
 
