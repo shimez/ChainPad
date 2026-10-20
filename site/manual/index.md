@@ -74,6 +74,17 @@ Presetを利用することで、設定のバックアップや復元、共有�
 
 ### 3-1. 画面構成
 
+ChainPadの設定画面は主に8つのエリアに分かれています。
+
+- 配列・テーマ設定エリア
+- 本体情報表示エリア
+- OSC送信先設定エリア
+- 入力選択エリア
+- 入力設定エリア
+- 保存ボタンエリア
+- 設定Import/Exportエリア
+- メンテナンスエリア
+
 ![ChainPad WebUI画面構成](./images/chainpad-webui-overall.png)
 
 ### 3-2. 配列・テーマ設定
@@ -251,5 +262,5 @@ Web Installerを利用する際はEdge/Chromeを使用することを推奨し�
 3. 画面の指示に従い、ファームウェアを書き込む
 4. ファームウェア書き換え後はBluetooth接続が不安定になる場合があります。PCのBluetooth設定で『ChainPad Chimera』を一旦削除し、改めて接続しなおしてください。
 
-※1 「USB JTAG/serial debug unit」と書かれたシリアルポートが複数ある場合、ChainPadを抜き差しし、抜いている間表示が消えたポートを選択してください
+※1 「USB JTAG/serial debug unit」と書かれたシリアルポートが複数ある場合、ChainPadを抜き差しし、抜いている間表示が消えたポートを選択してください。<br>
 ※2 「USB JTAG/serial debug unit」と書かれたシリアルポートがない場合や、書き込みに失敗した場合は、XIAOのBOOTボタンを押しながらUSBケーブルを接続してください。
