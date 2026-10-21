@@ -69,7 +69,7 @@ class PagesTests(unittest.TestCase):
     def test_guide_renders_markdown_and_copies_images(self):
         root = Path(self.temp.name) / "source"
         (root / "scripts/templates").mkdir(parents=True)
-        for page in ("getting-started", "manual"):
+        for page in ("getting-started", "manual", "assembly-guide"):
             guide = root / "site" / page
             (guide / "images").mkdir(parents=True)
             (guide / "images/sample.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
@@ -77,7 +77,7 @@ class PagesTests(unittest.TestCase):
             (root / f"scripts/templates/{page}.html").write_text('<main><!-- DOCUMENT_CONTENT --></main>')
         with patch.object(site, "ROOT", root), patch.object(site, "OUTPUT", self.output), patch.object(site.subprocess, "check_output", return_value="a" * 40):
             site.copy_site()
-        for page in ("getting-started", "manual"):
+        for page in ("getting-started", "manual", "assembly-guide"):
             html = (self.output / page / "index.html").read_text(encoding="utf-8")
             self.assertIn('<div class="toc">', html)
             self.assertIn("<table>", html)

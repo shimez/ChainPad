@@ -78,7 +78,7 @@ def prepare(base):
 
 def copy_site():
     shutil.copytree(ROOT / "site", OUTPUT, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md", ".gitkeep"))
-    for page in ("getting-started", "manual"):
+    for page in ("getting-started", "manual", "assembly-guide"):
         source = ROOT / f"site/{page}/index.md"
         template = (ROOT / f"scripts/templates/{page}.html").read_text(encoding="utf-8")
         content = markdown.markdown(source.read_text(encoding="utf-8"), extensions=["fenced_code", "tables", "toc", "sane_lists", "footnotes"], output_format="html")

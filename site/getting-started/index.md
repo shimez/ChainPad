@@ -218,9 +218,9 @@ ChainPadに設定したキーと同じキーをOBS側に設定することで、
 ## 8. ファームウェアを書き換える（必要な場合のみ）
 
 ChainPadのアップデートがあった場合はファームウェアの更新が可能です。<br>
-また、ChainPadと共通の基板を利用するChainOSCPadシリーズのファームウェアへの書き換えも可能です。
+また、ChainPadと共通の基板を利用するChainOSCPadシリーズのファームウェアへの書き換えもほぼ同じ手順で可能です。
 
-1. Web Installerのページにアクセスし、「Connect」や「Install」のボタンを押す
+1. [Web Installerのページ](../installer/)にアクセスし、「ChainPadをインストール」のボタンを押す
 2. シリアルポートの一覧が表示されるため、「USB JTAG/serial debug unit」と書かれたポートを選択する
 3. 画面の指示に従い、ファームウェアを書き込む
 4. ファームウェア書き換え後はBluetooth接続が不安定になる場合があります。PCのBluetooth設定で『ChainPad』（旧名『ChainPad Chimera』）を一旦削除し、改めて接続しなおしてください。
