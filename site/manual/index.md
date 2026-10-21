@@ -10,7 +10,9 @@
 
 ![ChainPad 外観図](./images/chainpad-topview-image-guide.png)
 
-①～⑫：キー / ⑬：エンコーダー / ⑭：USB Type-Cポート / ⑮：BOOTボタン
+①～⑫：キー / ⑬：エンコーダー / ⑭：USB Type-Cポート / ⑮：BOOTボタン※
+
+> ※ BOOTボタンの位置は使用するMCUによって異なります（図はXIAO ESP32S3/C6の場合の位置）
 
 ### 1-2. Getting Startedについて
 

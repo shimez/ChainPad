@@ -24,13 +24,37 @@ XIAOやキースイッチなどを別途用意し、はんだ付けして組み�
 内容物の外観
 
 (1)メイン基板
-![メイン基板表](./images/main-board-front.png)
 
-(2)バックパネル（裏面はChainOSCPadのロゴが記載されています）
-![バックパネル](./images/back-panel-chainpad.png)
+<table>
+    <tr>
+        <td>表</td>
+        <td>裏</td>
+    </tr>
+    <tr>
+        <td><img src="./images/main-board-front.png" width="200"></td>
+        <td><img src="./images/main-board-back.png" width="200"></td>
+    </tr>
+</table>
+
+(2)バックパネル
+
+<table>
+    <tr>
+        <td>表</td>
+        <td>裏</td>
+    </tr>
+    <tr>
+        <td><img src="./images/back-panel-chainpad.png" width="200"></td>
+        <td><img src="./images/back-panel-chainoscpad.png" width="200"></td>
+    </tr>
+</table>
 
 (3)スイッチプレート
-![スイッチプレート](./images/switch-plate.png)
+
+<table>
+    <tr><td><img src="./images/switch-plate.png" width="200">
+</td></tr>
+</table>
 
 **キット以外に必要なもの**
 
