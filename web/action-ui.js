@@ -44,6 +44,7 @@ function hidFields(fields,a){
 function actionSummary(a) {
   const transport={wifi:'Wi-Fi',usb:'USB',ble:'BLE',both:'USB + BLE'}[a.transport]||'';
   if(a.protocol==='wait')return `${a.delayMs} ms`;
+  if(a.protocol==='stopOtherChains')return '他のChainを中断 · このChainは継続';
   if(a.protocol==='osc')return `${a.address} → ${a.type==='string'?JSON.stringify(a.value):a.type==='bool'?(a.value?'True':'False'):a.value} · ${a.type}`;
   if(a.protocol==='midi'){
     if(a.message==='allNotesOn')return `All Notes → Note On · Velocity ${a.value}`;

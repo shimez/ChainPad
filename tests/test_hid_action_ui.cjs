@@ -7,6 +7,7 @@ class Element{
   replaceChildren(...items){this.children=items;}
   get lastChild(){return this.children.at(-1);}
   setAttribute(){}
+  querySelector(){return {focus(){}};}
 }
 const nodes={},plain=x=>JSON.parse(JSON.stringify(x));
 const config=JSON.parse(fs.readFileSync('web/builtin/ChainPad-Configuration-Default.json','utf8'));
@@ -17,7 +18,7 @@ const ctx=vm.createContext({TextEncoder,config,selected:0,saving:false,keyboardL
   $:id=>nodes[id]??=(new Element('div')),waitWarning(){},changed(){},RotationEditor:{refresh(){}}});
 const line=prefix=>html.split('\n').find(l=>l.startsWith(prefix));
 vm.runInContext(fs.readFileSync('web/presets.js','utf8')+'\n'+fs.readFileSync('web/action-ui.js','utf8')+'\n'+
-  ['function control(','function current(','function button('].map(line).join('\n')+'\n'+
+   ['function control(','function current(','function button(','function defaults('].map(line).join('\n')+'\n'+
   html.slice(html.indexOf('const actionLabels='),html.indexOf('function rotationSummary()'))+'\neditingAction=0;',ctx);
 const P=vm.runInContext('Presets',ctx);
 function all(node=nodes.actions){return [node,...node.children.flatMap(n=>all(n))];}
@@ -75,3 +76,21 @@ for(const board of ['s3','c5','c6']){
   }
 }
 console.log('PASS HID UI: existing JSON unchanged, all 28 events, field visibility, kind/operation changes, explicit Usage order, summaries, JIS/US, Full/Key round-trip, S3/C5/C6 transports');
+for(let input=0;input<28;input++){
+  show(action('keyDownUp'),input);choose('Action','stopOtherChains');
+  const expected={protocol:'stopOtherChains',delayMs:0};
+  assert.deepEqual(plain(config.chains[input].actions[0]),expected);
+  assert.equal(field('Action').children.find(n=>n.value==='stopOtherChains').textContent,'他のChainを中断');
+  assert.equal(all().filter(n=>n.tag==='label').length,1); // No Transport, wait, usage or target.
+  assert(all().some(n=>String(n.textContent).includes('実行済みのMIDI・HID・OSC操作は取り消されません')));
+  assert(ctx.actionSummary(expected).includes('このChainは継続'));
+  all().find(n=>n.className==='edit-action').onclick();
+  assert(!field('Action'));
+  all().find(n=>n.className==='edit-action').onclick();
+  assert.equal(field('Action').value,'stopOtherChains');
+  const restored=P.read(P.full(config),'full',ctx.capabilities).config;
+  show(plain(restored.chains[input].actions[0]),input);
+  assert.deepEqual(plain(config.chains[input].actions[0]),expected);
+  choose('Action','keyboard');assert.equal(field('種類').value,'keyboard');
+}
+console.log('PASS Stop UI: all 28 events, selection, no parameters, summary, close/re-edit, Full round-trip, switch back');

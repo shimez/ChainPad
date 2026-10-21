@@ -56,6 +56,10 @@ bool integer(JsonVariantConst v, int64_t low, int64_t high) {
 bool parseAction(JsonVariantConst j, Action& a) {
   if (!j.is<JsonObjectConst>()) return false;
   String p = j["protocol"] | "";
+  if (p == "stopOtherChains") {
+    if (!integer(j["delayMs"], 0, 0) || j.as<JsonObjectConst>().size() != 2) return false;
+    a.protocol = Protocol::StopOtherChains; a.delayMs = 0; return true;
+  }
   if (p == "wait") {
     if (!integer(j["delayMs"], 0, MAX_WAIT_MS)) return false;
     a.protocol = Protocol::Wait; a.delayMs = j["delayMs"]; return true;
@@ -228,6 +232,7 @@ template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocum
       j["delayMs"] = a.protocol == Protocol::Wait ? a.delayMs : 0;
       if (pairedAction(a) && a.delayMs) j["holdMs"] = a.delayMs;
       if (a.protocol == Protocol::Wait) { j["protocol"] = "wait"; continue; }
+      if (a.protocol == Protocol::StopOtherChains) { j["protocol"] = "stopOtherChains"; continue; }
       if (a.protocol == Protocol::Midi && allNotes(a.message)) {
         j["protocol"] = "midi";
         j["message"] = a.message == MidiMessage::AllNotesOn ? "allNotesOn" : a.message == MidiMessage::AllNotesOnOff ? "allNotesOnOff" : "allNotesOff";

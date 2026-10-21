@@ -833,6 +833,176 @@ void consumerTests() {
 #endif
   std::cout<<"PASS Consumer Control: codec/save-load, seven usages/USB/BLE, press-release, subscription, queue capacity, panic, reconnect, Release All, engine ordering\n";
 }
+void stopOtherChainsCodecTests() {
+  Config source, restored; String error; JsonDocument doc;
+  Action stop; stop.protocol = Protocol::StopOtherChains;
+  for (unsigned i = 0; i < INPUT_COUNT; ++i) {
+    source.chains[i].count = 1; source.chains[i].actions[0] = stop;
+  }
+  assert(encodeConfig(source, doc));
+  assert(doc["chains"][0]["actions"][0].as<JsonObjectConst>().size() == 2);
+  assert(decodeConfig(doc.as<JsonVariantConst>(), restored, error));
+  assert(saveSource(restored, error)); config = Config{}; assert(loadConfig(error));
+  for (unsigned i = 0; i < INPUT_COUNT; ++i) {
+    assert(config.chains[i].count == 1 && config.chains[i].actions[0].protocol == Protocol::StopOtherChains);
+    assert(config.chains[i].actions[0].delayMs == 0);
+  }
+  for (const char* invalid : {
+    R"({"protocol":"stopOtherChains"})", R"({"protocol":"stopOtherChains","delayMs":1})",
+    R"({"protocol":"stopOtherChains","delayMs":null})", R"({"protocol":"stopOtherChains","delayMs":"0"})",
+    R"({"protocol":"stopOtherChains","delayMs":0,"transport":"ble"})",
+    R"({"protocol":"stopOtherChains","delayMs":0,"holdMs":0})",
+    R"({"protocol":"stopOtherChains","delayMs":0,"target":1})"}) {
+    JsonDocument action; assert(!deserializeJson(action, invalid));
+    assert(doc["chains"][0]["actions"][0].set(action.as<JsonVariantConst>()));
+    assert(!decodeConfig(doc.as<JsonVariantConst>(), restored, error));
+  }
+  std::cout << "PASS Stop Other Chains: all-event JSON and LittleFS round-trip / invalid fields rejected\n";
+}
+void stopOtherChainsTests() {
+  Action stop; stop.protocol = Protocol::StopOtherChains;
+  Action wait; wait.protocol = Protocol::Wait; wait.delayMs = 100;
+  Action osc; osc.protocol = Protocol::Osc;
+  auto fresh = [&] {
+    reset(); config = Config{}; hostMillis = 0; fake::wifi = true;
+    fake::osc.clear(); fake::packets.clear();
+  };
+  auto chain = [&](unsigned input, std::initializer_list<Action> actions) {
+    auto& c = config.chains[input]; c.count = 0;
+    for (const auto& a : actions) c.actions[c.count++] = a;
+  };
+  // Immediate Stop preserves output state/FIFOs and continues after repeated Stops.
+  fresh();
+  {
+    Engine e; chain(0, {wait, osc}); chain(2, {stop, stop, osc, wait, osc});
+    e.trigger({0,0}); e.trigger({0,0});
+    e.trigger({2,0});
+    assert(e.activeCount() == 1 && e.stats.cancelledChains == 2);
+    assert(fake::packets.size() == 1 && fake::midi.empty() && fake::hid.empty() && fake::consumer.empty());
+    hostMillis = 100; e.tick(hostMillis);
+    assert(e.activeCount() == 0 && fake::packets.size() == 2);
+    e.trigger({0,100}); hostMillis = 200; e.tick(hostMillis);
+    assert(fake::packets.size() == 3 && e.stats.cancelledChains == 2);
+  }
+  // Stop from every array position, both completion and re-registration after Wait.
+  for (unsigned position = 0; position < 3; ++position) for (bool waitAgain : {false, true}) {
+    fresh(); Engine e;
+    Action longWait = wait; longWait.delayMs = 1000;
+    chain(0, {longWait, osc});
+    if (waitAgain) chain(2, {wait, stop, stop, osc, wait, osc});
+    else chain(2, {wait, stop, osc});
+    for (unsigned i = 0; i < 3; ++i) e.trigger({uint8_t(i == position ? 2 : 0),0});
+    hostMillis = 100; e.tick(hostMillis);
+    assert(e.stats.cancelledChains == 2 && e.activeCount() == (waitAgain ? 1 : 0));
+    assert(fake::packets.size() == 1);
+    hostMillis = 200; e.tick(hostMillis);
+    assert(e.activeCount() == 0 && fake::packets.size() == (waitAgain ? 2 : 1));
+    e.tick(2000); assert(fake::packets.size() == (waitAgain ? 2 : 1));
+  }
+  // Same-key invocations due together: first Stop cancels the other two, not self.
+  fresh();
+  {
+    Engine e; chain(0, {wait, stop, osc});
+    for (unsigned i = 0; i < 3; ++i) e.trigger({0,0});
+    hostMillis = 100; e.tick(hostMillis);
+    assert(fake::packets.size() == 1 && e.stats.cancelledChains == 2 && e.activeCount() == 0);
+    assert(e.stats.accepted == 5); // Three Waits, one Stop, one OSC.
+  }
+  // Capacity exemption requires Stop before ANY potentially yielding Action.
+  for (unsigned variant = 0; variant < 7; ++variant) {
+    fresh(); Engine e; chain(0, {wait, osc});
+    for (unsigned i = 0; i < Engine::MAX_RUNNING; ++i) assert(e.trigger({0,0}));
+    Action pair; pair.protocol = Protocol::Midi; pair.transport = Transport::Ble; pair.message = MidiMessage::NoteOnOff;
+    Action zeroWait = wait; zeroWait.delayMs = 0;
+    if (variant == 0) chain(2, {stop, osc});
+    if (variant == 1) chain(2, {stop, wait, osc});
+    if (variant == 2) chain(2, {osc, stop, wait});
+    if (variant == 3) chain(2, {osc, wait, stop});
+    if (variant == 4) chain(2, {osc, pair, stop});
+    if (variant == 5) chain(2, {osc, wait});
+    if (variant == 6) chain(2, {zeroWait, stop, wait});
+    const bool allowed = variant < 3 || variant == 6;
+    assert(e.trigger({2,0}) == allowed);
+    assert(e.stats.cancelledChains == (allowed ? 32 : 0));
+    assert(e.stats.rejectedChains == (allowed ? 0 : 1));
+    if (!allowed) assert(fake::osc.empty() && fake::midi.empty() && e.activeCount() == 32);
+    else {
+      assert(e.activeCount() == (variant == 0 ? 0 : 1));
+      hostMillis = 100; e.tick(hostMillis); assert(e.activeCount() == 0);
+      assert(fake::packets.size() == (variant == 6 ? 0 : 1));
+    }
+  }
+  // Accepted timed MIDI/HID pairs survive Stop; their Chain suffix does not.
+  for (bool hid : {false, true}) {
+    fresh(); Engine e;
+    Action pair; pair.protocol = hid ? Protocol::Keyboard : Protocol::Midi;
+    pair.transport = Transport::Ble; pair.keyMessage = KeyMessage::DownUp;
+    pair.message = MidiMessage::NoteOnOff; pair.delayMs = 50;
+    chain(0, {pair, osc}); chain(2, {stop});
+    assert(e.trigger({0,0}) && e.activeCount() == 1);
+    const auto midi = fake::midi.size(), keys = fake::hid.size(), consumer = fake::consumer.size();
+    e.trigger({2,0});
+    assert(e.activeCount() == 0 && e.stats.cancelledChains == 1);
+    assert(fake::midi.size() == midi && fake::hid.size() == keys && fake::consumer.size() == consumer && fake::osc.empty());
+    hostMillis = 50; settle(); e.tick(hostMillis);
+    assert(fake::osc.empty());
+    if (hid) assert(fake::hid.size() == 2 && fake::hid.back().keys[0] == 0);
+    else assert(fake::midi.size() == 2 && fake::midi.back().status == 0x80);
+  }
+  // Explicit recovery Actions still work; Stop itself sends no release.
+  fresh();
+  {
+    Engine e;
+    Action note; note.protocol = Protocol::Midi; note.transport = Transport::Ble;
+    Action key; key.protocol = Protocol::Keyboard; key.transport = Transport::Ble;
+    chain(0, {note, key, wait, osc}); e.trigger({0,0}); settle();
+    chain(2, {stop}); e.trigger({2,0}); settle();
+    assert(fake::midi.size() == 1 && fake::hid.size() == 1 && fake::hid.back().keys[0] == key.usage);
+    Action off = note; off.message = MidiMessage::AllNotesOff;
+    Action release = key; release.keyMessage = KeyMessage::ReleaseAll;
+    chain(2, {stop, off, release, osc}); e.trigger({2,0}); settle();
+    assert(fake::midi.size() == 2 && fake::midi.back().status == 0x80);
+    assert(fake::hid.back().keys[0] == 0 && fake::packets.size() == 1);
+    e.tick(1000); assert(fake::packets.size() == 1);
+  }
+  // Backpressure does not turn Stop into Panic: all three FIFOs survive.
+  fresh();
+  {
+    Engine e; fake::writable = false;
+    Action midi; midi.protocol = Protocol::Midi; midi.transport = Transport::Ble;
+    Action key; key.protocol = Protocol::Keyboard; key.transport = Transport::Ble;
+    Action consumer = key; consumer.keyMessage = KeyMessage::Consumer; consumer.usage = 233;
+    chain(0, {midi, key, consumer, osc}); chain(2, {stop});
+    e.trigger({0,0}); assert(e.activeCount() == 1);
+    e.trigger({2,0}); assert(e.activeCount() == 0 && e.stats.cancelledChains == 1);
+    assert(midiQueued(Transport::Ble) && keyboardQueued(Transport::Ble));
+    assert(fake::midi.empty() && fake::hid.empty() && fake::consumer.empty() && fake::packets.empty());
+    fake::writable = true; settle(); e.tick(1000);
+    assert(fake::midi.size() == 1 && fake::hid.size() == 1 && fake::hid.back().keys[0] == key.usage);
+    assert((fake::consumer == std::vector<uint16_t>{233,0}) && fake::packets.empty());
+  }
+  // Rotation latest-state work is independent; existing panic primitives still clear it.
+  fresh();
+  {
+    Engine e;
+    auto& r = config.encoderRotation; r.mode = RotationMode::RotationValue;
+    r.axis = {100,0,RotationBoundary::Stop}; r.outputCount = 1;
+    r.outputs[0].range.integer = {0,100}; rotationRuntime.restart(r);
+    chain(0, {wait, osc}); chain(2, {stop}); e.trigger({0,0}); e.trigger({26,0});
+    const auto pending = rotationPendingCount();
+    const auto position = rotationRuntime.position();
+    const auto generation = rotationSendStats.generation;
+    assert(pending == 1); e.trigger({2,0});
+    assert(rotationPendingCount() == pending && rotationRuntime.position() == position && rotationSendStats.generation == generation);
+    assert(fake::packets.empty()); rotationSendTick(); assert(fake::packets.size() == 1);
+    e.trigger({0,0}); e.trigger({26,0});
+    e.cancelAll(); backendsPanic(); settle(); e.tick(1000);
+    assert(e.activeCount() == 0 && rotationPendingCount() == 0 && fake::packets.size() == 1);
+    assert(fake::midi.empty() && fake::hid.back().keys[0] == 0 && fake::consumer.back() == 0);
+  }
+  fresh();
+  std::cout << "PASS Stop Other Chains: self preservation, array positions, retriggers, repeated Stops, full capacity, statistics, paired output, FIFO/rotation preservation, explicit recovery and panic\n";
+}
 int main() {
   rotationTests();
   configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests(); sharedSlotsTests();
@@ -842,5 +1012,7 @@ int main() {
   pairedActionTests();
   timedPairTests();
   consumerTests();
+  stopOtherChainsTests();
+  stopOtherChainsCodecTests();
   std::cout << "All firmware host tests passed.\n";
 }

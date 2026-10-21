@@ -13,7 +13,7 @@ constexpr size_t MAX_OSC_STRING_BYTES = 128;
 constexpr uint8_t eventActionLimit(uint8_t id) { return id < 26 ? MAX_ACTIONS : 8; }
 constexpr size_t MAX_RECORD_BYTES = 24576; // 16 maximum OSC Actions, including JSON escaping.
 constexpr uint32_t MAX_WAIT_MS = 86400000; // 24 hours; safely below half the millis() range.
-enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait };
+enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait, StopOtherChains };
 enum class OscType : uint8_t { Int, Float, Bool, String };
 enum class MidiMessage : uint8_t { NoteOn, NoteOff, CC, AllNotesOn, AllNotesOff, NoteOnOff, AllNotesOnOff };
 inline bool allNotes(MidiMessage m) { return m == MidiMessage::AllNotesOn || m == MidiMessage::AllNotesOff || m == MidiMessage::AllNotesOnOff; }

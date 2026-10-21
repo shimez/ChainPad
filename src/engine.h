@@ -23,7 +23,9 @@ class Engine {
  private:
     struct Invocation { uint8_t input = 0, next = 0; bool pairPending = false; uint32_t wakeAt = 0; } jobs[MAX_RUNNING];
    uint8_t running = 0;
-   bool advance(Invocation& job, uint32_t now);
+    enum class AdvanceResult { Complete, Waiting, StopOthers };
+    AdvanceResult advance(Invocation& job, uint32_t now);
+    void continueAfterStop(Invocation& job, uint32_t now, uint8_t others);
 };
 extern Engine engine;
 }

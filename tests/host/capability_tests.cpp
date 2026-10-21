@@ -105,5 +105,20 @@ int main() {
   consumers.clear();assert(dispatch(config.chains[0].actions[0],0)==SendResult::Accepted);
   for(int i=0;i<10;++i)backendsTick(0);
   assert((consumers==std::vector<uint16_t>{0xe9,0}));
+  source=Config{};
+  source.chains[0].count=2;
+  source.chains[0].actions[0].protocol=Protocol::Wait;
+  source.chains[0].actions[0].delayMs=100;
+  source.chains[0].actions[1].protocol=Protocol::Osc;
+  source.chains[2].count=1;
+  source.chains[2].actions[0].protocol=Protocol::StopOtherChains;
+  assert(saveSource(source,error)&&loadConfig(error));
+  assert(config.chains[2].actions[0].protocol==Protocol::StopOtherChains);
+  assert(encodeConfig(config,doc));
+  assert(doc["chains"][2]["actions"][0].as<JsonObjectConst>().size()==2);
+  Engine scheduler;assert(scheduler.trigger({0,0})&&scheduler.activeCount()==1);
+  assert(scheduler.trigger({2,0})&&scheduler.activeCount()==0&&scheduler.stats.cancelledChains==1);
+  scheduler.tick(1000);assert(scheduler.stats.accepted==2);
+  std::cout << "PASS Stop Other Chains: BLE-only persistence / no transport / cancellation\n";
   std::cout << "PASS " << HARDWARE_NAME << ": capabilities / BLE normalization / save-load / press-release / Consumer Control\n";
 }

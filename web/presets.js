@@ -10,6 +10,10 @@ const Presets = (() => {
   function action(raw, capabilities, changes) {
     if (!object(raw)) fail('Actionが不正です。');
     const a = clone(raw);
+    if (a.protocol === 'stopOtherChains') {
+      if (a.delayMs !== 0 || Object.keys(a).length !== 2) fail('他のChainを中断にはprotocolとdelayMs:0のみ指定できます。');
+      return {protocol:'stopOtherChains',delayMs:0};
+    }
     if (a.protocol === 'wait') {
       if (!int(a.delayMs, 0, 86400000)) fail('Waitは0〜86400000 msの整数で指定してください。');
       return {protocol:'wait', delayMs:a.delayMs};

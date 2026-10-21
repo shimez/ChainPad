@@ -11,6 +11,19 @@ config.chains[1].actions=[{protocol:'keyboard',transport:'usb',delayMs:0,message
 config.chains[27].actions=[{protocol:'osc',transport:'wifi',delayMs:0,address:'/test',type:'string',value:'hello'}];
 const normalized=v=>JSON.parse(JSON.stringify(v));
 const full=P.full(config);
+const stopConfig=normalized(config);
+for(const c of stopConfig.chains)c.actions=[{protocol:'stopOtherChains',delayMs:0}];
+for(const caps of [usb,ble]){
+  const restored=P.read(P.full(stopConfig),'full',caps);
+  assert.deepEqual(normalized(restored.config.chains),stopConfig.chains);
+  assert.equal(restored.converted,0);
+  for(let group=0;group<13;group++)assert.deepEqual(normalized(P.read(P.key(stopConfig,group),'key',caps).chains),[{input:0,actions:stopConfig.chains[0].actions},{input:1,actions:stopConfig.chains[1].actions}]);
+}
+for(const bad of [{protocol:'stopOtherChains'},{protocol:'stopOtherChains',delayMs:1},{protocol:'stopOtherChains',delayMs:null},{protocol:'stopOtherChains',delayMs:'0'},{protocol:'stopOtherChains',delayMs:0,transport:'ble'},{protocol:'stopOtherChains',delayMs:0,holdMs:0},{protocol:'stopOtherChains',delayMs:0,target:1}]){
+  const invalid=P.full(stopConfig);invalid.chains[0].actions=[bad];
+  assert.throws(()=>P.read(invalid,'full',usb));
+}
+console.log('PASS Stop Other Chains: all events, Full/Key round-trip, no transport conversion, invalid fields rejected');
 const consumerConfig=normalized(config);
 consumerConfig.chains[0].actions=Object.keys(P.consumerNames).map(usage=>({protocol:'keyboard',transport:'usb',delayMs:0,message:'consumer',usage:Number(usage),modifiers:0}));
 const consumerFull=P.full(consumerConfig);
