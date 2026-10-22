@@ -225,6 +225,13 @@ Preview Positionにエンコーダーのポジション（何クリック分回�
 - 待機時間欄に値を記入することで、次のActionの実行まで指定時間（何ミリ秒）待機させることが可能です。
 - Waitによる待機は該当のAction Chainにのみ有効です。別キーの操作、同じキーの別操作（押すに対する離すなど）、同じキーの再操作のAction Chainは独立して実行されます。
 
+### 4-5. 他のChainを中断
+
+![ChainPad WebUI 他のChainを中断](./images/chainpad-webui-action-interrupt.png)
+
+- 実行中の他のAction Chainを中断します。このActionを実行したChain自身は継続します。間違ってキーを押した場合の停止キーなどに利用してください
+- HIDやMIDIが入力されたままとなる場合があります。HIDの「HID全解除」やMIDIの「All Notes Off」などと合わせて活用してください。
+
 ## 5. 接続・通信設定
 
 ### 5-1. Wi-Fi

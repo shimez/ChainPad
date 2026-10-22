@@ -25,7 +25,7 @@ main>section{min-width:0}
 .system-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0 0}.system-info>div{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--field);min-width:0}.system-info dt{font-size:13px;font-weight:700;margin-bottom:6px}.system-info dd{margin:0;overflow-wrap:anywhere}.system-info a{color:var(--accent)}
 #actions{gap:18px}.action-card{padding:10px;position:relative;min-width:0}
 .action-card:not(:last-child)::after{content:'↓';position:absolute;bottom:-19px;left:28px;color:var(--muted);font-size:14px;line-height:18px}
-.action-head{display:grid;grid-template-columns:40px 22px 72px minmax(0,1fr) auto;gap:8px;margin:0;align-items:center}
+.action-head{display:grid;grid-template-columns:40px 22px max-content minmax(0,1fr) auto;gap:8px;margin:0;align-items:center}
 .action-summary{font-size:13px;overflow-wrap:anywhere;white-space:pre-wrap}.action-kind{font-size:13px}.action-number{color:var(--muted);text-align:center}
 .action-head .buttons{flex-wrap:nowrap}.action-head button{padding:7px 9px;min-height:40px}
 .drag-handle{touch-action:none;cursor:grab;font-size:22px;user-select:none}.action-dragging,.action-dragging *{cursor:grabbing!important;user-select:none!important}
@@ -33,7 +33,7 @@ main>section{min-width:0}
 .action-details{border-top:1px solid var(--line);margin-top:10px;padding-top:4px}
 .action-kind{white-space:nowrap}.cancel-help{grid-column:1/-1;margin:0}
 #rotationAxis{margin-bottom:14px}#rotationOutputs{display:grid;gap:12px;margin:12px 0}#encoderSettings{margin-bottom:18px}#rotationValueEditor{margin-bottom:18px}[hidden]{display:none!important}
-@media(max-width:700px){.action-head{grid-template-columns:40px 20px 72px minmax(0,1fr);gap:6px}.action-summary{grid-column:3/-1;grid-row:2}.action-head .buttons{grid-column:4;grid-row:1;justify-self:end}.action-card{padding:8px}}
+@media(max-width:700px){.action-head{grid-template-columns:40px 20px minmax(0,1fr) auto;gap:6px}.action-kind{min-width:0;white-space:normal;overflow-wrap:anywhere}.action-summary{grid-column:3/-1;grid-row:2}.action-head .buttons{grid-column:4;grid-row:1;justify-self:end}.action-card{padding:8px}}
 </style>
 <script>
 try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme==='dark')document.documentElement.dataset.theme=theme;}catch{}
