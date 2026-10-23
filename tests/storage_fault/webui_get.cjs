@@ -24,7 +24,7 @@ async function check(mode){
       if(mode.startsWith('503'))return new Response('{"ok":false,"message":"Stored settings require reload. Restart required."}',{status:503});
       return new Response(mode==='complete'?complete:partial);
     }});
-  vm.runInContext(extract('api')+'\n'+extract('load'),ctx);
+   vm.runInContext(fs.readFileSync('web/wifi-password.js','utf8')+'\nconst passwordEditor=WifiPassword.create($);\n'+extract('api')+'\n'+extract('load'),ctx);
   try {
     if(mode==='complete'){await ctx.load();assert.equal(ctx.config.chains[0].actions.length,16);assert.equal(ctx.config.encoderRotation.rotationValue.outputs.length,16);assert.equal(parsed,1);}
     else {await assert.rejects(ctx.load());assert.equal(ctx.config,original);assert.equal(parsed,0);}
@@ -56,7 +56,7 @@ async function recoveryUi(){
     if(path==='/api/wifi')return new Response('{"message":"Stored settings require reload. Restart required."}',{status:503});
     return new Response('{"message":"Restarting","state":"idle"}');
   }});
-  vm.runInContext(script,wctx);vm.runInContext(fs.readFileSync('web/maintenance.js','utf8'),wctx);await tick();
+  vm.runInContext(fs.readFileSync('web/wifi-password.js','utf8'),wctx);vm.runInContext(script,wctx);vm.runInContext(fs.readFileSync('web/maintenance.js','utf8'),wctx);await tick();
   assert.equal(wget('ssid').value,'unchanged');assert.equal(wget('password').value,'unchanged');assert(wget('save').disabled);
   assert.match(wget('message').textContent,/Restart/);await wget('wifiRestart').onclick();await wget('factoryReset').onclick();
   assert.equal(typeof wget('wifiRestart').onclick,'function');
@@ -71,6 +71,7 @@ async function saveError(failedPath){
       return new Response(JSON.stringify(failed?{ok:false,message:'Settings saved to storage, but runtime apply failed. Do not resave; Restart required.'}:{token:42,message:'Staged'}),{status:failed?400:200});}
   });
   const save=html.slice(html.indexOf('async function saveConfig('),html.indexOf("$('save').onclick"));
+  vm.runInContext(fs.readFileSync('web/wifi-password.js','utf8')+'\nconst passwordEditor=WifiPassword.create($);passwordEditor.load(false);',ctx);
   vm.runInContext(extract('api')+'\n'+html.match(/^function run\(.*$/m)[0]+'\n'+save,ctx);
   await vm.runInContext('run(()=>saveConfig())()',ctx);
   assert.equal(ctx.config,original);assert.equal(JSON.stringify(original),before);assert(ctx.dirty);assert(!ctx.saving&&!get('save').disabled);

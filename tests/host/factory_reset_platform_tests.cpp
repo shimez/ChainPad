@@ -3,7 +3,7 @@
 #include <iostream>
 using namespace chimera;
 int main(){
-  for(const char* config:{"valid settings","corrupt","oversized"}){
+  for(const char* config:{"valid settings","corrupt","oversized","{\"network\":{\"password\":\"old-wifi-secret\"}}"}){
     fakeReset::clear();fakeReset::files["/config.records"]=config;fakeReset::files["/pending.records"]="staged";
     assert(factoryResetBoot()==ResetBoot::Normal);
     assert(requestFactoryReset()&&factoryResetBlocked());

@@ -192,6 +192,7 @@ void encodeCapabilities(JsonDocument& doc) {
   doc["defaultMidiTransport"] = HAS_USB_MIDI ? "both" : "ble";
   doc["maxWaitMs"] = MAX_WAIT_MS;
   doc["schemaVersion"] = 2;
+  doc["wifiPasswordUpdate"] = "omit-preserves";
   doc["rotationOutputCapacity"] = ROTATION_OUTPUT_CAPACITY;
   doc["rotationRuntimeSupported"] = true;
   doc["rotationOutputSendingSupported"] = true;
@@ -220,6 +221,14 @@ bool encodeNetwork(const NetworkSettings& source, JsonDocument& doc) {
   n["ssid"] = source.ssid; n["password"] = source.password;
   n["oscHost"] = source.oscHost; n["oscPort"] = source.oscPort;
   return !doc.overflowed() && n.size() == 4;
+}
+bool encodeNetworkPublic(const NetworkSettings& source, JsonDocument& doc, bool wifiOnly) {
+  doc.clear(); auto n = doc.to<JsonObject>();
+  if (n.isNull()) return false;
+  n["ssid"] = source.ssid;
+  n["passwordConfigured"] = source.password[0] != 0;
+  if (!wifiOnly) { n["oscHost"] = source.oscHost; n["oscPort"] = source.oscPort; }
+  return !doc.overflowed() && n.size() == (wifiOnly ? 2 : 4);
 }
 template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocument& doc) {
     doc.clear(); auto c = doc.to<JsonObject>(); c["input"] = id;

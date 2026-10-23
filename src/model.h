@@ -124,6 +124,8 @@ bool saveWifiConfig(const String& json, String& error);
 bool decodeNetwork(JsonVariantConst root, NetworkSettings& out, String& error);
 bool decodeChain(JsonVariantConst root, uint8_t id, Chain& out, String& error);
 bool encodeNetwork(const NetworkSettings& source, JsonDocument& doc);
+// Public GET representation: never serialize the stored Wi-Fi password.
+bool encodeNetworkPublic(const NetworkSettings& source, JsonDocument& doc, bool wifiOnly = false);
 bool encodeChain(const Chain& source, uint8_t id, JsonDocument& doc);
 bool encodeChain(const ChainView& source, uint8_t id, JsonDocument& doc);
 uint32_t beginConfigSave(const String& network, String& error);

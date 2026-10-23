@@ -116,7 +116,7 @@ const html=fs.readFileSync(path.join(__dirname,'../web/index.html'),'utf8');
 vm.runInContext(html.split('\n').find(line=>line.startsWith('function applyImport(')),ui);
 for(const file of [P.full(config),oldFile]){
   ui.raw=file;vm.runInContext("applyImport(raw,{kind:'full'})",ui);
-  assert.deepEqual(normalized(ui.config.network),{ssid:'current-edit',password:'current-secret',...portable.network});
+  assert.deepEqual(normalized(ui.config.network),{ssid:'current-edit',...portable.network});
   assert.equal(fields.ssid.value,'current-edit');assert.equal(fields.password.value,'current-secret');
   assert.equal(fields.oscHost.value,portable.network.oscHost);
   assert.deepEqual(normalized(ui.config.chains),config.chains);

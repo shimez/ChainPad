@@ -6,6 +6,9 @@
 <style>
 :root{color-scheme:light dark;font:16px system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;padding:24px;background:#f3f6f8;color:#182a38}main{max-width:440px;margin:8vh auto;background:#fff;padding:28px;border:1px solid #bdcbd5;border-radius:12px}h1{font-size:24px;margin:0 0 12px}p{line-height:1.6;color:#506275}label{display:grid;gap:8px;margin:20px 0}input,button{width:100%;font:inherit;padding:12px;border:1px solid #bdcbd5;border-radius:7px}input{background:#f8fafc;color:inherit}button{background:#087565;color:#fff;cursor:pointer;font-weight:600}button:disabled{opacity:.5;cursor:default}#message{white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:0}.error{color:#b42318!important}@media(prefers-color-scheme:dark){body{background:#10151d;color:#eef5ff}main{background:#1b2330;border-color:#374557}input{background:#111923;border-color:#374557}p{color:#a9b8cc}.error{color:#ff9d99!important}}
 </style>
+<style>
+label.password-clear{display:flex;align-items:center;gap:8px}label.password-clear>input{width:16px;height:16px;margin:0;padding:0;flex:0 0 16px}#password:disabled{opacity:.45;cursor:not-allowed}
+</style>
 <main>
 <h1>ChainPad Wi-Fi設定</h1>
 <p>接続先のWi-Fi情報を入力してください。保存すると本体が再起動します。</p>
@@ -13,6 +16,8 @@
 <form id="wifi">
 <label>SSID<input id="ssid" maxlength="32" autocomplete="off" required></label>
 <label>パスワード<input id="password" type="password" maxlength="64" autocomplete="new-password"></label>
+<label class="password-clear"><input id="clearPassword" type="checkbox"><span>保存時にパスワードをクリア（パスワードなしのWi-Fi）</span></label>
+<p id="passwordStatus" role="status"></p>
 <button id="save" disabled>保存して再起動</button>
 </form>
 <p id="message" role="status">設定を読み込み中…</p>
@@ -24,13 +29,15 @@
 <p id="factoryResetMessage" role="status"></p>
 </main>
 <script src="maintenance.js"></script>
+<script src="wifi-password.js"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
+const passwordEditor=WifiPassword.create($);
 function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);}
 async function api(method,body){const response=await fetch('/api/wifi',{method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const data=await response.json();if(!response.ok)throw Error(data.message||'設定に失敗しました。');return data;}
-api('GET').then(data=>{$('ssid').value=data.ssid;$('password').value=data.password;$('save').disabled=false;message('パスワードのないWi-Fiでは空欄にしてください。');}).catch(error=>message(error.message||'設定を読み込めません。ChainPad-Setupへの接続を確認して画面を開き直してください。',true));
+api('GET').then(data=>{$('ssid').value=data.ssid;passwordEditor.load(data.passwordConfigured);$('save').disabled=false;message('変更する場合のみ新しいパスワードを入力してください。');}).catch(error=>message(error.message||'設定を読み込めません。ChainPad-Setupへの接続を確認して画面を開き直してください。',true));
 $('wifiRestart').onclick=async()=>{try{const response=await fetch('/api/restart',{method:'POST'});const data=await response.json();if(!response.ok)throw Error(data.message||'Restartに失敗しました。');message(data.message);}catch(error){message(error.message,true);}};
-$('wifi').onsubmit=async event=>{event.preventDefault();$('save').disabled=true;message('保存中…');try{await api('PUT',{ssid:$('ssid').value,password:$('password').value});$('ssid').disabled=true;$('password').disabled=true;message('保存しました。本体を再起動しています。\n再起動後は接続先のWi-Fiに戻ってChainPadを使用してください。設定をやり直す場合はChainPad-Setupに再接続してください。');}catch(error){message(error.message,true);$('save').disabled=false;}};
+$('wifi').onsubmit=async event=>{event.preventDefault();const network=passwordEditor.update({ssid:$('ssid').value});const controls=['save','ssid','password','clearPassword'].map(id=>[$(id),$(id).disabled]);controls.forEach(([el])=>el.disabled=true);message('保存中…');try{await api('PUT',network);passwordEditor.saved(network);$('password').disabled=true;message('保存しました。本体を再起動しています。\n再起動後は接続先のWi-Fiに戻ってChainPadを使用してください。設定をやり直す場合はChainPad-Setupに再接続してください。');}catch(error){message(error.message,true);controls.forEach(([el,disabled])=>el.disabled=disabled);}finally{delete network.password;}};
 </script>
 </html>

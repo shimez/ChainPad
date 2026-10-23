@@ -24,7 +24,7 @@ foreach ($chip in @('S3','C5','C6')) {
     Write-Output "Storage tests: H1/H2/H3/H4 safety regression: $chip Standard"
     & cmd.exe /d /c $command
     if ($LASTEXITCODE -ne 0) { throw "Storage fault tests failed: $chip" }
-    foreach ($mode in @('--builtin-reset','--builtin-chain-oom','--builtin-rotation-oom','--builtin-json-oom')) {
+    foreach ($mode in @('--wifi-privacy','--builtin-reset','--builtin-chain-oom','--builtin-rotation-oom','--builtin-json-oom')) {
         & "$build\fault_$chip.exe" $mode
         if ($LASTEXITCODE -ne 0) { throw "Builtin fault test failed: $chip $mode" }
     }

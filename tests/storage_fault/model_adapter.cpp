@@ -3,10 +3,12 @@
 #define encodeChain rawEncodeChain
 #define encodeRotation rawEncodeRotation
 #define encodeNetwork rawEncodeNetwork
+#define encodeNetworkPublic rawEncodeNetworkPublic
 #include "../../src/model.cpp"
 #undef encodeChain
 #undef encodeRotation
 #undef encodeNetwork
+#undef encodeNetworkPublic
 #include "../../src/json_wire.h"
 namespace {
 void observe(bool selected, JsonDocument& doc){
@@ -21,6 +23,7 @@ void observe(bool selected, JsonDocument& doc){
 }
 namespace chimera {
 bool encodeNetwork(const NetworkSettings& n,JsonDocument& d){bool s=jsonFault::enter("network");bool ok=rawEncodeNetwork(n,d);observe(s,d);return ok;}
+bool encodeNetworkPublic(const NetworkSettings& n,JsonDocument& d,bool wifiOnly){bool s=jsonFault::enter("network");bool ok=rawEncodeNetworkPublic(n,d,wifiOnly);observe(s,d);return ok;}
 bool encodeChain(const Chain& c,uint8_t id,JsonDocument& d){bool s=jsonFault::enter(id==0?"chain":"other");bool ok=rawEncodeChain(c,id,d);observe(s,d);return ok;}
 bool encodeChain(const ChainView& c,uint8_t id,JsonDocument& d){bool s=jsonFault::enter(id==0?"chain":"other");bool ok=rawEncodeChain(c,id,d);observe(s,d);return ok;}
 bool encodeRotation(const EncoderRotationSettings& r,JsonDocument& d,bool lossless){bool s=jsonFault::enter("rotation");bool ok=rawEncodeRotation(r,d,lossless);observe(s,d);return ok;}

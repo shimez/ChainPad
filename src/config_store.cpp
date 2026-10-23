@@ -157,6 +157,13 @@ uint32_t beginConfigSave(const String& json, String& error) {
   JsonDocument doc; NetworkSettings network;
   if (deserializeJson(doc, json)) { error = "Invalid network JSON"; return 0; }
   if (!doc["schemaVersion"].is<unsigned>() || doc["schemaVersion"] != 2) { error = "Unsupported schemaVersion (expected 2)"; return 0; }
+  // Resolve omission once, at begin: the staged header owns the snapshot.
+  // Storage decoding remains strict, so missing on-disk credentials are corrupt.
+  auto update = doc["network"].as<JsonObject>();
+  if (!update.isNull() && update["password"].isUnbound()) {
+    if (!configOutputsAllowed()) { error = "Current Wi-Fi password unavailable; provide password explicitly"; return 0; }
+    if (!update["password"].set(activeConfig().password)) { error = "Network password snapshot failed"; return 0; }
+  }
   if (!decodeNetwork(doc["network"], network, error)) return 0;
   const auto existing = inspect(error);
   if (existing == ConfigStorageState::IoError || existing == ConfigStorageState::Corrupt) return 0;
@@ -246,8 +253,8 @@ bool saveWifiConfig(const String& json, String& error) {
   JsonDocument credentials, doc;
   if (deserializeJson(credentials, json)) { error = "Invalid Wi-Fi JSON"; return false; }
   error = "Settings encode or serialization failed";
-  if (!encodeNetwork(config, doc) || !doc["ssid"].set(credentials["ssid"]) ||
-      !doc["password"].set(credentials["password"])) return false;
+  if (!encodeNetwork(config, doc) || !doc["ssid"].set(credentials["ssid"])) return false;
+  if (!credentials["password"].isUnbound() && !doc["password"].set(credentials["password"])) return false;
   JsonDocument request; request["schemaVersion"] = 2;
   if (doc.overflowed() || !request["network"].set(doc)) return false;
   String body; if (!checkedSettingsJson(request, body)) return false;

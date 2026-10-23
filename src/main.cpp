@@ -99,7 +99,8 @@ void setupWeb() {
   });
   web.on("/api/wifi", HTTP_GET, [] {
     if (configCommittedApplyFailed()) { result(503, "Stored settings require reload. Outputs disabled; Restart required."); return; }
-    JsonDocument doc; doc["ssid"] = activeConfig().ssid; doc["password"] = activeConfig().password;
+    JsonDocument doc;
+    if (!encodeNetworkPublic(activeConfig(), doc, true)) { result(500, "Wi-Fi encode failed"); return; }
     jsonResponse(200, doc);
   });
   web.on("/api/wifi", HTTP_PUT, [] {
@@ -121,7 +122,7 @@ void setupWeb() {
     JsonDocument doc; String part;
     auto record = [&](uint8_t index) {
       bool ok;
-      if (!index) ok = encodeNetwork(activeConfig(), doc);
+      if (!index) ok = encodeNetworkPublic(activeConfig(), doc);
       else if (index <= INPUT_COUNT) ok = encodeChain(activeConfig().chains[index - 1], index - 1, doc);
       else ok = encodeRotation(activeConfig().encoderRotation, doc, true);
       return ok && checkedSettingsJson(doc, part);

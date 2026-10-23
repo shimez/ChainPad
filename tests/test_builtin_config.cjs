@@ -38,7 +38,7 @@ if(process.argv.includes('--firmware')){
     assert.deepEqual(normalize({chains:got.chains}),normalize({chains:sources.Default.chains}));
     assert.deepEqual(got.encoderRotation,sources.Default.encoderRotation);
     assert.equal(got.network.oscHost,'192.168.1.100');assert.equal(got.network.oscPort,9000);
-    assert.equal(got.network.ssid,'');assert.equal(got.network.password,'');
+    assert.equal(got.network.ssid,'');assert(!Object.hasOwn(got.network,'password'));assert.equal(got.network.passwordConfigured,false);
   }
 }
 for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(match[1]);

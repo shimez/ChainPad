@@ -34,8 +34,10 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(payload)
         elif self.path == "/api/config":
-            self.reply(CONFIG)
-        elif self.path in ("/presets.js", "/action-ui.js", "/rotation-ui.js"):
+            network = {k: v for k, v in CONFIG["network"].items() if k != "password"}
+            network["passwordConfigured"] = bool(CONFIG["network"]["password"])
+            self.reply({**CONFIG, "network": network})
+        elif self.path in ("/presets.js", "/action-ui.js", "/rotation-ui.js", "/wifi-password.js"):
             payload = (ROOT / "web" / self.path.lstrip("/")).read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/javascript; charset=utf-8")
@@ -43,7 +45,7 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(payload)
         elif self.path == "/api/wifi":
-            self.reply({key: CONFIG["network"][key] for key in ("ssid", "password")})
+            self.reply({"ssid": CONFIG["network"]["ssid"], "passwordConfigured": bool(CONFIG["network"]["password"])})
         elif self.path == "/api/capabilities":
             usb = BOARD == "s3"
             self.reply({"hardware": f"XIAO ESP32{BOARD.upper()}", "usbMidi": usb, "usbKeyboard": usb,
@@ -78,7 +80,8 @@ class Handler(BaseHTTPRequestHandler):
         data = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         if self.path == "/api/wifi":
             for key in ("ssid", "password"):
-                CONFIG["network"][key] = data[key]
+                if key in data:
+                    CONFIG["network"][key] = data[key]
         elif urlsplit(self.path).path == "/api/config/chain":
             query = parse_qs(urlsplit(self.path).query)
             if not PENDING or int(query["token"][0]) != TOKEN or int(query["input"][0]) != len(PENDING["chains"]):
@@ -103,6 +106,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/config/begin":
             TOKEN += 1
             request = json.loads(body)
+            request["network"].setdefault("password", CONFIG["network"]["password"])
             if request.get("schemaVersion") != 2:
                 self.send_error(400)
                 return

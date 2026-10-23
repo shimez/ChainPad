@@ -5,7 +5,7 @@ const html=fs.readFileSync('web/index.html','utf8');
 const line=prefix=>html.split('\n').find(l=>l.startsWith(prefix));
 async function check(usb){
   const config=JSON.parse(fs.readFileSync('web/builtin/ChainPad-Configuration-Default.json','utf8'));
-  config.network={ssid:'local',password:'secret',oscHost:'192.168.1.2',oscPort:9000};
+  config.network={ssid:'local',passwordConfigured:true,oscHost:'192.168.1.2',oscPort:9000};
   for(const c of config.chains)c.actions=[{protocol:'stopOtherChains',delayMs:0}];
   const nodes={},get=id=>nodes[id]??={value:config.network[id],disabled:false};
   const caps={usbMidi:usb,usbKeyboard:usb},calls=[],staged={chains:[]};let stored;
@@ -28,6 +28,7 @@ async function check(usb){
       return new Response(JSON.stringify(result));
     }});
   const save=html.slice(html.indexOf('async function saveConfig('),html.indexOf("$('save').onclick"));
+  vm.runInContext(fs.readFileSync('web/wifi-password.js','utf8')+'\nconst passwordEditor=WifiPassword.create($);passwordEditor.load(true);',ctx);
   vm.runInContext(fs.readFileSync('web/presets.js','utf8')+'\n'+
     ['async function api(','async function load(','function run('].map(line).join('\n')+'\n'+save+'\n'+line("$('panic').onclick"),ctx);
   await ctx.saveConfig();assert(!ctx.dirty&&!ctx.saving&&!get('save').disabled);

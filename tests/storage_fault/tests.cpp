@@ -359,7 +359,9 @@ void h4(){
   std::cout<<"PASS SAFETY H4 "<<cases<<" cases: encode/pools/strings/optional fields/copies; Wi-Fi byte+RAM retention, no rename/restart/panic, expired transactions; GET preflight500/send abort; sticky short writes\n";
   web.request("/api/config",HTTP_GET);CHECK(web.status==200&&web.finished&&!web.stopped);
   std::ofstream(".pio/storage-fault-tests/get-complete.json")<<web.body;
-  String error;JsonDocument full;CHECK(!deserializeJson(full,web.body));Config received;CHECK(decodeConfig(full.as<JsonVariantConst>(),received,error));
+  String error;JsonDocument full;CHECK(!deserializeJson(full,web.body));Config received;
+  CHECK(full["network"]["password"].isUnbound());full["network"]["password"]="";
+  CHECK(decodeConfig(full.as<JsonVariantConst>(),received,error));
   CHECK(received.chains[0].count==16&&received.encoderRotation.outputCount==16);
   // Timing includes actual checked GET handler, excludes file output/decoding.
   using Clock=std::chrono::steady_clock;double headerUs=0;auto start=Clock::now();
@@ -373,7 +375,9 @@ void h4(){
     auto& o=maximum.encoderRotation.outputs[i];o.kind=RotationOutputKind::OscFloat;
     o.range.floating=i%2?RotationFloatRange{-0.0f,0.1f}:RotationFloatRange{-std::numeric_limits<float>::max(),std::numeric_limits<float>::max()};}
   seed(maximum);web.request("/api/config",HTTP_GET);CHECK(web.status==200&&web.finished);
-  CHECK(web.body.find("\\u0001")!=std::string::npos);CHECK(!deserializeJson(full,web.body));CHECK(decodeConfig(full.as<JsonVariantConst>(),received,error));
+  CHECK(web.body.find("\\u0001")!=std::string::npos);CHECK(!deserializeJson(full,web.body));
+  CHECK(full["network"]["password"].isUnbound());full["network"]["password"]="";
+  CHECK(decodeConfig(full.as<JsonVariantConst>(),received,error));
   for(int i=0;i<16;++i){CHECK(!strcmp(received.chains[0].actions[i].address,maximum.chains[0].actions[i].address));
     CHECK(!strcmp(received.chains[0].actions[i].stringValue,maximum.chains[0].actions[i].stringValue));
     CHECK(received.encoderRotation.outputs[i].range.floating.start==maximum.encoderRotation.outputs[i].range.floating.start);
@@ -386,7 +390,75 @@ void h4(){
   CHECK(std::signbit(config.encoderRotation.outputs[1].range.floating.start));
   std::cout<<"PASS SAFETY H4 normal max16+16/long strings/C0 escaping/float endpoints/negative zero/Wi-Fi restart/save-reload\n";
 }
+void wifiPrivacy(){
+  probeFake::clear();String error;CHECK(loadConfig(error));registerHandlers();
+  auto c=fixture();strcpy(c.password,"private-wifi-secret");seed(c);
+  auto get=[&](bool configured){
+    for(const char* path:{"/api/config","/api/wifi"}){
+      web.request(path,HTTP_GET);CHECK(web.status==200);
+      CHECK(web.body.find("private-wifi-secret")==std::string::npos);
+      JsonDocument d;CHECK(!deserializeJson(d,web.body));
+      auto n=std::string(path)=="/api/config"?d["network"].as<JsonVariantConst>():d.as<JsonVariantConst>();
+      CHECK(n["password"].isUnbound()&&n["passwordConfigured"].is<bool>()&&n["passwordConfigured"]==configured);
+      CHECK(n["ssid"]==config.ssid);
+    }
+  };
+  auto begin=[&](const char* field){
+    std::string body="{\"schemaVersion\":2,\"network\":{\"ssid\":\"edited\",\"oscHost\":\"10.1.2.3\",\"oscPort\":9012";
+    body+=field;body+="}}";web.request("/api/config/begin",HTTP_POST,body.c_str());
+    if(web.status!=200)return uint32_t(0);
+    JsonDocument d;CHECK(!deserializeJson(d,web.body));return d["token"].as<uint32_t>();
+  };
+  auto finish=[&](uint32_t t){
+    JsonDocument d;
+    for(uint8_t i=0;i<28;++i){CHECK(encodeChain(c.chains[i],i,d));CHECK(stageConfigChain(t,i,json(d),error));}
+    CHECK(encodeRotation(c.encoderRotation,d,true));CHECK(stageConfigRotation(t,json(d),error));
+    CHECK(commitConfigSave(t,error));
+  };
+  get(true);
+  JsonDocument d;CHECK(encodeNetwork(config,d));CHECK(d["password"]=="private-wifi-secret");
+  d.remove("password");NetworkSettings n;CHECK(!decodeNetwork(d.as<JsonVariantConst>(),n,error));
+  for(bool wifi:{false,true}){
+    seed(c);const auto before=disk();
+    for(const char* bad:{"null","123","false","[]","{}","\"embedded\\u0000nul\""}){
+      std::string field=",\"password\":";field+=bad;
+      if(wifi){std::string body="{\"ssid\":\"bad\"";body+=field;body+="}";web.request("/api/wifi",HTTP_PUT,body.c_str());}
+      else CHECK(!begin(field.c_str()));
+      CHECK(web.status==400&&disk()==before&&String(config.password)=="private-wifi-secret");
+    }
+    for(const char* value:{"",",\"password\":\"replacement\"", "",",\"password\":\"\"", "",",\"password\":\"replacement\""}){
+      const String expected=String(value).isEmpty()?String(config.password):String(value)==",\"password\":\"\""?String(""):String("replacement");
+      if(wifi){std::string body="{\"ssid\":\"edited\"";body+=value;body+="}";web.request("/api/wifi",HTTP_PUT,body.c_str());CHECK(web.status==200);}
+      else {auto t=begin(value);CHECK(t);finish(t);}
+      CHECK(String(config.password)==expected);CHECK(loadConfig(error)&&String(config.password)==expected);
+      get(!expected.isEmpty());CHECK(config.chains[0].count==16&&config.encoderRotation.outputCount==16);
+    }
+  }
+  // The header snapshots the current active password at begin, not at commit.
+  seed(c);auto t=begin("");CHECK(t);strcpy(config.password,"later-ram-value");
+  c.chains[0].actions[0].intValue=123;c.chains[0].actions[0].oscType=OscType::Int;finish(t);
+  CHECK(String(config.password)=="private-wifi-secret"&&config.oscPort==9012&&config.chains[0].actions[0].intValue==123);
+  // Another real save invalidates the earlier token; it cannot restore an old secret.
+  t=begin("");CHECK(t);web.request("/api/wifi",HTTP_PUT,"{\"ssid\":\"new\",\"password\":\"new-current\"}");
+  CHECK(web.status==200&&!commitConfigSave(t,error));t=begin("");CHECK(t);finish(t);CHECK(String(config.password)=="new-current");
+  const auto before=disk();
+  t=begin(",\"password\":\"abandoned\"");CHECK(t);CHECK(loadConfig(error)); // power loss before commit
+  CHECK(disk()==before&&String(config.password)=="new-current"&&!commitConfigSave(t,error));
+  storageFault::pendingWriteFailures=1;web.request("/api/wifi",HTTP_PUT,"{\"ssid\":\"failed\"}");
+  CHECK(web.status==400&&disk()==before&&String(config.password)=="new-current");storageFault::clearFaults();
+  t=begin("");CHECK(t);storageFault::renameFailure=true;
+  JsonDocument record;for(uint8_t i=0;i<28;++i){CHECK(encodeChain(c.chains[i],i,record));CHECK(stageConfigChain(t,i,json(record),error));}
+  CHECK(encodeRotation(c.encoderRotation,record,true)&&stageConfigRotation(t,json(record),error));
+  CHECK(!commitConfigSave(t,error)&&disk()==before);storageFault::clearFaults();CHECK(loadConfig(error)&&String(config.password)=="new-current");
+  // Missing credentials in storage stay corrupt; API omission is not a disk migration.
+  auto corrupt=before;auto start=corrupt.find("\"password\":");CHECK(start!=std::string::npos);
+  auto end=corrupt.find(',',start);CHECK(end!=std::string::npos);corrupt.erase(start,end-start+1);
+  *storageFault::files.at("/config.records")=corrupt;CHECK(!loadConfig(error));CHECK(!begin(""));
+  *storageFault::files.at("/config.records")=before;CHECK(loadConfig(error));
+  std::cout<<"PASS Wi-Fi privacy: real GET routes omit secret, strict disk decode, both update routes preserve/replace/clear/reject, current-value snapshot, token invalidation, reboot/abandon/write/rename failure retention\n";
+}
 int main(int argc,char** argv){try{
+  if(argc==2&&std::string(argv[1])=="--wifi-privacy"){wifiPrivacy();return 0;}
   if(argc==2&&std::string(argv[1]).find("--builtin-")==0){
     const std::string mode=argv[1];String error;probeFake::clear();registerHandlers();
     if(mode=="--builtin-upgrade"){
