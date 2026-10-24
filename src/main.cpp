@@ -14,6 +14,8 @@
 #include "engine.h"
 #include "inputs.h"
 #include "backends.h"
+#include "obs_backend.h"
+#include "obs_test_console.h"
 #include "diagnostics.h"
 #include "factory_reset.h"
 #include "web_assets.h"
@@ -312,10 +314,16 @@ void setup() {
 }
 void loop() {
   static uint32_t observedOverflows = 0;
+  obsTick(!maintenanceRecovery && !restartAt && !factoryResetBlocked() && configOutputsAllowed());
   web.handleClient();
   // At most one command per loop, so pasted input cannot monopolize execution.
   if (console.available() > 0) {
     const int command = console.read();
+#if defined(CHAINPAD_OBS_TEST)
+    if (obsTestByte(command, console)) {
+      // Test lines consume each byte exactly once; secrets never reach m/h/d.
+    } else
+#endif
 #if CHAINPAD_HID_TRACE
     if (hidtrace::command(command) || hidtrace::active()) {
       // Recording controls are silent. Suppress diagnostic console output while active.

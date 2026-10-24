@@ -8,7 +8,8 @@ struct BackendStatus {
   bool usbMidi, usbKeyboard, bleMidi, bleKeyboard, wifi;
   uint32_t retries, overflows;
 };
-// All transport ownership lives here; called only from the Arduino loop.
+// Backend entry points run on the Arduino loop. OBS delegates socket ownership
+// to its worker; these calls never wait for that worker or network completion.
 void backendsBegin();
 void backendsTick(uint32_t now);
 void backendsPanic();

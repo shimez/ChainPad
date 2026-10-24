@@ -1,0 +1,24 @@
+--- WebSockets.h@2.7.2
++++ WebSockets.h@chainpad
+@@ -63,7 +63,9 @@
+ 
+ #if defined(ESP8266) || defined(ESP32)
+ 
+-#define WEBSOCKETS_MAX_DATA_SIZE (15 * 1024)
++#ifndef WEBSOCKETS_MAX_DATA_SIZE
++#define WEBSOCKETS_MAX_DATA_SIZE (15 * 1024)
++#endif
+ #define WEBSOCKETS_USE_BIG_MEM
+ #define GET_FREE_HEAP ESP.getFreeHeap()
+ // moves all Header strings to Flash (~300 Byte)
+--- WebSockets.cpp@2.7.2
++++ WebSockets.cpp@chainpad
+@@ -499,6 +499,8 @@
+                 messageReceived(client, header->opCode, payload, header->payloadLen, header->fin);
+                 break;
+             case WSop_close: {
++                // ChainPad: expose raw Close BEFORE normal teardown.
++                messageReceived(client, header->opCode, payload, header->payloadLen, header->fin);
+ #ifndef NODEBUG_WEBSOCKETS
+                 uint16_t reasonCode = 1000;
+                 if(header->payloadLen >= 2) {
