@@ -133,8 +133,30 @@ host/storageの最初の実行は240秒のツール期限を超えたため、�
 
 S3 ELFでtaskStack=8192、requestStorage=864、resultStorage=96、settingStorage=152 Bを確認。
 FIFO件数は4/8/1のまま。PoCとの差は主にシリアル編集領域・結果コメント領域の除外。
-認証/接続/応答時間、内部Heap/PSRAM/stack実測、入力遅延は以下の実機試験待ち。
+上表は通信基盤チェックポイント`e5c2c65`の測定値。後続のUSB CDC改善後の
+最新ビルド使用量・試験結果は[serial-output.md](serial-output.md)を参照。
 
-Phase 1版の実機接続/通信/負荷/長時間測定は未実施。PoCの実績と混同しない。
-USB serial COM18は列挙されたが、ChainPadであることと利用可能なOBS接続先は未確認。
-実機への書込み・接続情報の取得は行っていない。実機必須の完了条件はユーザー検証待ち。
+## Phase 1完了整理（2026-10-24）
+
+ユーザーの完了判断に基づき、通信基盤とUSB CDC改善のStage 1/2/3-Aを完了として整理する。
+通信基盤は`e5c2c65`でチェックポイント済み。後続CDC改善は未コミット。
+ユーザー実施のS3 OBS test実機ログでは認証あり接続、Ready維持、16件の受付表示、
+Accepted 4件の成功結果、通常診断との交互出力を確認した。Astraによる実装・ログ照合もPASS。
+接続/認証/応答時間とHeap/stackの観測値・測定時点の限定は上記リンクに記録する。
+以前の実機レビューではAP-onlyでの接続試行停止とUnavailable受付もPASSとされた。
+全文ログや接続先・認証情報はユーザー側保管とする。
+
+完了は全条件の実機保証を意味しない。短時間Wi-Fi断からの自動復帰、queued/in-flightを
+区別したPanic取消、既存機能との共存、反復・長時間動作等の実機検証には残項目がある。
+USB CDC Stage 3-B/Cは未実施・保留であり、Phase 1完了の必須条件から外す。
+PC試験のPASSをこれら実機試験のPASSに置き換えない。
+
+次段階はPhase 2「Web ConfiguratorでのOBS接続設定・保存・状態表示」の設計レビュー。
+Action ChainへのOBS操作統合はPhase 3。今回の整理ではWorker動作・モデル・保存・UIの
+コード変更、実機書込み、Commit/Push/Mergeを行わない。
+
+今回の整理時にOBS Native、serial T01–T18、依存パッチ検査、OBS/serial成果物分離検査、
+通常4ボードのimage検査を再実行しPASS。S3通常/OBS test、C3/C5/C6通常と両traceの
+計7構成は、前回の最終成功ビルドを採用した。本番ソース・ヘッダー・確認対象ビルド設定の
+更新時刻が各ELFより後でないことも確認した（ハッシュ付き再現ビルドの証明ではない）。
+今回の変更は文書だけであり、host/trace/capability・保存障害の既存PASSも引き継ぐ。
