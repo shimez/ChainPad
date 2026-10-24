@@ -1,4 +1,5 @@
 #include "diagnostics.h"
+#include "serial_output.h"
 #include "hid_trace.h"
 #include "model.h"
 #include "rotation_runtime.h"
@@ -56,11 +57,11 @@ void memoryCheckpoint(const char* phase) {
   }
 }
 void printMemoryDiagnostics(Print& out) {
-  out.printf("Memory records: startup=%u failures=%u recordBytes=%u\n", startupCount, failureCount,
+  outputPrintf(out, "Memory records: startup=%u failures=%u recordBytes=%u\n", startupCount, failureCount,
     unsigned(sizeof(startup) + sizeof(failures)));
   for (unsigned i = 0; i < startupCount; ++i) {
     const auto& s = startup[i];
-    out.printf("MEM %s free=%lu min=%lu largest=%lu\n", s.phase, s.free, s.minimum, s.largest);
+    outputPrintf(out, "MEM %s free=%lu min=%lu largest=%lu\n", s.phase, s.free, s.minimum, s.largest);
   }
   for (unsigned i = 0; i < 4; ++i) {
     AllocationFailure f;
@@ -68,14 +69,17 @@ void printMemoryDiagnostics(Print& out) {
     const bool valid = i < failureCount;
     if (valid) f = failures[i];
     portEXIT_CRITICAL(&memoryMux);
-    if (valid) out.printf("ALLOC FAIL phase=%s api=%s size=%lu caps=0x%lx free=%lu min=%lu largest=%lu\n",
+    if (valid) outputPrintf(out, "ALLOC FAIL phase=%s api=%s size=%lu caps=0x%lx free=%lu min=%lu largest=%lu\n",
       f.phase, f.function, f.size, f.caps, f.free, f.minimum, f.largest);
   }
   for (const char* name : {"loopTask", "input-scan", "nimble_host", "wifi", "tiT", "esp_timer", "IDLE"}) {
     TaskHandle_t task = xTaskGetHandle(name);
-    if (task) out.printf("STACK %s lowWaterBytes=%u\n", name, unsigned(uxTaskGetStackHighWaterMark(task)));
-    else out.printf("STACK %s not found\n", name);
+    if (task) outputPrintf(out, "STACK %s lowWaterBytes=%u\n", name, unsigned(uxTaskGetStackHighWaterMark(task)));
+    else outputPrintf(out, "STACK %s not found\n", name);
   }
+#if CHAINPAD_SERIAL_BUFFERED
+  serialout::printStats(out);
+#endif
 }
 void printDiagnostics(Print& out, const char* reason) {
 #if CHAINPAD_HID_TRACE
@@ -96,43 +100,46 @@ void printDiagnostics(Print& out, const char* reason) {
       if (count > maxKey) maxKey = count;
     }
   }
-  out.printf("\n[diag] t=%lu reason=%s board=%s (bytes)\n", millis(), reason, HARDWARE_NAME);
-  out.printf("RAM internal: free=%u minFree=%u largest=%u allocated=%u loopStackMin=%u\n",
+  outputPrintf(out, "\n[diag] t=%lu reason=%s board=%s (bytes)\n", millis(), reason, HARDWARE_NAME);
+  outputPrintf(out, "RAM internal: free=%u minFree=%u largest=%u allocated=%u loopStackMin=%u\n",
     unsigned(ram.total_free_bytes), unsigned(ram.minimum_free_bytes), unsigned(ram.largest_free_block),
     unsigned(ram.total_allocated_bytes), unsigned(stack));
-  out.printf("RAM PSRAM: free=%u minFree=%u largest=%u allocated=%u\n",
+  outputPrintf(out, "RAM PSRAM: free=%u minFree=%u largest=%u allocated=%u\n",
     unsigned(psram.total_free_bytes), unsigned(psram.minimum_free_bytes), unsigned(psram.largest_free_block), unsigned(psram.total_allocated_bytes));
-  out.printf("Static sizes: Action=%u Chain=%u Config=%u Engine=%u; recordLimit=%u\n",
+  outputPrintf(out, "Static sizes: Action=%u Chain=%u Config=%u Engine=%u; recordLimit=%u\n",
     unsigned(sizeof(Action)), unsigned(sizeof(Chain)), unsigned(sizeof(Config)), unsigned(sizeof(Engine)), unsigned(MAX_RECORD_BYTES));
-  out.printf("Active Config address: %p\n", static_cast<void*>(&config));
-  out.printf("Config external=%u PSRAM total=%u bytes\n", unsigned(esp_ptr_external_ram(&config)),
+  outputPrintf(out, "Active Config address: %p\n", static_cast<void*>(&config));
+  outputPrintf(out, "Config external=%u PSRAM total=%u bytes\n", unsigned(esp_ptr_external_ram(&config)),
     unsigned(heap_caps_get_total_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)));
-  out.printf("Rotation storage: Output=%u Settings=%u count=%u/%u state=%s\n",
+  outputPrintf(out, "Rotation storage: Output=%u Settings=%u count=%u/%u state=%s\n",
     unsigned(sizeof(RotationOutput)), unsigned(sizeof(EncoderRotationSettings)), unsigned(config.encoderRotation.outputCount),
     unsigned(ROTATION_OUTPUT_CAPACITY), configStorageStateName());
-  out.printf("Rotation runtime: bytes=%u active=%u range=%lu position=", unsigned(sizeof(RotationRuntime)),
+  outputPrintf(out, "Rotation runtime: bytes=%u active=%u range=%lu position=", unsigned(sizeof(RotationRuntime)),
     unsigned(rotationRuntime.active()), (unsigned long)config.encoderRotation.axis.rangeSteps);
-  if (rotationRuntime.active()) out.printf("%lu", (unsigned long)rotationRuntime.position());
+  if (rotationRuntime.active()) outputPrintf(out, "%lu", (unsigned long)rotationRuntime.position());
   else out.print("n/a");
   out.println();
-  out.printf("Rotation sender: bytes=%u pendingBytes=%u pending=%u budget=%u generation=%lu snapshot=%lu overwrite=%lu discard=%lu unavailable=%lu\n",
+  outputPrintf(out, "Rotation sender: bytes=%u pendingBytes=%u pending=%u budget=%u generation=%lu snapshot=%lu overwrite=%lu discard=%lu unavailable=%lu\n",
     unsigned(rotationSenderBytes()), unsigned(rotationPendingBytes()), rotationPendingCount(), ROTATION_SEND_BUDGET,
     rotationSendStats.generation, rotationSendStats.snapshot, rotationSendStats.overwritten,
     rotationSendStats.discarded, rotationSendStats.unavailable);
-  out.printf("Rotation OSC/USB/BLE accepted=%lu/%lu/%lu failed=%lu/%lu/%lu\n",
+  outputPrintf(out, "Rotation OSC/USB/BLE accepted=%lu/%lu/%lu failed=%lu/%lu/%lu\n",
     rotationSendStats.accepted[0], rotationSendStats.accepted[1], rotationSendStats.accepted[2],
     rotationSendStats.failed[0], rotationSendStats.failed[1], rotationSendStats.failed[2]);
-  out.printf("Actions: total=%u/%u maxKey=%u/%u maxEvent=%u; running=%u rejected=%lu\n",
+  outputPrintf(out, "Actions: total=%u/%u maxKey=%u/%u maxEvent=%u; running=%u rejected=%lu\n",
     actions, unsigned(MAX_TOTAL_ACTIONS), maxKey, unsigned(MAX_KEY_ACTIONS), maxEvent,
     unsigned(engine.activeCount()), engine.stats.rejectedChains);
   if (configStorageMounted()) {
     const size_t total = LittleFS.totalBytes(), used = LittleFS.usedBytes();
-    out.printf("LittleFS: total=%u used=%u free=%u active=%d pending=%d\n",
+    outputPrintf(out, "LittleFS: total=%u used=%u free=%u active=%d pending=%d\n",
       unsigned(total), unsigned(used), unsigned(total >= used ? total - used : 0),
       fileBytes("/config.records"), fileBytes("/pending.records"));
   } else out.println("LittleFS: unmounted (not mounted/formatted by diagnostics)");
   const auto status = backendStatus();
-  out.printf("Counters: transportRetries=%lu transportOverflows=%lu inputOverflows=%lu\n",
+  outputPrintf(out, "Counters: transportRetries=%lu transportOverflows=%lu inputOverflows=%lu\n",
     status.retries, status.overflows, inputOverflows());
+#if CHAINPAD_SERIAL_BUFFERED
+  serialout::printStats(out);
+#endif
 }
 }

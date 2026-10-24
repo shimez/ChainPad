@@ -1,5 +1,6 @@
 #include "hid_trace.h"
 #if CHAINPAD_HID_TRACE
+#include "serial_output.h"
 #include <esp_timer.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/portmacro.h>
@@ -86,35 +87,41 @@ bool command(int ch) {
   portEXIT_CRITICAL(&mux);
   return true;
 }
-void dumpTick(Print& out) {
+void dumpTick(Print& direct) {
   // command/dump run on loop only. With mode=0 callbacks cannot mutate this snapshot.
   if (!dumping) return;
+  bool finished = false;
+  const bool accepted = serialReport(direct, 384, [&](Print& out) {
   if (dumpLine == 0) {
-    out.printf("TRACE mode=%u start_us=%lld stop_us=%lld stored=%u lost=%lu bytes=%u status_ok=%lu status_error=%lu notify_true=%lu notify_false=%lu discarded_reports=%lu\n",
+    outputPrintf(out, "TRACE mode=%u start_us=%lld stop_us=%lld stored=%u lost=%lu bytes=%u status_ok=%lu status_error=%lu notify_true=%lu notify_false=%lu discarded_reports=%lu\n",
       capturedMode, startUs, stopUs, used, lost, unsigned(sizeof(entries)), statusesOk, statusesError, notifyTrue, notifyFalse, discarded);
   } else if (dumpLine <= Count) {
-    unsigned i = dumpLine - 1; out.printf("COUNT %s %lu\n", names[i], counts[i]);
+    unsigned i = dumpLine - 1; outputPrintf(out, "COUNT %s %lu\n", names[i], counts[i]);
   } else if (dumpLine <= Count + 28) {
-    unsigned i = dumpLine - Count - 1; out.printf("INPUT %u %lu\n", i, inputs[i]);
+    unsigned i = dumpLine - Count - 1; outputPrintf(out, "INPUT %u %lu\n", i, inputs[i]);
   } else if (dumpLine <= Count + 30) {
     unsigned i = dumpLine - Count - 29;
-    out.printf("FIFO transport=%u initial=%u final=%u high=%u\n", i, initial[i], finalDepth[i], high[i]);
+    outputPrintf(out, "FIFO transport=%u initial=%u final=%u high=%u\n", i, initial[i], finalDepth[i], high[i]);
   } else if (dumpLine == Count + 31) {
-    out.printf("PAIR notify_request_pairs=%lu mean_us=%lld max_us=%lld (not receiver hold time)\n",
+    outputPrintf(out, "PAIR notify_request_pairs=%lu mean_us=%lld max_us=%lld (not receiver hold time)\n",
       pairs, pairs ? pairTotal / pairs : 0, pairMax);
   } else if (dumpLine <= Count + 39) {
     const unsigned usages[] = {0, 233, 234, 226, 205, 181, 182, 183};
     const unsigned usage = usages[dumpLine - Count - 32];
-    out.printf("USAGE notify_requests usage=%u count=%lu\n", usage, usageCalls[usage]);
+    outputPrintf(out, "USAGE notify_requests usage=%u count=%lu\n", usage, usageCalls[usage]);
   } else if (dumpLine == Count + 40) {
     out.println("us,event,transport,usage,report_id,epoch,value");
   } else {
     unsigned i = dumpLine - Count - 41;
-    if (i >= used) { dumping = false; out.println("TRACE END"); return; }
+    if (i >= used) { finished = true; out.println("TRACE END"); return; }
     const auto& e = entries[(head + i) % Capacity];
-    out.printf("%lld,%s,%u,%u,%lu,%lu,%ld\n", e.us, names[e.event], e.transport, e.usage, e.id, e.epoch, e.value);
+    outputPrintf(out, "%lld,%s,%u,%u,%lu,%lu,%ld\n", e.us, names[e.event], e.transport, e.usage, e.id, e.epoch, e.value);
   }
-  ++dumpLine; // One line per loop; never dump during a recording.
+  });
+  if (accepted) {
+    if (finished) dumping = false;
+    else ++dumpLine; // Retry the same frozen line if output was not admitted.
+  }
 }
 }}
 #endif

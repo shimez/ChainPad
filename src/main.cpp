@@ -17,6 +17,7 @@
 #include "obs_backend.h"
 #include "obs_test_console.h"
 #include "diagnostics.h"
+#include "serial_output.h"
 #include "factory_reset.h"
 #include "web_assets.h"
 
@@ -43,7 +44,7 @@ String bootMessage;
 bool diagnosticsEnabled = false;
 uint32_t lastDiagnostics = 0;
 void diagnosticCheckpoint(const char* reason) {
-  if (diagnosticsEnabled) printDiagnostics(console, reason);
+  if (diagnosticsEnabled) serialReport(console, 2560, [&](Print& out) { printDiagnostics(out, reason); });
 }
 bool inputReady = false;
 bool maintenanceRecovery = false;
@@ -305,12 +306,14 @@ void setup() {
   if (!maintenanceRecovery) inputReady = inputsBegin();
   memoryCheckpoint(inputReady ? "inputs/ready" : "inputs/FAILED");
   memoryPhase("loop");
-   console.println("ChainPad / Project Chimera Phase 2"); console.println(bootMessage);
-  console.println("Setup AP: when unconfigured or disconnected for 30s / http://192.168.4.1");
-  console.println("Diagnostics: m=snapshot, d=toggle 5s + save logging, ?=help (115200 baud)");
+  serialReport(console, 1024, [&](Print& out) {
+    out.println("ChainPad / Project Chimera Phase 2"); out.println(bootMessage);
+    out.println("Setup AP: when unconfigured or disconnected for 30s / http://192.168.4.1");
+    out.println("Diagnostics: m=snapshot, d=toggle 5s + save logging, ?=help (115200 baud)");
 #if CHAINPAD_HID_TRACE
-  console.println("HID TRACE: 1=start counters, 2=start events, 0=stop, p=dump (controls are silent)");
+    out.println("HID TRACE: 1=start counters, 2=start events, 0=stop, p=dump (controls are silent)");
 #endif
+  });
 }
 void loop() {
   static uint32_t observedOverflows = 0;
@@ -330,21 +333,31 @@ void loop() {
     } else
 #endif
     if (command == 'm') {
-      console.printf("inputsReady=%u\n", unsigned(inputReady));
-      console.printf("Boot: %s\nWi-Fi mode=%u status=%u AP=%s STA=%s\n", bootMessage.c_str(),
-        unsigned(WiFi.getMode()), unsigned(WiFi.status()), WiFi.softAPIP().toString().c_str(), WiFi.localIP().toString().c_str());
-      printDiagnostics(console, "manual");
+      serialReport(console, 2560, [&](Print& out) {
+        outputPrintf(out, "inputsReady=%u\n", unsigned(inputReady));
+        outputPrintf(out, "Boot: %s\nWi-Fi mode=%u status=%u AP=%s STA=%s\n", bootMessage.c_str(),
+          unsigned(WiFi.getMode()), unsigned(WiFi.status()), WiFi.softAPIP().toString().c_str(), WiFi.localIP().toString().c_str());
+        printDiagnostics(out, "manual");
+      });
     }
     else if (command == 'h') {
+#if !CHAINPAD_SERIAL_BUFFERED
       console.setTxTimeoutMs(20);
-      printMemoryDiagnostics(console);
+#endif
+      serialReport(console, 3072, [&](Print& out) { printMemoryDiagnostics(out); });
+#if !CHAINPAD_SERIAL_BUFFERED
       console.setTxTimeoutMs(0);
+#endif
     }
     else if (command == 'd') {
       diagnosticsEnabled = !diagnosticsEnabled; lastDiagnostics = millis();
-      console.println(diagnosticsEnabled ? "Diagnostics ON" : "Diagnostics OFF");
-      if (diagnosticsEnabled) printDiagnostics(console, "enabled");
-    } else if (command == '?') console.println("m=snapshot; h=startup/allocations/stacks; d=toggle 5s + save logging (default OFF); bytes; file -1=absent -2=open failed");
+      serialReport(console, 2560, [&](Print& out) {
+        out.println(diagnosticsEnabled ? "Diagnostics ON" : "Diagnostics OFF");
+        if (diagnosticsEnabled) printDiagnostics(out, "enabled");
+      });
+    } else if (command == '?') serialReport(console, 256, [&](Print& out) {
+      out.println("m=snapshot; h=startup/allocations/stacks; d=toggle 5s + save logging (default OFF); bytes; file -1=absent -2=open failed");
+    });
   }
   uint32_t now = millis();
   updateSetupPortal(wifiSetupFlow.tick(WiFi.status() == WL_CONNECTED, now));
@@ -373,10 +386,20 @@ void loop() {
       && !hidtrace::active()
 #endif
   ) {
-    lastDiagnostics = now; printDiagnostics(console, "periodic");
+    lastDiagnostics = now;
+    serialReport(console, 2560, [&](Print& out) { printDiagnostics(out, "periodic"); });
   }
   delay(1);
 #if CHAINPAD_HID_TRACE
   hidtrace::dumpTick(console);
+#endif
+#if CHAINPAD_SERIAL_BUFFERED
+  serialout::output().pump(console, bool(console),
+#if CHAINPAD_HID_TRACE
+    hidtrace::active()
+#else
+    false
+#endif
+  );
 #endif
 }

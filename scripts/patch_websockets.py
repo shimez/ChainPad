@@ -49,6 +49,6 @@ if __name__ == '__main__':
     patch(Path(sys.argv[1]))
 elif 'Import' in globals():
     Import('env')
-    if env.subst('$PIOENV') not in ('xiao_esp32s3', 'xiao_esp32s3_obs_test'):
+    if env.subst('$PIOENV') not in ('xiao_esp32s3', 'xiao_esp32s3_obs_test', 'xiao_esp32s3_obs_trace'):
         raise RuntimeError('OBS patch must run only in an explicit S3 environment')
     patch(Path(env.subst('$PROJECT_LIBDEPS_DIR')) / env.subst('$PIOENV') / 'WebSockets' / 'src')
