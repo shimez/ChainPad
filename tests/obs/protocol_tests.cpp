@@ -57,5 +57,19 @@ int main() {
   assert(!a.append(reinterpret_cast<const uint8_t*>(text.data()), 1, false, 0));
   assert(a.length == 2048 && a.bytes[2048] == 0);
   assert(!a.expired(4898) && a.expired(4899)); a.reset(); assert(!a.active && !a.length);
+  for(unsigned i=0;i<7;++i) {
+    Protocol typed; typed.state=State::Ready; Command c; c.operation=Operation(i);
+    if(named(c.operation)) { std::string boundary; for(int n=0;n<64;++n)boundary+=u8"名"; strcpy(c.target,boundary.c_str()); }
+    c.muted=c.operation==Operation::SetInputMute;
+    assert(typed.request(c,42,0));
+    auto reply=[&](const char* type,const char* id){return std::string("{\"op\":7,\"d\":{\"requestId\":\"")+id+"\",\"requestType\":\""+type+"\",\"requestStatus\":{\"result\":false,\"code\":600}}}";};
+    assert(receive(typed,reply(requestType(c.operation),"chainpad-43").c_str())==Received::Ignored);
+    assert(receive(typed,reply(requestType(Operation((i+1)%7)),"chainpad-42").c_str())==Received::Invalid);
+    assert(receive(typed,reply(requestType(c.operation),"chainpad-42").c_str())==Received::Result);
+    assert(!typed.success && typed.code==600);
+    typed.pending=0;
+    if(named(c.operation)) { memset(c.target,'x',sizeof(c.target)); assert(!typed.request(c,43,0)); }
+    else {strcpy(c.target,"unexpected");assert(!typed.request(c,43,0));}
+  }
   std::cout << "PASS OBS protocol/auth: Hello ordering, reference vector, no-auth, UTF-8/escaping, IDs, errors, no server comments, timeout/wrap, limits, fragments, Close policy\n";
 }

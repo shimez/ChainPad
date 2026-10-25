@@ -94,3 +94,12 @@ for(let input=0;input<28;input++){
   choose('Action','keyboard');assert.equal(field('種類').value,'keyboard');
 }
 console.log('PASS Stop UI: all 28 events, selection, no parameters, summary, close/re-edit, Full round-trip, switch back');
+for(const operation of ['setCurrentProgramScene','startStream','stopStream','startRecord','stopRecord','setInputMute','toggleInputMute']){
+  const a={protocol:'obs',delayMs:0,operation,...(operation==='setCurrentProgramScene'?{sceneName:'画面'}:operation.includes('InputMute')?{inputName:'マイク'}:{}),...(operation==='setInputMute'?{inputMuted:true}:{})};
+  const before=JSON.stringify(a);show(a);
+  assert.equal(JSON.stringify(a),before);assert(!field('Action'));
+  assert.equal(all().find(n=>n.className==='action-kind').textContent,'OBS');
+  assert(ctx.actionSummary(a).includes(operation));
+  assert.deepEqual(plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]),a);
+}
+console.log('PASS OBS read-only rendering and preservation without exposing an incomplete editor');

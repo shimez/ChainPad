@@ -17,6 +17,7 @@
 #include "obs_backend.h"
 #include "obs_test_console.h"
 #include "obs_http.h"
+#include "obs_actions.h"
 #include "diagnostics.h"
 #include "serial_output.h"
 #include "factory_reset.h"
@@ -213,6 +214,17 @@ void setupWeb() {
     doc["lastAction"] = engine.stats.lastAction + 1;
     const char* results[] = {"accepted", "unavailable", "busy", "failed"};
     doc["lastResult"] = results[unsigned(engine.stats.lastResult)];
+    const auto& obsAction = obsActionStatus();
+    auto actionStatus = doc["obsActions"].to<JsonObject>();
+    actionStatus["admission"] = obsAction.admission;
+    actionStatus["requestId"] = obsAction.requestId;
+    actionStatus["completed"] = obsAction.completed; actionStatus["failed"] = obsAction.failed;
+    actionStatus["lastResult"] = nullptr;
+    if (obsAction.last.id) {
+      auto last = actionStatus["lastResult"].to<JsonObject>();
+      last["requestId"] = obsAction.last.id; last["success"] = obsAction.last.success;
+      last["code"] = obsAction.last.code; last["operation"] = obs::operationName(obsAction.last.operation);
+    }
     doc["transportRetries"] = s.retries; doc["transportOverflows"] = s.overflows;
     doc["inputOverflows"] = inputOverflows(); doc["pressedMask"] = pressedInputs();
     doc["inputsReady"] = inputReady; doc["bootMessage"] = bootMessage;

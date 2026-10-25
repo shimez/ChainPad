@@ -31,7 +31,9 @@ bool keyboardWrite(Transport t, const KeyboardReport& report) {
 }
 SendResult oscDispatch(const Action&) { return SendResult::Accepted; }
 }
+#include "obs_action_tests.h"
 int main() {
+  obsActionTests();
   JsonDocument caps;
   encodeCapabilities(caps);
   assert(caps["usbMidi"] == false && caps["usbKeyboard"] == false);

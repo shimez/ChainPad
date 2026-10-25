@@ -40,26 +40,6 @@ bool encode(JsonDocument& doc, char* out, size_t capacity) {
   return serializeJson(doc, out, capacity) > 0;
 }
 }
-bool validText(const char* s, size_t maxBytes, bool allowEmpty) {
-  if (!s || (!allowEmpty && !*s)) return false;
-  // Bounded scan: the caller supplies a terminated string or maxBytes+1 bytes.
-  size_t length = 0;
-  while (length <= maxBytes && s[length]) ++length;
-  if (length > maxBytes) return false;
-  for (size_t i = 0; i < length;) {
-    uint8_t c = uint8_t(s[i++]);
-    if (c < 0x80) { if (c < 0x20 || c == 0x7f) return false; continue; }
-    unsigned count; uint32_t value, minimum;
-    if (c >= 0xc2 && c <= 0xdf) { count = 1; value = c & 31; minimum = 0x80; }
-    else if (c >= 0xe0 && c <= 0xef) { count = 2; value = c & 15; minimum = 0x800; }
-    else if (c >= 0xf0 && c <= 0xf4) { count = 3; value = c & 7; minimum = 0x10000; }
-    else return false;
-    if (count > length - i) return false;
-    while (count--) { c = uint8_t(s[i++]); if ((c & 0xc0) != 0x80) return false; value = (value << 6) | (c & 63); }
-    if (value < minimum || value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff)) return false;
-  }
-  return true;
-}
 bool terminalClose(uint16_t code) {
   return code >= 4000 || code == 1002 || code == 1003 || code == 1007 || code == 1008 || code == 1009;
 }
@@ -93,21 +73,27 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
   if (op != 7 || state != State::Ready || !d["requestId"].is<const char*>()) return Received::Invalid;
   char expected[32]; snprintf(expected, sizeof(expected), "chainpad-%lu", static_cast<unsigned long>(pending));
   if (!pending || strcmp(d["requestId"], expected) || d["requestId"].as<JsonString>().size() != strlen(expected)) return Received::Ignored;
-  if (d["requestType"] != "SetCurrentProgramScene" || !d["requestStatus"]["result"].is<bool>() || !d["requestStatus"]["code"].is<int>()) return Received::Invalid;
+  if (d["requestType"] != requestType(operation) || !d["requestStatus"]["result"].is<bool>() || !d["requestStatus"]["code"].is<int>()) return Received::Invalid;
   success = d["requestStatus"]["result"]; code = d["requestStatus"]["code"];
   if (success && code != 100) return Received::Invalid;
   // Server-controlled comments never cross into diagnostics/API/logs.
   return Received::Result;
 }
 bool Protocol::request(const char* scene, uint32_t id, uint32_t now) {
-  if (state != State::Ready || pending || !id || !validText(scene, SCENE_LIMIT)) return false;
+  if (!validText(scene, SCENE_LIMIT)) return false;
+  Command command; memcpy(command.target, scene, strlen(scene) + 1);
+  return request(command, id, now);
+}
+bool Protocol::request(const Command& command, uint32_t id, uint32_t now) {
+  if (state != State::Ready || pending || !id || !validCommand(command)) return false;
   Budget budget; JsonDocument doc(&budget);
   char name[32]; snprintf(name, sizeof(name), "chainpad-%lu", static_cast<unsigned long>(id));
   doc["op"] = 6; auto d = doc["d"].to<JsonObject>();
-  d["requestType"] = "SetCurrentProgramScene"; d["requestId"] = name;
-  d["requestData"]["sceneName"] = scene;
+  d["requestType"] = requestType(command.operation); d["requestId"] = name;
+  if (named(command.operation)) d["requestData"][command.operation == Operation::SetCurrentProgramScene ? "sceneName" : "inputName"] = command.target;
+  if (command.operation == Operation::SetInputMute) d["requestData"]["inputMuted"] = command.muted;
   if (!encode(doc, wire, sizeof(wire))) return false;
-  pending = id; sentAt = now; return true;
+  operation = command.operation; pending = id; sentAt = now; return true;
 }
 bool Protocol::expire(uint32_t now) const { return pending && uint32_t(now - sentAt) >= RESPONSE_TIMEOUT_MS; }
 void Assembly::reset() { active = false; length = 0; bytes[0] = 0; }

@@ -5,6 +5,9 @@ target builds and normal-S3 hardware verification. The limitations below are
 accepted for M2; no additional verification phase is required for this milestone.
 M3 WebUI work is recorded separately below; the M2 backend contract is retained.
 
+Phase 3 Action schema, admission/completion diagnostics and work-1 verification:
+[OBS Action Chain](obs-actions.md).
+
 ## Ownership and boot
 
 Normal ESP32S3 builds use one loop-owned `obscontrol::Controller`, holding one M1

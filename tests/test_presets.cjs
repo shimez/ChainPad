@@ -11,6 +11,17 @@ config.chains[1].actions=[{protocol:'keyboard',transport:'usb',delayMs:0,message
 config.chains[27].actions=[{protocol:'osc',transport:'wifi',delayMs:0,address:'/test',type:'string',value:'hello'}];
 const normalized=v=>JSON.parse(JSON.stringify(v));
 const full=P.full(config);
+const obsConfig=normalized(config);
+obsConfig.chains.forEach(c=>c.actions=[]);
+obsConfig.chains[0].actions=['setCurrentProgramScene','startStream','stopStream','startRecord','stopRecord','setInputMute','toggleInputMute'].map(operation=>({protocol:'obs',delayMs:0,operation,...(operation==='setCurrentProgramScene'?{sceneName:'名'.repeat(64)}:operation.includes('InputMute')?{inputName:'マイク 🎙'}:{}),...(operation==='setInputMute'?{inputMuted:false}:{})}));
+for(const caps of [usb,ble]){
+  assert.deepEqual(normalized(P.read(P.full(obsConfig),'full',caps).config.chains),obsConfig.chains);
+  assert.deepEqual(normalized(P.read(P.key(obsConfig,0),'key',caps).chains[0]),obsConfig.chains[0]);
+}
+for(const patch of [{sceneName:'x'.repeat(193)},{sceneName:''},{sceneName:'\ud800'},{sceneName:'a\0b'},{sceneName:'a\nb'},{operation:'unknown'},{password:'secret'},{delayMs:1}]){
+  const bad=normalized(obsConfig);Object.assign(bad.chains[0].actions[0],patch);assert.throws(()=>P.read(P.full(bad),'full',ble));
+}
+console.log('PASS OBS seven-operation Full/Key preservation on supported/unsupported capabilities, UTF-8 limits and strict parameters');
 const stopConfig=normalized(config);
 for(const c of stopConfig.chains)c.actions=[{protocol:'stopOtherChains',delayMs:0}];
 for(const caps of [usb,ble]){

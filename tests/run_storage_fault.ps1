@@ -9,7 +9,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Builtin data is stale' }
 & "$root\.venv\Scripts\python.exe" "$root\tests\storage_fault\generate.py" $build
 if ($LASTEXITCODE -ne 0) { throw 'Handler extraction failed' }
 $json = Join-Path $root '.pio\libdeps\xiao_esp32s3\ArduinoJson\src'
-$sources = @('tests\storage_fault\tests.cpp','tests\storage_fault\model_adapter.cpp','src\config_store.cpp','src\factory_reset.cpp','src\rotation.cpp','src\rotation_runtime.cpp','src\rotation_sender.cpp','src\engine.cpp','src\backends.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
+$sources = @('tests\storage_fault\tests.cpp','tests\storage_fault\model_adapter.cpp','src\config_store.cpp','src\factory_reset.cpp','src\rotation.cpp','src\rotation_runtime.cpp','src\rotation_sender.cpp','src\engine.cpp','src\backends.cpp','src\obs_actions.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
 $sources += 'src\storage_probe.cpp'
 $sources += 'tests\probe_platform\probe_stat.cpp'
 # 32-bit ESP32 ArduinoJson default: 128 slots/pool. Host pointers remain 64-bit;

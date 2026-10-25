@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include "capabilities.h"
 #include "rotation.h"
+#include "obs_command.h"
 
 namespace chimera {
 constexpr uint8_t INPUT_COUNT = 28;
@@ -13,7 +14,7 @@ constexpr size_t MAX_OSC_STRING_BYTES = 128;
 constexpr uint8_t eventActionLimit(uint8_t id) { return id < 26 ? MAX_ACTIONS : 8; }
 constexpr size_t MAX_RECORD_BYTES = 24576; // 16 maximum OSC Actions, including JSON escaping.
 constexpr uint32_t MAX_WAIT_MS = 86400000; // 24 hours; safely below half the millis() range.
-enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait, StopOtherChains };
+enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait, StopOtherChains, Obs };
 enum class OscType : uint8_t { Int, Float, Bool, String };
 enum class MidiMessage : uint8_t { NoteOn, NoteOff, CC, AllNotesOn, AllNotesOff, NoteOnOff, AllNotesOnOff };
 inline bool allNotes(MidiMessage m) { return m == MidiMessage::AllNotesOn || m == MidiMessage::AllNotesOff || m == MidiMessage::AllNotesOnOff; }
@@ -29,7 +30,8 @@ struct Action {
   Transport transport = Transport::Wifi;
   uint32_t delayMs = 0;
   OscType oscType = OscType::Int;
-  char address[MAX_OSC_ADDRESS_BYTES + 1] = "/avatar/parameters/Costume";
+  // OBS and OSC are mutually exclusive; target names do not enlarge every slot.
+  union { char address[MAX_OSC_ADDRESS_BYTES + 1] = "/avatar/parameters/Costume"; char obsTarget[obs::TARGET_LIMIT + 1]; };
   int32_t intValue = 2;
   float floatValue = 0;
   bool boolValue = false;
@@ -41,6 +43,8 @@ struct Action {
   uint8_t value = 127;
   uint8_t usage = 104; // USB HID usage F13; independent of keyboard layout.
   uint8_t modifiers = 0;
+  obs::Operation obsOperation = obs::Operation::SetCurrentProgramScene;
+  // OBS SetInputMute uses boolValue; all other OBS operations keep it false.
 };
 struct Chain { uint8_t count = 0; Action actions[MAX_ACTIONS]; };
 inline bool pairedAction(const Action& a) {

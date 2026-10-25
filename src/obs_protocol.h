@@ -1,24 +1,26 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
+#include "obs_command.h"
 
 namespace chimera { namespace obs {
-constexpr size_t MESSAGE_LIMIT = 2048, SCENE_LIMIT = 192;
+constexpr size_t MESSAGE_LIMIT = 2048, SCENE_LIMIT = TARGET_LIMIT;
 constexpr uint32_t RESPONSE_TIMEOUT_MS = 3000, HANDSHAKE_TIMEOUT_MS = 5000;
 enum class State : uint8_t { Disabled, Disconnected, Connecting, Authenticating, Ready, Error };
 enum class Received { Invalid, Identify, Ready, Result, Ignored };
 using Authenticate = bool (*)(const char*, const char*, const char*, char*);
-bool validText(const char* text, size_t maxBytes, bool allowEmpty = false);
 bool terminalClose(uint16_t code);
 struct Protocol {
   State state = State::Disconnected;
   uint32_t pending = 0, sentAt = 0;
   bool success = false;
   int code = 0;
+  Operation operation = Operation::SetCurrentProgramScene;
   char wire[1536]{};
   void connected();
   Received receive(const char*, size_t, const char*, Authenticate);
   bool request(const char*, uint32_t, uint32_t);
+  bool request(const Command&, uint32_t, uint32_t);
   bool expire(uint32_t) const;
 };
 struct Assembly {

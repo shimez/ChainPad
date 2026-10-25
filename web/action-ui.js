@@ -42,6 +42,7 @@ function hidFields(fields,a){
   }
 }
 function actionSummary(a) {
+  if(a.protocol==='obs')return `OBS · ${a.operation} · ${a.sceneName??a.inputName??''}${a.operation==='setInputMute'?(a.inputMuted?' · Mute':' · Unmute'):''}`;
   const transport={wifi:'Wi-Fi',usb:'USB',ble:'BLE',both:'USB + BLE'}[a.transport]||'';
   if(a.protocol==='wait')return `${a.delayMs} ms`;
   if(a.protocol==='stopOtherChains')return '他のChainを中断 · このChainは継続';

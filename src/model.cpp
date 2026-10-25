@@ -56,6 +56,19 @@ bool integer(JsonVariantConst v, int64_t low, int64_t high) {
 bool parseAction(JsonVariantConst j, Action& a) {
   if (!j.is<JsonObjectConst>()) return false;
   String p = j["protocol"] | "";
+  if (p == "obs") {
+    if (j["protocol"].as<JsonString>().size() != 3) return false;
+    if (!integer(j["delayMs"], 0, 0) || !j["operation"].is<const char*>()) return false;
+    const auto name = j["operation"].as<JsonString>();
+    if (name.size() != strlen(name.c_str()) || !obs::parseOperation(name.c_str(), a.obsOperation)) return false;
+    const bool named = obs::named(a.obsOperation), mute = a.obsOperation == obs::Operation::SetInputMute;
+    if (j.as<JsonObjectConst>().size() != size_t(3 + named + mute)) return false;
+    a.obsTarget[0] = 0; a.boolValue = false;
+    if (named && (!text(j[a.obsOperation == obs::Operation::SetCurrentProgramScene ? "sceneName" : "inputName"], a.obsTarget, sizeof(a.obsTarget)) ||
+                  !obs::validText(a.obsTarget, obs::TARGET_LIMIT))) return false;
+    if (mute) { if (!j["inputMuted"].is<bool>()) return false; a.boolValue = j["inputMuted"]; }
+    a.protocol = Protocol::Obs; a.delayMs = 0; return true;
+  }
   if (p == "stopOtherChains") {
     if (!integer(j["delayMs"], 0, 0) || j.as<JsonObjectConst>().size() != 2) return false;
     a.protocol = Protocol::StopOtherChains; a.delayMs = 0; return true;
@@ -196,8 +209,10 @@ void encodeCapabilities(JsonDocument& doc) {
   doc["obsWebSocket"] = bool(CHAINPAD_HAS_OBS);
 #if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
   doc["obsSettingsApi"] = true;
+  doc["obsActions"] = true;
 #else
   doc["obsSettingsApi"] = false;
+  doc["obsActions"] = false;
 #endif
   doc["rotationOutputCapacity"] = ROTATION_OUTPUT_CAPACITY;
   doc["rotationRuntimeSupported"] = true;
@@ -245,6 +260,14 @@ template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocum
       const auto& a = source.actions[k]; auto j = actions.add<JsonObject>();
       if (j.isNull()) return false;
       j["delayMs"] = a.protocol == Protocol::Wait ? a.delayMs : 0;
+      if (a.protocol == Protocol::Obs) {
+        const char* operation = obs::operationName(a.obsOperation);
+        if (!operation) return false;
+        j["protocol"] = "obs"; j["operation"] = operation;
+        if (obs::named(a.obsOperation)) j[a.obsOperation == obs::Operation::SetCurrentProgramScene ? "sceneName" : "inputName"] = a.obsTarget;
+        if (a.obsOperation == obs::Operation::SetInputMute) j["inputMuted"] = a.boolValue;
+        continue;
+      }
       if (pairedAction(a) && a.delayMs) j["holdMs"] = a.delayMs;
       if (a.protocol == Protocol::Wait) { j["protocol"] = "wait"; continue; }
       if (a.protocol == Protocol::StopOtherChains) { j["protocol"] = "stopOtherChains"; continue; }

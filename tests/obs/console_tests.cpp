@@ -1,17 +1,21 @@
 #include "obs_test_console.h"
 #include "obs_backend.h"
+#include "obs_actions.h"
 #include <cassert>
 #include <iostream>
 namespace chimera {
-ObsSettings received;unsigned applies=0, sends=0, panics=0;
+ObsSettings received;unsigned applies=0, sends=0, panics=0, drains=0;
 bool obsApplySettings(const ObsSettings& s){received=s;++applies;return true;}
 SendResult obsDispatch(const char*,uint32_t& id){id=++sends;return SendResult::Accepted;}
 void obsPanic(){++panics;}
 ObsStatus obsStatusSnapshot(){return {};}
-bool obsNextResult(ObsResult&){return false;}
+bool obsNextResult(ObsResult&){++drains;return false;}
 }
 int main(){
   using namespace chimera;Print out;
+  Action action; action.protocol=Protocol::Obs;
+  assert(obsActionDispatch(action)==SendResult::Unavailable && !strcmp(obsActionStatus().admission,"testConsoleOwned"));
+  obsActionsTick(); assert(drains==0 && sends==0);
   auto line=[&](const std::string& s){for(unsigned char c:s)assert(obsTestByte(c,out));};
   for(char c:std::string("mhd?p@"))assert(!obsTestByte(c,out));
   line("!{\"op\":\"settings\",\"ip\":\"192.0.2.1\",\"port\":4455,\"enabled\":true,\"password\":\"secret-mhd?\"}\r\n");

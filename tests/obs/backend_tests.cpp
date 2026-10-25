@@ -1,11 +1,27 @@
 #include "obs_backend.h"
 #include "obs_lifecycle.h"
+#include "obs_actions.h"
+#include "engine.h"
+#include "rotation_runtime.h"
 #include <WebSocketsClient.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
 #include <ArduinoJson.h>
 #include <iostream>
 using namespace chimera;
+// Production Engine/dispatch/OBS adapter/Worker; unrelated output transports are sinks.
+static unsigned hidSent=0, oscSent=0;
+namespace chimera {
+Config config; RotationRuntime rotationRuntime;
+bool RotationRuntime::step(bool) { return false; }
+void transportsBegin() {} void transportsTick() {} void rotationSenderBegin() {} void rotationDiscard() {}
+void midiTick() {} void keyboardTick() {} void midiPanic() {} void keyboardPanic() {}
+bool midiReady(Transport) {return true;} bool keyboardReady(Transport) {return true;}
+bool midiQueued(Transport) {return false;} bool keyboardQueued(Transport) {return false;}
+SendResult midiDispatch(const Action&) {return SendResult::Accepted;}
+SendResult keyboardDispatch(const Action&) {++hidSent;return SendResult::Accepted;}
+SendResult oscDispatch(const Action&) {++oscSent;return SendResult::Accepted;}
+}
 static ObsSettings settings() {ObsSettings s;strcpy(s.ip,"192.0.2.1");strcpy(s.password,"test-password");s.enabled=true;return s;}
 static void ready() {
   for(int i=0;i<40&&obsStatusSnapshot().state!=obs::State::Ready;++i)rtos::step(1000);
@@ -89,7 +105,56 @@ int main(){
     rtos::step(1);assert(obsStatusSnapshot().attempts==attempts+1);
   }
   wire::online=true;ready();
+  // All seven operations traverse the real Engine -> dispatch -> Worker path.
+  obsActionsTick(); const auto drops=obsStatusSnapshot().resultDrops;
+  for(unsigned i=0;i<21;++i) {
+    const auto op=obs::Operation(i%7);
+    auto& chain=config.chains[0]; chain.count=3;
+    chain.actions[0].protocol=Protocol::Keyboard;
+    auto& action=chain.actions[1]; action.protocol=Protocol::Obs; action.obsOperation=op;
+    strcpy(action.obsTarget,"日本語 \"input\""); action.boolValue=op==obs::Operation::SetInputMute;
+    chain.actions[2].protocol=Protocol::Osc;
+    const auto sent=requests(); const auto completed=obsActionStatus().completed, failed=obsActionStatus().failed;
+    assert(engine.trigger({0,0}) && !engine.activeCount());
+    id=obsActionStatus().requestId; assert(id && !strcmp(obsActionStatus().admission,"accepted"));
+    assert(hidSent==i+1 && oscSent==i+1 && requests()==sent); // no Worker step yet
+    rtos::step(); assert(requests()==sent+1);
+    JsonDocument packet; assert(!deserializeJson(packet,wire::sent.back()));
+    assert(packet["d"]["requestType"]==obs::requestType(op));
+    auto data=packet["d"]["requestData"];
+    if(obs::named(op)) assert(data[op==obs::Operation::SetCurrentProgramScene?"sceneName":"inputName"]==action.obsTarget);
+    else assert(data.isNull());
+    if(op==obs::Operation::SetInputMute) assert(data["inputMuted"].is<bool>() && data["inputMuted"]==true);
+    // StopOtherChains must leave accepted/in-flight requests alone.
+    config.chains[2].count=1; config.chains[2].actions[0].protocol=Protocol::StopOtherChains;
+    assert(engine.trigger({2,0}));
+    const bool ok=i%2==0;
+    wire::text("{\"op\":7,\"d\":{\"requestId\":\"chainpad-"+std::to_string(id)+"\",\"requestType\":\""+obs::requestType(op)+"\",\"requestStatus\":{\"result\":"+(ok?"true":"false")+",\"code\":"+(ok?"100":"600")+"}}}");rtos::step();
+    backendsTick(0);
+    assert(obsActionStatus().last.id==id && obsActionStatus().last.operation==op && obsActionStatus().last.success==ok);
+    assert(obsActionStatus().completed==completed+ok && obsActionStatus().failed==failed+!ok);
+    assert(!obsNextResult(result));
+  }
+  assert(obsStatusSnapshot().resultDrops==drops);
+  // Lost Toggle reply: timeout is diagnostic, never a second toggle after reconnect.
+  assert(engine.trigger({0,0})); id=obsActionStatus().requestId;rtos::step();before=requests();
+  rtos::step(3001);ready();backendsTick(0);
+  assert(requests()==before && obsActionStatus().last.id==id && obsActionStatus().last.code==-4);
+  assert(obsActionStatus().last.operation==obs::Operation::ToggleInputMute);
+  // Disconnect with a typed in-flight request also never replays it.
+  assert(engine.trigger({0,0})); id=obsActionStatus().requestId;rtos::step();before=requests();
+  wire::online=false;rtos::step();wire::online=true;ready();backendsTick(0);
+  assert(requests()==before && obsActionStatus().last.id==id && !obsActionStatus().last.success);
+  // Full/unavailable admission still continues to the OSC sink; Panic drains typed requests.
+  for(int i=0;i<4;++i)submit();
+  auto oscBefore=oscSent; assert(engine.trigger({0,0}));
+  assert(oscSent==oscBefore+1 && !strcmp(obsActionStatus().admission,"busy"));
+  before=requests(); backendsPanic(); assert(engine.trigger({0,0}));
+  assert(oscSent==oscBefore+2 && !strcmp(obsActionStatus().admission,"disconnected"));
+  rtos::step();ready();backendsTick(0);assert(requests()==before);
   cfg=settings();cfg.enabled=false;assert(obsApplySettings(cfg));rtos::step();assert(obsStatusSnapshot().state==obs::State::Disabled);
+  oscBefore=oscSent;assert(engine.trigger({0,0}));
+  assert(oscSent==oscBefore+1 && !strcmp(obsActionStatus().admission,"disabled"));
   rtos::shutdown();
   std::cout<<"PASS production OBS worker/API: settings snapshots, zero-wait queue/full, results, Panic races/in-flight boundary, config/Wi-Fi/session epochs, AP-only, reconnect, timeout/no replay, terminal Close latch/retry, oversize, no-auth, permission, result overflow, worker-only Socket ownership\n";
 }

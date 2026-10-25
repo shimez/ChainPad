@@ -16,7 +16,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Wi-Fi setup flow tests failed' }
 $platformCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /std:c++17 /EHsc /utf-8 /I`"$root\tests\reset_platform`" /I`"$root\tests\probe_platform`" /I`"$root\src`" /Fe:`"$build\factory_reset_platform_tests.exe`" /Fo`"$build\\`" `"$root\tests\host\factory_reset_platform_tests.cpp`" `"$root\src\factory_reset.cpp`" `"$root\src\storage_probe.cpp`" `"$root\tests\probe_platform\probe_stat.cpp`" && `"$build\factory_reset_platform_tests.exe`""
 & cmd.exe /d /c $platformCommand
 if ($LASTEXITCODE -ne 0) { throw 'Factory Reset platform tests failed' }
-$sources = @('tests\host\core_tests.cpp','tests\host\rotation_tests.cpp','tests\host\rotation_storage_tests.cpp','src\rotation.cpp','src\model.cpp','src\config_store.cpp','src\engine.cpp','src\backends.cpp','src\osc_backend.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
+$sources = @('tests\host\core_tests.cpp','tests\host\rotation_tests.cpp','tests\host\rotation_storage_tests.cpp','src\rotation.cpp','src\model.cpp','src\config_store.cpp','src\engine.cpp','src\backends.cpp','src\obs_actions.cpp','src\osc_backend.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
 $args = @('/nologo','/std:c++17','/EHsc','/utf-8','/D_CRT_SECURE_NO_WARNINGS','/DCHAINPAD_HAS_USB=1',"/I`"$root\tests\host`"", "/I`"$root\src`"", "/I`"$json`"", "/Fe:`"$build\core_tests.exe`"", "/Fo`"$build\\`"")
 $args += '/DCHAINPAD_HOST_TEST=1'
 $sources += 'src\rotation_runtime.cpp'
@@ -39,7 +39,7 @@ $enabledCommand = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe " + ($
 & cmd.exe /d /c $enabledCommand
 if ($LASTEXITCODE -ne 0) { throw 'Trace-enabled firmware host tests failed' }
 
-$bleSources = @('tests\host\capability_tests.cpp','src\rotation.cpp','src\model.cpp','src\config_store.cpp','src\engine.cpp','src\backends.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
+$bleSources = @('tests\host\capability_tests.cpp','src\rotation.cpp','src\model.cpp','src\config_store.cpp','src\engine.cpp','src\backends.cpp','src\obs_actions.cpp','src\midi_backend.cpp','src\keyboard_backend.cpp')
 $bleSources += 'src\rotation_runtime.cpp'
 $bleSources += 'src\rotation_sender.cpp'
 $bleSources += 'src\storage_probe.cpp'

@@ -11,7 +11,7 @@ struct ObsSettings {
   char password[129]{};
   bool enabled = false;
 };
-struct ObsResult { uint32_t id = 0; bool success = false; int code = 0; };
+struct ObsResult { uint32_t id = 0; bool success = false; int code = 0; obs::Operation operation = obs::Operation::SetCurrentProgramScene; };
 struct ObsStatus {
   obs::State state = obs::State::Disabled;
   uint32_t accepted = 0, rejected = 0, completed = 0, failed = 0, discarded = 0;
@@ -24,6 +24,7 @@ struct ObsStatus {
 void obsBegin();
 bool obsApplySettings(const ObsSettings& snapshot); // Also explicitly retries terminal errors.
 SendResult obsDispatch(const char* scene, uint32_t& requestId);
+SendResult obsDispatch(const obs::Command&, uint32_t& requestId);
 void obsPanic();
 void obsTick(bool allowed); // Permission + loop metrics only; never network I/O.
 ObsStatus obsStatusSnapshot(); // Approximate independent counters, no secret data.
@@ -32,6 +33,7 @@ bool obsNextResult(ObsResult& result);
 inline void obsBegin() {}
 inline bool obsApplySettings(const ObsSettings&) { return false; }
 inline SendResult obsDispatch(const char*, uint32_t& id) { id = 0; return SendResult::Unavailable; }
+inline SendResult obsDispatch(const obs::Command&, uint32_t& id) { id = 0; return SendResult::Unavailable; }
 inline void obsPanic() {}
 inline void obsTick(bool) {}
 inline ObsStatus obsStatusSnapshot() { return {}; }

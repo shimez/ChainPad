@@ -15,7 +15,7 @@ namespace {
 using namespace obs;
 constexpr unsigned REQUESTS = 4, RESULTS = 8, STACK_BYTES = 8192;
 struct Settings { ObsSettings value; uint32_t generation = 0; };
-struct Request { uint32_t id; Epoch epoch; char scene[SCENE_LIMIT + 1]; };
+struct Request { uint32_t id; Epoch epoch; Command command; };
 StaticQueue_t requestControl, resultControl, settingControl;
 uint8_t requestStorage[REQUESTS * sizeof(Request)], resultStorage[RESULTS * sizeof(ObsResult)], settingStorage[sizeof(Settings)];
 QueueHandle_t requestQueue = nullptr, resultQueue = nullptr, settingQueue = nullptr;
@@ -39,17 +39,17 @@ bool fatal = false, identify = false, closed = false;
 uint32_t started = 0, authenticatingAt = 0;
 bool station() { return (WiFi.getMode() & WIFI_STA) && WiFi.status() == WL_CONNECTED; }
 bool current() { Lock lock; return lifecycle.current(session); }
-void result(uint32_t id, bool success, int code) {
+void result(uint32_t id, bool success, int code, Operation operation) {
   if (!id) return;
-  ObsResult r{id, success, code};
+  ObsResult r{id, success, code, operation};
   if (xQueueSend(resultQueue, &r, 0) != pdTRUE) ++lostResults;
   if (success) ++completed; else ++failed;
   if (code == -2) ++discarded;
 }
 void discard() {
-  result(protocol.pending, false, -2); protocol.pending = 0;
+  result(protocol.pending, false, -2, protocol.operation); protocol.pending = 0;
   Request r;
-  while (xQueueReceive(requestQueue, &r, 0) == pdTRUE) result(r.id, false, -2);
+  while (xQueueReceive(requestQueue, &r, 0) == pdTRUE) result(r.id, false, -2, r.command.operation);
   assembly.reset(); identify = false;
 }
 void invalidate() {
@@ -106,7 +106,7 @@ void message(const char* bytes, size_t size) {
     }
     case Received::Result:
       responseMs = millis() - protocol.sentAt;
-      result(protocol.pending, protocol.success, protocol.code); protocol.pending = 0; break;
+      result(protocol.pending, protocol.success, protocol.code, protocol.operation); protocol.pending = 0; break;
     case Received::Ignored: ++ignored; break;
     case Received::Invalid: fatal = true; lastError = -7; break;
   }
@@ -171,7 +171,7 @@ void worker(void*) {
           if (!socket.sendTXT(protocol.wire)) { closed = true; lastError = -3; }
         }
         if (protocol.expire(now)) {
-          result(protocol.pending, false, -4); protocol.pending = 0;
+          result(protocol.pending, false, -4, protocol.operation); protocol.pending = 0;
           closed = true; lastError = -4;
         }
         if (assembly.expired(now) || (protocol.state != State::Ready && uint32_t(now - started) >= HANDSHAKE_TIMEOUT_MS)) {
@@ -186,14 +186,14 @@ void worker(void*) {
           backoff = 1000;
           Request r;
           if (xQueueReceive(requestQueue, &r, 0) == pdTRUE) {
-            if (!(r.epoch == session) || !current()) result(r.id, false, -2);
-            else if (!protocol.request(r.scene, r.id, now)) result(r.id, false, -6);
+            if (!(r.epoch == session) || !current()) result(r.id, false, -2, r.command.operation);
+            else if (!protocol.request(r.command, r.id, now)) result(r.id, false, -6, r.command.operation);
             else {
               bool claimed;
               { Lock lock; claimed = lifecycle.claim(r.epoch); }
-              if (!claimed) { protocol.pending = 0; result(r.id, false, -2); }
+              if (!claimed) { protocol.pending = 0; result(r.id, false, -2, r.command.operation); }
               else if (!socket.sendTXT(protocol.wire)) {
-                result(r.id, false, -3); protocol.pending = 0; closed = true;
+                result(r.id, false, -3, r.command.operation); protocol.pending = 0; closed = true;
               }
             }
           }
@@ -226,8 +226,14 @@ bool obsApplySettings(const ObsSettings& value) {
 SendResult obsDispatch(const char* scene, uint32_t& id) {
   id = 0;
   if (!obs::validText(scene, obs::SCENE_LIMIT)) { ++rejected; return SendResult::Failed; }
+  obs::Command command; memcpy(command.target, scene, strlen(scene) + 1);
+  return obsDispatch(command, id);
+}
+SendResult obsDispatch(const obs::Command& command, uint32_t& id) {
+  id = 0;
+  if (!obs::validCommand(command)) { ++rejected; return SendResult::Failed; }
   if (!task || !station()) { ++rejected; return SendResult::Unavailable; }
-  Request r{}; memcpy(r.scene, scene, strlen(scene) + 1);
+  Request r{}; r.command = command;
   Lock lock;
   if (!lifecycle.claim(lifecycle.epoch)) { ++rejected; return SendResult::Unavailable; }
   r.epoch = lifecycle.epoch; r.id = lifecycle.nextId();
