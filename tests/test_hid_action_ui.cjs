@@ -2,11 +2,12 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const html=fs.readFileSync('web/index.html','utf8');
 class Element{
-  constructor(tag){this.tag=tag;this.children=[];this.textContent='';this.className='';this.classList={add:()=>{},remove:()=>{}};}
+  constructor(tag){this.tag=tag;this.children=[];this.textContent='';this.className='';this.style={};this.classList={add:()=>{},remove:()=>{}};}
   append(...items){this.children.push(...items);}
   replaceChildren(...items){this.children=items;}
   get lastChild(){return this.children.at(-1);}
   setAttribute(){}
+  setCustomValidity(message){this.validationMessage=message;}
   querySelector(){return {focus(){}};}
 }
 const nodes={},plain=x=>JSON.parse(JSON.stringify(x));
@@ -16,8 +17,10 @@ const ctx=vm.createContext({TextEncoder,config,selected:0,saving:false,keyboardL
   usageNames:{104:'F13',30:'1'},capabilities:{usbKeyboard:true,usbMidi:true,keyboardTransports:['usb','ble']},
   document:{createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text,children:[]})},
   $:id=>nodes[id]??=(new Element('div')),waitWarning(){},changed(){},RotationEditor:{refresh(){}}});
+let sceneCache={state:'unavailable',complete:false,scenes:[]},sceneListener;
+ctx.obsScenes={clear(){sceneListener=null;},snapshot:()=>sceneCache,busy:()=>false,subscribe(fn){sceneListener=fn;},refresh(){}};
 const line=prefix=>html.split('\n').find(l=>l.startsWith(prefix));
-vm.runInContext(fs.readFileSync('web/presets.js','utf8')+'\n'+fs.readFileSync('web/action-ui.js','utf8')+'\n'+
+vm.runInContext(fs.readFileSync('web/presets.js','utf8')+'\n'+fs.readFileSync('web/action-ui.js','utf8')+'\n'+fs.readFileSync('web/obs-actions.js','utf8')+'\n'+
    ['function control(','function current(','function button(','function defaults('].map(line).join('\n')+'\n'+
   html.slice(html.indexOf('const actionLabels='),html.indexOf('function rotationSummary()'))+'\neditingAction=0;',ctx);
 const P=vm.runInContext('Presets',ctx);
@@ -97,9 +100,36 @@ console.log('PASS Stop UI: all 28 events, selection, no parameters, summary, clo
 for(const operation of ['setCurrentProgramScene','startStream','stopStream','startRecord','stopRecord','setInputMute','toggleInputMute']){
   const a={protocol:'obs',delayMs:0,operation,...(operation==='setCurrentProgramScene'?{sceneName:'画面'}:operation.includes('InputMute')?{inputName:'マイク'}:{}),...(operation==='setInputMute'?{inputMuted:true}:{})};
   const before=JSON.stringify(a);show(a);
-  assert.equal(JSON.stringify(a),before);assert(!field('Action'));
-  assert.equal(all().find(n=>n.className==='action-kind').textContent,'OBS');
-  assert(ctx.actionSummary(a).includes(operation));
+  assert.equal(JSON.stringify(a),before);assert(field('Action'));
+  assert.equal(all().find(n=>n.className==='action-kind').textContent,'OBS（非対応）');
+  assert(ctx.actionSummary(a).length>0);
   assert.deepEqual(plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]),a);
 }
-console.log('PASS OBS read-only rendering and preservation without exposing an incomplete editor');
+for(const supported of [true,false]){
+  ctx.capabilities.obsActions=supported;
+  for(const [operation,label] of vm.runInContext('ObsActionsUI.operations',ctx)){
+    show(action('keyDown'));choose('Action','obs');choose('OBS操作',operation);
+    const a=config.chains[0].actions[0];assert.equal(a.operation,operation);
+    if(operation==='setCurrentProgramScene'){assert(field('シーン名'));choose('シーン名','手入力');}
+    if(operation.includes('InputMute')){assert(field('入力名'));choose('入力名','マイク');}
+    if(operation==='setInputMute'){choose('ミュート','false');assert.equal(a.inputMuted,false);}
+    const saved=plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]);
+    assert.deepEqual(saved,plain(a));assert.deepEqual(plain(P.read(P.key(config,0),'key',ctx.capabilities).chains[0].actions[0]),saved);
+    show(saved);choose('OBS操作',operation);assert.deepEqual(plain(config.chains[0].actions[0]),saved);
+  }
+}
+ctx.capabilities.obsActions=true;
+show({protocol:'obs',delayMs:0,operation:'setCurrentProgramScene',sceneName:'missing'});
+sceneCache={state:'ready',complete:true,scenes:['ゲーム','<script>']};sceneListener();
+assert.equal(all().find(n=>n.tag==='datalist').children.length,2);
+assert(all().some(n=>n.className==='error'&&n.textContent.includes('一覧にありません')));
+assert.equal(field('シーン名').validationMessage,''); // Missing scene is NOT invalid.
+choose('シーン名','ゲーム');assert(!all().some(n=>n.className==='error'));
+choose('シーン名','missing');
+for(const state of ['loading','stale','error','unavailable']){
+  sceneCache={...sceneCache,state,complete:false};sceneListener();
+  assert(!all().some(n=>n.className==='error'));assert.equal(config.chains[0].actions[0].sceneName,'missing');
+}
+choose('シーン名','名'.repeat(65));assert(field('シーン名').validationMessage);
+assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
+console.log('PASS OBS editor: seven operations, supported/unsupported creation/editing and Full/Key roundtrip, datalist/free input, missing-vs-unavailable/stale/failed, byte limits');

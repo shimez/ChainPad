@@ -10,7 +10,7 @@ async function check(usb){
   const nodes={},get=id=>nodes[id]??={value:config.network[id],disabled:false};
   const caps={usbMidi:usb,usbKeyboard:usb},calls=[],staged={chains:[]};let stored;
   const ctx=vm.createContext({TextEncoder,config,capabilities:caps,selected:0,dirty:true,saving:false,$:get,
-    RotationPreview:{clone:structuredClone,stringify:JSON.stringify},
+     RotationPreview:{clone:structuredClone,stringify:JSON.stringify},obsScenes:{init(){}},
     cancelActionDrag(){},rotationSummary(){},selectInput(){},message(){},
     document:{querySelectorAll:()=>[get('save')]},
     fetch:async(path,options)=>{

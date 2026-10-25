@@ -2,9 +2,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "obs_command.h"
+#include "obs_scene_list.h"
 
 namespace chimera { namespace obs {
-constexpr size_t MESSAGE_LIMIT = 2048, SCENE_LIMIT = TARGET_LIMIT;
+constexpr size_t MESSAGE_LIMIT = 16384, CONTROL_MESSAGE_LIMIT = 2048, SCENE_LIMIT = TARGET_LIMIT;
 constexpr uint32_t RESPONSE_TIMEOUT_MS = 3000, HANDSHAKE_TIMEOUT_MS = 5000;
 enum class State : uint8_t { Disabled, Disconnected, Connecting, Authenticating, Ready, Error };
 enum class Received { Invalid, Identify, Ready, Result, Ignored };
@@ -17,6 +18,7 @@ struct Protocol {
   int code = 0;
   Operation operation = Operation::SetCurrentProgramScene;
   char wire[1536]{};
+  SceneList* scenes = nullptr; // Worker-owned scratch; never allocated on its stack.
   void connected();
   Received receive(const char*, size_t, const char*, Authenticate);
   bool request(const char*, uint32_t, uint32_t);

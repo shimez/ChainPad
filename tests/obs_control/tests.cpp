@@ -5,6 +5,7 @@
 namespace fake {
 bool accepted=true, allowed=false, maintenance=false, global=true;
 unsigned applies=0, ticks=0;
+SendResult sceneAdmission=SendResult::Unavailable;unsigned sceneRequests=0;
 ObsSettings applied;
 ObsStatus status;
 void reset(){accepted=true;allowed=false;maintenance=false;global=true;applies=ticks=0;applied={};status={};}
@@ -20,6 +21,12 @@ bool obsApplySettings(const ObsSettings& s){
 }
 void obsTick(bool permitted){fake::allowed=permitted;++fake::ticks;}
 ObsStatus obsStatusSnapshot(){auto s=fake::status;if(!fake::allowed||!fake::applied.enabled)s.state=obs::State::Disabled;return s;}
+SendResult obsDispatch(const obs::Command& command,uint32_t& id){
+  assert(command.operation==obs::Operation::GetSceneList);
+  id=fake::sceneAdmission==SendResult::Accepted?++fake::sceneRequests:0;return fake::sceneAdmission;
+}
+bool obsNextResult(ObsResult&){return false;}
+bool obsTakeSceneList(obs::SceneList&){return false;}
 }
 using chimera::obscontrol::Controller;
 bool maintenance(){return fake::maintenance;}
@@ -57,6 +64,15 @@ int main(){
   control.observeLoop(UINT32_MAX-99);control.observeLoop(200);
   JsonDocument timing;control.statusJson(timing.to<JsonObject>());assert(timing["loopIntervalMaxUs"]==300);
   WebServer web;registerObsHttp(web,control,maintenance,outputs);
+  web.request(HTTP_GET,"/api/obs/scenes");assert(response(web,200)["complete"]==false);
+  web.request(HTTP_POST,"/api/obs/scenes/refresh");assert(response(web,503)["state"]=="error");
+  web.request(HTTP_GET,"/api/obs/scenes/refresh");response(web,405);
+  web.request(HTTP_POST,"/api/obs/scenes/refresh","{}");response(web,400);
+  fake::maintenance=true;web.request(HTTP_POST,"/api/obs/scenes/refresh");response(web,409);fake::maintenance=false;
+  fake::sceneAdmission=SendResult::Busy;web.request(HTTP_POST,"/api/obs/scenes/refresh");response(web,429);
+  fake::sceneAdmission=SendResult::Accepted;web.request(HTTP_POST,"/api/obs/scenes/refresh");assert(response(web,202)["state"]=="loading");
+  web.request(HTTP_POST,"/api/obs/scenes/refresh");response(web,202);assert(fake::sceneRequests==1);
+  web.request(HTTP_GET,"/api/obs/scenes");assert(response(web,200)["complete"]==false);
   web.request(HTTP_POST,"/api/obs/reconnect");assert(response(web,409)["error"]["code"]=="disabled");
   web.request(HTTP_PUT,"/api/obs",update);assert(response(web,200)["saved"]==true&&fake::allowed);
   auto old=io::files.at(io::Active);unsigned applies=fake::applies;

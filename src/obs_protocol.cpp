@@ -12,10 +12,11 @@ namespace {
 class Budget : public ArduinoJson::Allocator {
   struct alignas(max_align_t) Header { size_t size; };
   size_t used = 0;
-  static constexpr size_t LIMIT = 8192;
+  const size_t limit;
 public:
+  explicit Budget(size_t bytes = 8192) : limit(bytes) {}
   void* allocate(size_t n) override {
-    if (n > LIMIT - used || sizeof(Header) > LIMIT - used - n) return nullptr;
+    if (n > limit - used || sizeof(Header) > limit - used - n) return nullptr;
     auto h = static_cast<Header*>(malloc(sizeof(Header) + n));
     if (!h) return nullptr;
     h->size = n; used += n + sizeof(Header); return h + 1;
@@ -28,7 +29,7 @@ public:
   void* reallocate(void* p, size_t n) override {
     if (!p) return allocate(n);
     auto h = static_cast<Header*>(p) - 1;
-    if (n > LIMIT - (used - h->size)) return nullptr;
+    if (n > limit - (used - h->size)) return nullptr;
     const size_t old = h->size;
     auto next = static_cast<Header*>(realloc(h, sizeof(Header) + n));
     if (!next) return nullptr;
@@ -46,7 +47,9 @@ bool terminalClose(uint16_t code) {
 void Protocol::connected() { state = State::Authenticating; pending = 0; wire[0] = 0; }
 Received Protocol::receive(const char* data, size_t size, const char* password, Authenticate auth) {
   if (!data || !size || size > MESSAGE_LIMIT || memchr(data, 0, size)) return Received::Invalid;
-  Budget budget; JsonDocument doc(&budget);
+  const bool discovery = pending && operation == Operation::GetSceneList;
+  if (!discovery && size > CONTROL_MESSAGE_LIMIT) return Received::Invalid;
+  Budget budget(discovery ? 32768 : 8192); JsonDocument doc(&budget);
   if (deserializeJson(doc, data, size, DeserializationOption::NestingLimit(6)) || !doc["op"].is<unsigned>() || !doc["d"].is<JsonObject>()) return Received::Invalid;
   auto d = doc["d"].as<JsonObject>(); const unsigned op = doc["op"];
   if (op == 0) {
@@ -76,6 +79,24 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
   if (d["requestType"] != requestType(operation) || !d["requestStatus"]["result"].is<bool>() || !d["requestStatus"]["code"].is<int>()) return Received::Invalid;
   success = d["requestStatus"]["result"]; code = d["requestStatus"]["code"];
   if (success && code != 100) return Received::Invalid;
+  if (success && discovery) {
+    // A bounded but incomplete list is a failure, never an authoritative cache.
+    auto list = d["responseData"]["scenes"];
+    if (!scenes || !list.is<JsonArray>() || list.size() > SCENE_COUNT_LIMIT) {
+      success = false; code = -10; return Received::Result;
+    }
+    scenes->count = scenes->used = 0;
+    for (auto entry : list.as<JsonArray>()) {
+      auto name = entry["sceneName"].as<JsonString>();
+      if (!name.c_str() || name.size() != strlen(name.c_str()) || !validText(name.c_str(), TARGET_LIMIT) ||
+          name.size() + 1 > SCENE_BYTES_LIMIT - scenes->used) {
+        scenes->count = scenes->used = 0; success = false; code = -10; return Received::Result;
+      }
+      scenes->offsets[scenes->count++] = scenes->used;
+      memcpy(scenes->names + scenes->used, name.c_str(), name.size() + 1);
+      scenes->used += name.size() + 1;
+    }
+  }
   // Server-controlled comments never cross into diagnostics/API/logs.
   return Received::Result;
 }

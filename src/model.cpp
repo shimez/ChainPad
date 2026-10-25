@@ -261,6 +261,7 @@ template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocum
       if (j.isNull()) return false;
       j["delayMs"] = a.protocol == Protocol::Wait ? a.delayMs : 0;
       if (a.protocol == Protocol::Obs) {
+        if (a.obsOperation == obs::Operation::GetSceneList) return false;
         const char* operation = obs::operationName(a.obsOperation);
         if (!operation) return false;
         j["protocol"] = "obs"; j["operation"] = operation;

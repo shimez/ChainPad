@@ -17,6 +17,10 @@ constexpr unsigned REQUESTS = 4, RESULTS = 8, STACK_BYTES = 8192;
 struct Settings { ObsSettings value; uint32_t generation = 0; };
 struct Request { uint32_t id; Epoch epoch; Command command; };
 StaticQueue_t requestControl, resultControl, settingControl;
+StaticQueue_t sceneControl;
+uint8_t sceneStorage[sizeof(SceneList)];
+QueueHandle_t sceneQueue = nullptr;
+SceneList sceneScratch;
 uint8_t requestStorage[REQUESTS * sizeof(Request)], resultStorage[RESULTS * sizeof(ObsResult)], settingStorage[sizeof(Settings)];
 QueueHandle_t requestQueue = nullptr, resultQueue = nullptr, settingQueue = nullptr;
 StaticTask_t taskControl;
@@ -106,6 +110,10 @@ void message(const char* bytes, size_t size) {
     }
     case Received::Result:
       responseMs = millis() - protocol.sentAt;
+      if (protocol.operation == Operation::GetSceneList && protocol.success) {
+        sceneScratch.id = protocol.pending; sceneScratch.generation = session.session;
+        xQueueOverwrite(sceneQueue, &sceneScratch);
+      }
       result(protocol.pending, protocol.success, protocol.code, protocol.operation); protocol.pending = 0; break;
     case Received::Ignored: ++ignored; break;
     case Received::Invalid: fatal = true; lastError = -7; break;
@@ -206,11 +214,13 @@ void worker(void*) {
 }
 void obsBegin() {
   if (task) return;
+  protocol.scenes = &sceneScratch;
+  sceneQueue = xQueueCreateStatic(1, sizeof(SceneList), sceneStorage, &sceneControl);
   requestQueue = xQueueCreateStatic(REQUESTS, sizeof(Request), requestStorage, &requestControl);
   resultQueue = xQueueCreateStatic(RESULTS, sizeof(ObsResult), resultStorage, &resultControl);
   settingQueue = xQueueCreateStatic(1, sizeof(Settings), settingStorage, &settingControl);
   WiFi.onEvent([](arduino_event_id_t, arduino_event_info_t) { Lock lock; lifecycle.wifiLost(); }, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-  if (requestQueue && resultQueue && settingQueue)
+  if (requestQueue && resultQueue && settingQueue && sceneQueue)
     task = xTaskCreateStaticPinnedToCore(worker, "chainpad-obs", STACK_BYTES, nullptr, 1, taskStack, &taskControl, ARDUINO_RUNNING_CORE);
   if (!task) { lastError = -9; published = obs::State::Error; }
 }
@@ -251,6 +261,7 @@ void obsTick(bool allowed) {
 ObsStatus obsStatusSnapshot() {
   ObsStatus s; s.state = published.load();
   { Lock lock;
+    s.generation = lifecycle.epoch.session;
     if (!lifecycle.allowed || !lifecycle.enabled) s.state = obs::State::Disabled;
     else if (s.state == obs::State::Ready && !lifecycle.claim(lifecycle.epoch)) s.state = obs::State::Disconnected;
   }
@@ -263,5 +274,6 @@ ObsStatus obsStatusSnapshot() {
   s.lastError = lastError; s.lastClose = lastClose; return s;
 }
 bool obsNextResult(ObsResult& r) { return resultQueue && xQueueReceive(resultQueue, &r, 0) == pdTRUE; }
+bool obsTakeSceneList(SceneList& list) { return sceneQueue && xQueueReceive(sceneQueue, &list, 0) == pdTRUE; }
 }
 #endif

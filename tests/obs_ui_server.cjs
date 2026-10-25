@@ -11,7 +11,8 @@ http.createServer(async(req,res)=>{
   if(url.pathname.startsWith('/api/')){
     calls.push({path:url.pathname,method:req.method}); // Never record credentials/body.
     const unsupported=new URL(req.headers.referer||'http://localhost').searchParams.has('unsupported');
-    if(url.pathname==='/api/capabilities')return send({obsWebSocket:!unsupported,obsSettingsApi:!unsupported,usbMidi:true,usbKeyboard:true,midiTransports:['usb','ble'],keyboardTransports:['usb','ble'],defaultMidiTransport:'usb',maxActions:16,maxWaitMs:86400000,rotationOutputCapacity:16});
+    if(url.pathname==='/api/capabilities')return send({obsActions:!unsupported,obsWebSocket:!unsupported,obsSettingsApi:!unsupported,usbMidi:true,usbKeyboard:true,midiTransports:['usb','ble'],keyboardTransports:['usb','ble'],defaultMidiTransport:'usb',maxActions:16,maxWaitMs:86400000,rotationOutputCapacity:16});
+    if(url.pathname.startsWith('/api/obs/scenes'))return send({state:settings.enabled?'ready':'unavailable',complete:settings.enabled,scenes:['ゲーム画面','待機画面','雑談'],generation:1,ageMs:0},url.pathname.endsWith('refresh')?202:200);
     if(url.pathname==='/api/config')return send(config);
     if(url.pathname==='/api/status')return send({name:'ChainPad',hardware:'XIAO ESP32S3',version:'M3 fixture',wifi:true,ip:'192.0.2.20',storageState:'ready',configOutputsAllowed:true,obs:unsupported?undefined:{connectionState:settings.enabled?'Ready':'Disabled',lastError:settings.enabled?-1:null,applyState:'accepted'}});
     if(url.pathname==='/api/obs'||url.pathname==='/api/obs/reconnect'){
@@ -30,4 +31,4 @@ http.createServer(async(req,res)=>{
   const file=path.join('web',url.pathname==='/'?'index.html':path.basename(url.pathname));
   if(!fs.existsSync(file)){res.writeHead(404);return res.end();}
   res.writeHead(200,{'Content-Type':file.endsWith('.js')?'text/javascript':file.endsWith('.svg')?'image/svg+xml':'text/html'});res.end(fs.readFileSync(file));
-}).listen(8765,'127.0.0.1',()=>console.log('OBS UI fixture: http://127.0.0.1:8765 (unsupported: /?unsupported=1)'));
+}).listen(Number(process.env.PORT)||8765,'127.0.0.1',()=>console.log('OBS UI fixture ready (unsupported: /?unsupported=1)'));

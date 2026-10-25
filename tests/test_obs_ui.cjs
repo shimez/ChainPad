@@ -65,7 +65,7 @@ async function main(){
   const a=ctx.api('status'),b=ctx.api('status');assert.equal(requests,1);resolve();await Promise.all([a,b]);
   let timer,delay,updates=0;
   let epoch=0;
-  Object.assign(ctx,{$:()=>({replaceChildren(){},append(){}}),obsEditor:{epoch:()=>epoch,updateStatus(){updates++;},statusFailed(){}},
+  Object.assign(ctx,{$:()=>({replaceChildren(){},append(){}}),obsScenes:{tick(){},failed(){}},obsEditor:{epoch:()=>epoch,updateStatus(){updates++;},statusFailed(){}},
     document:{hidden:false,createElement:()=>({})},clearTimeout:()=>{timer=null;},setTimeout:(fn,ms)=>{timer=fn;delay=ms;return 1;},statusTimer:null});
   vm.runInContext(html.match(/^async function status\(.*$/m)[0],ctx);
   const poll=ctx.status();await ctx.status();assert.equal(requests,2);resolve();await poll;assert.equal(delay,3000);assert.equal(updates,1);

@@ -13,7 +13,7 @@ $sources = @('tests\obs\protocol_tests.cpp','tests\obs\native_crypto.cpp','src\o
 $command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe $common /I`"$json`" /I`"$root\src`" /Fe:`"$build\protocol.exe`" $($sources -join ' ') && `"$build\protocol.exe`""
 & cmd.exe /d /c $command
 if ($LASTEXITCODE -ne 0) { throw 'OBS protocol/auth tests failed' }
-$command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /c /Fo:`"$build\b64.obj`" `"$ws\libb64\cencode.c`" && cl.exe $common /DESP32 /DWEBSOCKETS_MAX_DATA_SIZE=2048 /DWEBSOCKETS_TCP_TIMEOUT=20 /I`"$ws`" /Fe:`"$build\frames.exe`" `"$root\tests\obs\frame_tests.cpp`" `"$ws\WebSockets.cpp`" `"$build\b64.obj`" && `"$build\frames.exe`""
+$command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /c /Fo:`"$build\b64.obj`" `"$ws\libb64\cencode.c`" && cl.exe $common /DESP32 /DWEBSOCKETS_MAX_DATA_SIZE=16384 /DWEBSOCKETS_TCP_TIMEOUT=20 /I`"$ws`" /Fe:`"$build\frames.exe`" `"$root\tests\obs\frame_tests.cpp`" `"$ws\WebSockets.cpp`" `"$build\b64.obj`" && `"$build\frames.exe`""
 & cmd.exe /d /c $command
 if ($LASTEXITCODE -ne 0) { throw 'WebSocket frame patch tests failed' }
 $sources = @('tests\obs\backend_tests.cpp','tests\obs\native_crypto.cpp','src\obs_backend.cpp','src\obs_protocol.cpp','src\obs_auth.cpp','src\obs_actions.cpp','src\engine.cpp','src\backends.cpp') | ForEach-Object { "`"$root\$_`"" }

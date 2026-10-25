@@ -19,6 +19,7 @@ struct ObsStatus {
   uint32_t stackLowBytes = 0, loopMaxUs = 0, connectMs = 0, authMs = 0, responseMs = 0;
   int lastError = 0;
   uint32_t lastClose = 0;
+  uint32_t generation = 0; // Connection generation; cache freshness only.
 };
 #if CHAINPAD_HAS_OBS
 void obsBegin();
@@ -29,6 +30,7 @@ void obsPanic();
 void obsTick(bool allowed); // Permission + loop metrics only; never network I/O.
 ObsStatus obsStatusSnapshot(); // Approximate independent counters, no secret data.
 bool obsNextResult(ObsResult& result);
+bool obsTakeSceneList(obs::SceneList&);
 #else
 inline void obsBegin() {}
 inline bool obsApplySettings(const ObsSettings&) { return false; }
@@ -38,5 +40,6 @@ inline void obsPanic() {}
 inline void obsTick(bool) {}
 inline ObsStatus obsStatusSnapshot() { return {}; }
 inline bool obsNextResult(ObsResult&) { return false; }
+inline bool obsTakeSceneList(obs::SceneList&) { return false; }
 #endif
 }

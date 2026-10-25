@@ -8,6 +8,24 @@
 using namespace chimera::obs;
 static Received receive(Protocol& p, const char* text) { return p.receive(text, strlen(text), "test-password", authentication); }
 int main() {
+  {
+    Protocol discovery;SceneList list;discovery.scenes=&list;discovery.state=State::Ready;
+    Command command;command.operation=Operation::GetSceneList;
+    auto fetch=[&](unsigned count,unsigned length){
+      discovery.pending=0;assert(discovery.request(command,99,0));
+      JsonDocument reply;reply["op"]=7;auto d=reply["d"].to<JsonObject>();
+      d["requestId"]="chainpad-99";d["requestType"]="GetSceneList";
+      d["requestStatus"]["result"]=true;d["requestStatus"]["code"]=100;
+      auto names=d["responseData"]["scenes"].to<JsonArray>();
+      for(unsigned i=0;i<count;++i){auto scene=names.add<JsonObject>();scene["sceneName"]=std::string(length,'a');scene["sceneUuid"]=std::string(36,'u');scene["sceneIndex"]=i;}
+      std::string wire;serializeJson(reply,wire);return receive(discovery,wire.c_str());
+    };
+    assert(fetch(32,100)==Received::Result && discovery.success && list.count==32 && list.used==3232);
+    assert(fetch(0,0)==Received::Result && discovery.success && list.count==0);
+    assert(fetch(33,10)==Received::Result && !discovery.success && discovery.code==-10);
+    assert(fetch(32,192)==Received::Result && !discovery.success && discovery.code==-10);
+    assert(fetch(1,193)==Received::Result && !discovery.success);
+  }
   Protocol p;
   assert(!p.request("scene", 1, 0)); p.connected();
   assert(receive(p, R"({"op":2,"d":{"negotiatedRpcVersion":1}})") == Received::Invalid);
@@ -50,12 +68,12 @@ int main() {
   assert(validText(u8"ゲーム", 9) && !validText(u8"ゲーム", 8));
   assert(!validText("\xc0\xaf", 4) && !validText("\xed\xa0\x80", 4) && !validText("\xf4\x90\x80\x80", 4));
   Assembly a; assert(!a.append(nullptr, 0, false, 0));
-  auto text = std::string(2048, 'a');
+  auto text = std::string(MESSAGE_LIMIT, 'a');
   assert(a.append(reinterpret_cast<const uint8_t*>(text.data()), 1000, true, UINT32_MAX - 100));
   assert(!a.append(nullptr, 0, true, 0));
-  assert(a.append(reinterpret_cast<const uint8_t*>(text.data()), 1048, false, 0));
+  assert(a.append(reinterpret_cast<const uint8_t*>(text.data()), MESSAGE_LIMIT-1000, false, 0));
   assert(!a.append(reinterpret_cast<const uint8_t*>(text.data()), 1, false, 0));
-  assert(a.length == 2048 && a.bytes[2048] == 0);
+  assert(a.length == MESSAGE_LIMIT && a.bytes[MESSAGE_LIMIT] == 0);
   assert(!a.expired(4898) && a.expired(4899)); a.reset(); assert(!a.active && !a.length);
   for(unsigned i=0;i<7;++i) {
     Protocol typed; typed.state=State::Ready; Command c; c.operation=Operation(i);

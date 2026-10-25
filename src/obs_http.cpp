@@ -1,4 +1,5 @@
 #include "obs_http.h"
+#include "obs_scenes.h"
 #if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
 #include <memory>
 #include <new>
@@ -15,7 +16,8 @@ class ObsHandler : public RequestHandler {
   bool complete = false;
   bool repliedEarly = false;
   static bool route(const String& uri) {
-    return !strcmp(uri.c_str(), "/api/obs") || !strcmp(uri.c_str(), "/api/obs/reconnect");
+    return !strcmp(uri.c_str(), "/api/obs") || !strcmp(uri.c_str(), "/api/obs/reconnect") ||
+      !strcmp(uri.c_str(), "/api/obs/scenes") || !strcmp(uri.c_str(), "/api/obs/scenes/refresh");
   }
   void clearBody() {
     if (body) { volatile char* p = body.get(); for (size_t i = 0; i < used; ++i) p[i] = 0; }
@@ -77,6 +79,28 @@ public:
     if (!route(uri)) return false;
     if (repliedEarly) { clearBody(); return true; }
     control.tick(outputsAllowed());
+    const bool scenes = !strcmp(uri.c_str(), "/api/obs/scenes");
+    const bool refreshScenes = !strcmp(uri.c_str(), "/api/obs/scenes/refresh");
+    if (scenes || refreshScenes) {
+      int http = 200;
+      if ((scenes && method != HTTP_GET) || (refreshScenes && method != HTTP_POST)) http = 405;
+      else if (refreshScenes) {
+        if (maintenance()) http = 409;
+        else if (!complete || used) http = 400;
+        else {
+          const auto admission = obsScenesRefresh();
+          http = admission == SendResult::Accepted ? 202 : admission == SendResult::Busy ? 429 : 503;
+        }
+      }
+      JsonDocument doc; obsScenesJson(doc.to<JsonObject>()); doc["ok"] = http < 400;
+      const size_t size = measureJson(doc);
+      std::unique_ptr<char[]> output(size <= 10000 ? new (std::nothrow) char[size + 1] : nullptr);
+      web.sendHeader("Cache-Control", "no-store");
+      if (!output || doc.overflowed() || serializeJson(doc, output.get(), size + 1) != size)
+        web.send(500, "application/json", "{\"ok\":false,\"state\":\"error\",\"complete\":false}");
+      else web.send(http, "application/json; charset=utf-8", output.get());
+      clearBody(); return true;
+    }
     const bool settings = !strcmp(uri.c_str(), "/api/obs");
     if (settings && method == HTTP_GET) send(web, {200, false, nullptr}, true);
     else if ((settings && method == HTTP_PUT) || (!settings && method == HTTP_POST)) {

@@ -6,9 +6,10 @@
 // Shared schema, including builds without an OBS Worker. No networking dependency.
 namespace chimera { namespace obs {
 constexpr size_t TARGET_LIMIT = 192;
-enum class Operation : uint8_t { SetCurrentProgramScene, StartStream, StopStream, StartRecord, StopRecord, SetInputMute, ToggleInputMute };
+enum class Operation : uint8_t { SetCurrentProgramScene, StartStream, StopStream, StartRecord, StopRecord, SetInputMute, ToggleInputMute, GetSceneList };
 inline const char* operationName(Operation op) {
   switch (op) {
+    case Operation::GetSceneList: return "getSceneList"; // Internal discovery, never an Action.
     case Operation::SetCurrentProgramScene: return "setCurrentProgramScene";
     case Operation::StartStream: return "startStream";
     case Operation::StopStream: return "stopStream";
@@ -21,6 +22,7 @@ inline const char* operationName(Operation op) {
 }
 inline const char* requestType(Operation op) {
   switch (op) {
+    case Operation::GetSceneList: return "GetSceneList";
     case Operation::SetCurrentProgramScene: return "SetCurrentProgramScene";
     case Operation::StartStream: return "StartStream";
     case Operation::StopStream: return "StopStream";

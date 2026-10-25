@@ -30,7 +30,7 @@ std::vector<uint8_t> frame(unsigned opcode, bool fin, const std::string& text) {
   bytes.insert(bytes.end(), text.begin(), text.end()); return bytes;
 }
 int main() {
-  static_assert(WEBSOCKETS_MAX_DATA_SIZE == 2048);
+  static_assert(WEBSOCKETS_MAX_DATA_SIZE == 16384);
   Harness normal; normal.feed(frame(1, true, "hello"));
   assert(normal.events.size() == 1 && normal.events[0].payload == "hello" && !normal.disconnected);
   normal.feed(frame(9, true, "ping"));
@@ -39,8 +39,8 @@ int main() {
   assert(normal.events[2].payload == "first" && !normal.events[2].fin);
   assert(normal.events[3].opcode == 0 && !normal.events[3].fin);
   assert(normal.events[4].payload == "last" && normal.events[4].fin);
-  normal.feed(frame(1, true, std::string(2048, 'x')));
-  assert(normal.events.back().payload.size() == 2048 && !normal.disconnected);
+  normal.feed(frame(1, true, std::string(WEBSOCKETS_MAX_DATA_SIZE, 'x')));
+  assert(normal.events.back().payload.size() == WEBSOCKETS_MAX_DATA_SIZE && !normal.disconnected);
   for (unsigned code : {1000u, 4009u, 4010u, 4011u}) {
     Harness close;
     std::string payload; payload += char(code >> 8); payload += char(code); payload += "reason";
@@ -50,7 +50,7 @@ int main() {
   }
   Harness emptyClose; emptyClose.feed(frame(8, true, ""));
   assert(emptyClose.disconnected && emptyClose.events[0].payload.empty());
-  Harness large; large.feed({0x81,126,8,1});
+  Harness large; large.feed({0x81,126,64,1});
   assert(large.disconnected && large.events.empty() && (large.tcp.tx[0] & 15) == 8);
   Harness partial; partial.feed({0x81,5,'h'}); assert(partial.disconnected && partial.events.empty());
   std::cout << "PASS patched WebSockets wire parser: text, ping/pong masking, continuation, boundary, oversize, truncated payload, raw Close before teardown\n";

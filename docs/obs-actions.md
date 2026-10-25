@@ -1,5 +1,9 @@
 # OBS Action Chain — Phase 3 / Work 1
 
+This is the historical work-1 record (`6a82a09`). The implemented editor,
+scene discovery, current receive limits and resource measurements are documented
+in [Phase 3 / Work 2](obs-scenes.md), which supersedes the work-2 handoff below.
+
 Phase 2 baseline: `b964392` (approved). Work 1 adds typed operations, shared
 Action persistence, nonblocking dispatch and completion collection. OBS networking
 remains S3-only. Scene discovery and the complete editor belong to work 2;

@@ -14,6 +14,7 @@ async function check(mode){
   }
   const original=mode==='503-empty'?undefined:{sentinel:'previous editor state'};let parsed=0;
   const ctx=vm.createContext({config:original,capabilities:{},selected:0,dirty:true,$:node,
+    obsScenes:{init(){}},
     selectInput(){},rotationSummary(){},message(){},Presets:{full:c=>c,read(){++parsed;}},
     fetch:async path=>{
       if(path==='/api/capabilities')return new Response('{}');

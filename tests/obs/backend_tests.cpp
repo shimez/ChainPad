@@ -1,6 +1,7 @@
 #include "obs_backend.h"
 #include "obs_lifecycle.h"
 #include "obs_actions.h"
+#include "obs_scenes.h"
 #include "engine.h"
 #include "rotation_runtime.h"
 #include <WebSocketsClient.h>
@@ -152,6 +153,34 @@ int main(){
   before=requests(); backendsPanic(); assert(engine.trigger({0,0}));
   assert(oscSent==oscBefore+2 && !strcmp(obsActionStatus().admission,"disconnected"));
   rtos::step();ready();backendsTick(0);assert(requests()==before);
+  // Discovery shares the request queue, but only the Action adapter drains results.
+  auto sceneJson=[](){JsonDocument d;obsScenesJson(d.to<JsonObject>());return d;};
+  auto sceneReply=[&](uint32_t requestId,const std::string& scenes){
+    wire::text("{\"op\":7,\"d\":{\"requestId\":\"chainpad-"+std::to_string(requestId)+"\",\"requestType\":\"GetSceneList\",\"requestStatus\":{\"result\":true,\"code\":100},\"responseData\":{\"scenes\":"+scenes+"}}}");
+    rtos::step();backendsTick(0);
+  };
+  const auto actionCompleted=obsActionStatus().completed;
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];
+  assert(obsScenesRefresh()==SendResult::Accepted && sceneJson()["requestId"]==id);
+  auto normal=submit();rtos::step();assert(wire::sent.back().find("GetSceneList")!=std::string::npos);
+  sceneReply(id,"[{\"sceneName\":\"ゲーム\"},{\"sceneName\":\"<scene>\"}]");
+  auto cache=sceneJson();assert(cache["complete"]==true && cache["scenes"].size()==2);
+  assert(obsActionStatus().completed==actionCompleted); // Discovery not counted as an Action completion.
+  response(normal);backendsTick(0);assert(obsActionStatus().completed==actionCompleted+1);
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  sceneReply(id,"[{\"sceneName\":\""+std::string(193,'x')+"\"}]");
+  cache=sceneJson();assert(cache["state"]=="error" && cache["complete"]==false && cache["scenes"][0]=="ゲーム");
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();sceneReply(id,"[]");
+  assert(sceneJson()["complete"]==true && sceneJson()["scenes"].size()==0);
+  rtos::step(60001);assert(sceneJson()["state"]=="stale" && sceneJson()["complete"]==false);
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();sceneReply(id,"[{\"sceneName\":\"old\"}]");
+  assert(obsApplySettings(settings()));assert(sceneJson()["complete"]==false);rtos::step();ready();
+  assert(sceneJson()["complete"]==false && sceneJson()["scenes"][0]=="old");
+  assert(obsScenesRefresh()==SendResult::Accepted);rtos::step();obsPanic();rtos::step();ready();backendsTick(0);
+  assert(sceneJson()["state"]=="error" && sceneJson()["complete"]==false);
+  assert(obsScenesRefresh()==SendResult::Accepted);rtos::step();wire::text(std::string(obs::MESSAGE_LIMIT+1,'x'));rtos::step();backendsTick(0);
+  assert(sceneJson()["state"]=="error" && sceneJson()["complete"]==false && sceneJson()["scenes"][0]=="old");
+  assert(obsApplySettings(settings()));rtos::step();ready();
   cfg=settings();cfg.enabled=false;assert(obsApplySettings(cfg));rtos::step();assert(obsStatusSnapshot().state==obs::State::Disabled);
   oscBefore=oscSent;assert(engine.trigger({0,0}));
   assert(oscSent==oscBefore+1 && !strcmp(obsActionStatus().admission,"disabled"));
