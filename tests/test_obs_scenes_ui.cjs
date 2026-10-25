@@ -1,29 +1,40 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 async function main(){
-  const calls=[],document={hidden:false};let reply={state:'loading',complete:false,scenes:[],generation:1},fail=false,hold;
-  const ctx=vm.createContext({TextEncoder,document,Date,fetch:async(path,options)=>{
-    calls.push({path,...options});if(hold)await hold;if(fail)throw Error();
-    return {ok:true,json:async()=>reply};
+  const calls=[],document={hidden:false};let now=0,reply={state:'loading',complete:false,scenes:[],generation:1},fail=false,hold;
+  const ctx=vm.createContext({TextEncoder,document,Date:{now:()=>now},fetch:async(path,options)=>{
+    calls.push({path,...options});const data=reply;if(hold)await hold;if(fail)throw Error();
+    return {ok:true,json:async()=>data};
   }});
   vm.runInContext(fs.readFileSync('web/obs-actions.js','utf8'),ctx);
   const manager=vm.runInContext('ObsActionsUI.create()',ctx);
-  manager.init({obsActions:false});await flush();assert.equal(calls.length,0);
-  manager.init({obsActions:true});await flush();assert.equal(calls[0].method,'POST');
+  const ready=generation=>({connectionState:'Ready',generation});
+  manager.init({obsActions:false});manager.tick(ready(1));await flush();assert.equal(calls.length,0);
+  manager.init({obsActions:true});await flush();assert.equal(calls.length,0);
+  manager.tick({connectionState:'Disconnected',generation:1});await flush();assert.equal(calls.length,0);
+  manager.tick(ready(1));await flush();assert.equal(calls[0].method,'POST');
   reply={state:'ready',complete:true,scenes:['ゲーム'],generation:1,ageMs:0};
-  manager.tick({connectionState:'Ready'});await flush();assert(manager.snapshot().complete);
-  const count=calls.length;manager.tick({connectionState:'Ready'});await flush();
-  assert.equal(calls.length,count+1);assert.equal(calls.at(-1).method,'GET');
-  reply={...reply,generation:2,state:'stale',complete:false};
-  manager.tick({connectionState:'Ready'});await flush();await flush();assert.equal(calls.at(-1).method,'POST');
+  manager.tick(ready(1));await flush();assert.equal(calls.at(-1).method,'GET');assert(manager.snapshot().complete);
+  const count=calls.length;
+  for(let i=0;i<10;i++)manager.tick(ready(1));await flush();assert.equal(calls.length,count);
+  now=60001;manager.tick(ready(1));assert(!manager.snapshot().complete);assert.equal(calls.length,count);
+  reply={...reply,generation:2};manager.tick(ready(2));await flush();assert.equal(calls.at(-1).method,'POST');assert(manager.snapshot().complete);
   fail=true;await manager.refresh();assert.equal(manager.snapshot().state,'error');assert(!manager.snapshot().complete);
   assert.equal(manager.snapshot().scenes[0],'ゲーム');fail=false;
   let release;hold=new Promise(resolve=>release=resolve);
   const pending=manager.refresh();const n=calls.length;await manager.refresh();assert.equal(calls.length,n);
-  release();await pending;hold=null;
-  document.hidden=true;await manager.refresh();manager.tick({connectionState:'Ready'});assert.equal(calls.length,n);
+  manager.tick({connectionState:'Disconnected',generation:3});release();await pending;hold=null;
+  assert(!manager.snapshot().complete); // Late pre-disconnect reply cannot restore authority.
+  reply={...reply,generation:3};manager.tick(ready(3));await flush();assert(manager.snapshot().complete);
+  hold=new Promise(resolve=>release=resolve);
+  const oldRequest=manager.refresh();const beforeReconnect=calls.length;
+  reply={...reply,generation:4};manager.tick(ready(4));assert.equal(calls.length,beforeReconnect);
+  hold=null;release();await oldRequest;await flush();
+  assert.equal(calls.length,beforeReconnect+1);assert.equal(manager.snapshot().generation,4);assert(manager.snapshot().complete);
+  const hiddenCount=calls.length;document.hidden=true;await manager.refresh();manager.tick(ready(4));assert.equal(calls.length,hiddenCount);
   document.hidden=false;manager.failed();assert(!manager.snapshot().complete);
-  reply={state:'ready',complete:true,scenes:[],generation:2,ageMs:60000};await manager.refresh();assert(!manager.snapshot().complete);
-  console.log('PASS scene manager: initial refresh, Ready/reconnect retry, cache GET, stale age, network failure, single-flight, hidden-page pause, retained names');
+  reply={state:'loading',complete:false,scenes:[],generation:4};manager.tick(ready(4));await flush();
+  now+=20001;const beforeTimeout=calls.length;manager.tick(ready(4));assert.equal(manager.snapshot().state,'error');assert.equal(calls.length,beforeTimeout);
+  console.log('PASS scene manager: Ready-only automatic refresh, idle polling silence, bounded result polling, expiry, generation, late response isolation, failures and hidden-page pause');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

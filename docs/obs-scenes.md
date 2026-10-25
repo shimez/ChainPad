@@ -10,8 +10,11 @@ switch shows sceneName, mute operations show inputName, and only SetInputMute
 shows the boolean mute control. Other operations have no additional parameters.
 Operation summaries are Japanese. Existing OSC/MIDI/HID/Wait editors remain.
 
-Scene names use an input+datalist ComboBox: candidates and free input are both
-supported. A valid name absent from a fresh, complete fetched list gets a red
+Scene names use a free-text input plus a `シーン一覧から選択` button. The button
+refreshes the list and opens an inline, unfiltered native selection list. Select
+a candidate and press `選択したシーンを使用` to apply; Cancel/Escape leaves the
+text unchanged. No candidate is automatically selected/applied. A valid name
+absent from a fresh, complete fetched list gets a red
 advisory but remains savable. Unavailable, failed, stale and loading lists never
 prove absence. Discovery never modifies Action names or Config. Name validation
 remains 1..192 UTF-8 bytes without control characters or malformed Unicode.
@@ -23,11 +26,13 @@ still allow creation/editing and preserve parameters through Config save/load
 and Full/Key Presets. Connection/discovery APIs remain normal-S3-only; their
 routes are not registered on non-S3 or OBS TEST builds.
 
-The initial page load attempts refresh. The existing visible-page status poll
-drives cache GETs and retries on Ready transition or connection generation change.
-Manual refresh is available. Requests are single-flight; no second timer is added.
-Hidden pages do not initiate discovery requests. Freshness expiry removes absence
-warnings; manual refresh fetches a newer list.
+The first Ready observation after page load refreshes the list. Later refreshes
+occur only on Ready transition/connection generation change or explicit selection
+button use. The existing visible-page status poll fetches scene results only while
+a discovery is loading (bounded to 20 seconds), never on an idle Ready connection.
+Requests are single-flight; no second timer is added. Hidden pages do not initiate
+discovery requests. Freshness expiry removes absence warnings and shows a neutral
+free-input hint; the selection button fetches a newer list.
 
 ## Ownership and bounds
 
@@ -104,7 +109,7 @@ validation error code. No OBS server comments or credentials are returned.
 
 ## Resources
 
-Final build RAM/Flash (bytes), relative to work 1:
+Original work-2 (`af0a928`) build RAM/Flash (bytes), relative to work 1:
 
 | Target | RAM | RAM delta | Flash | Flash delta |
 |---|---:|---:|---:|---:|
@@ -136,3 +141,60 @@ scene discovery, rapid input, mixed protocol latency, long-running behavior and
 runtime Worker/loop stack headroom and heap coexistence on normal S3 firmware.
 Work 2 does not claim these physical results. Existing synchronous HTTP/Flash
 stalls and bounded-result FIFO drops remain relevant. No Push is part of work 2.
+
+## Work-2 UI follow-up
+
+The original UI did not send GetSceneList to OBS every three seconds, but it did
+GET the cache on every status poll, notify the editor before/after each GET, and
+rebuild datalist options even on text input. Browser-native filtering also hid
+other candidates when the input already contained a scene name. The separate
+unfiltered picker removes those interactions. Async notifications never replace,
+assign to or focus the text input. Only explicit Apply changes its value. Option
+nodes are rebuilt only when the candidate array changes; Cancel closes the panel
+even if the outstanding request finishes later.
+
+The reported stale-list message was an unconditional consequence of the existing
+60000 ms server cache TTL, not evidence that the named scene was absent. The TTL
+is retained, because no live scene-change events are subscribed. Fresh complete
+matches now show no warning; expiration/incomplete/unavailable results show a
+neutral free-input hint rather than demanding an update. Only a fresh complete
+list can produce a red missing-name advisory. No advisory blocks persistence.
+
+`/api/status.obs.generation` now exposes the existing Worker session generation.
+This detects reconnection even if status polling misses the disconnected interval,
+without idle scene GETs. Client request epochs discard pre-disconnect/old-generation
+replies. A Ready transition during an outstanding request queues one refresh.
+The Action schema, Worker queues, cache limits and single result consumer remain.
+
+Audio input selection is deferred for the current OBS WebSocket 5.x compatibility
+range. Upstream 5.6.3 GetInputList includes `inputKindCaps` and could filter the
+audio bit in one request, but 5.5.6/5.4.2 do not. Those lists mix video-only inputs;
+kind allowlists or per-input probes would be necessary for general audio selection.
+GetSpecialInputs covers only global Desktop/Mic slots, not all mute targets.
+References: upstream `src/utils/Obs_ArrayHelper.cpp` in tags 5.6.3 and 5.5.6,
+and `docs/generated/protocol.md` (GetInputList/GetSpecialInputs).
+
+Follow-up verification: scene-manager, HID/OBS-editor, OBS-settings UI, Presets,
+Stop Chain save/load, builtin Config and WebUI storage-fault Node suites PASS;
+`tests/run_obs_control.ps1` PASS including generation publication. Browser fixture
+confirmed no scene requests during repeated idle status polls, all candidates
+despite unrelated input text, Apply/Cancel, focus/caret preservation across refresh,
+empty warning for a matching scene, and free-text Config save/reload on both
+supported and unsupported fixtures. A synthetic
+composition event was used to check stable input DOM; physical OS IME interaction
+has not been manually exercised.
+
+User-reported hardware results for `af0a928`: scene switch, record start/stop,
+SetInputMute and ToggleInputMute worked. Stream start/stop remain unverified
+because OBS streaming was not configured. These reports do not cover this follow-up.
+
+Follow-up final normal S3/C3/C5/C6 and S3 OBS TEST builds: all PASS, sequentially.
+Static RAM is unchanged from `af0a928`; Flash deltas are shown below (bytes).
+
+| Target | RAM | Flash | Flash delta |
+|---|---:|---:|---:|
+| S3 | 141964 | 1610194 | +1436 |
+| C3 | 136364 | 1461039 | +1408 |
+| C5 | 65768 | 1676825 | +1408 |
+| C6 | 141580 | 1623208 | +1408 |
+| S3 OBS TEST | 138636 | 1600918 | +1408 |

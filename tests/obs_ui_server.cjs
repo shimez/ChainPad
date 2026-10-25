@@ -14,7 +14,7 @@ http.createServer(async(req,res)=>{
     if(url.pathname==='/api/capabilities')return send({obsActions:!unsupported,obsWebSocket:!unsupported,obsSettingsApi:!unsupported,usbMidi:true,usbKeyboard:true,midiTransports:['usb','ble'],keyboardTransports:['usb','ble'],defaultMidiTransport:'usb',maxActions:16,maxWaitMs:86400000,rotationOutputCapacity:16});
     if(url.pathname.startsWith('/api/obs/scenes'))return send({state:settings.enabled?'ready':'unavailable',complete:settings.enabled,scenes:['ゲーム画面','待機画面','雑談'],generation:1,ageMs:0},url.pathname.endsWith('refresh')?202:200);
     if(url.pathname==='/api/config')return send(config);
-    if(url.pathname==='/api/status')return send({name:'ChainPad',hardware:'XIAO ESP32S3',version:'M3 fixture',wifi:true,ip:'192.0.2.20',storageState:'ready',configOutputsAllowed:true,obs:unsupported?undefined:{connectionState:settings.enabled?'Ready':'Disabled',lastError:settings.enabled?-1:null,applyState:'accepted'}});
+    if(url.pathname==='/api/status')return send({name:'ChainPad',hardware:'XIAO ESP32S3',version:'M3 fixture',wifi:true,ip:'192.0.2.20',storageState:'ready',configOutputsAllowed:true,obs:unsupported?undefined:{connectionState:settings.enabled?'Ready':'Disabled',generation:1,lastError:settings.enabled?-1:null,applyState:'accepted'}});
     if(url.pathname==='/api/obs'||url.pathname==='/api/obs/reconnect'){
       if(unsupported)return send({message:'Not found'},404);
       if(req.method==='PUT'){

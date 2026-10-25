@@ -52,7 +52,9 @@ int main(){
     assert(io::writes==writes&&fake::applies==(state<2?1u:0u));
     if(state>=2){assert(doc["settings"].isNull()&&!fake::allowed);control.tick(true);assert(!fake::allowed);}
     else {assert(doc["settings"]["password"].isUnbound());assert(fake::applied.enabled==(state==0));}
+    fake::status.generation=42+state;
     JsonDocument status;control.statusJson(status.to<JsonObject>());
+    assert(status["generation"]==42+state);
     assert(status["storageState"]==doc["storageState"]&&status["applyState"]==doc["applyState"]);
     io::intact();
   }

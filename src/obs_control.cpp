@@ -124,6 +124,7 @@ void Controller::statusJson(JsonObject out) const {
   out["blockedReason"] = nullptr; if (reason) out["blockedReason"] = reason;
   out["stopRequested"] = reason != nullptr;
   out["connectionState"] = connectionName(status.state);
+  out["generation"] = status.generation;
   out["lastError"] = nullptr; if (status.lastError) out["lastError"] = status.lastError;
   out["lastClose"] = nullptr; if (status.lastClose) out["lastClose"] = status.lastClose;
   out["loopIntervalMaxUs"] = loopIntervalMaxUs_; out["saveMaxUs"] = saveMaxUs_;

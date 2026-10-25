@@ -8,6 +8,7 @@ class Element{
   get lastChild(){return this.children.at(-1);}
   setAttribute(){}
   setCustomValidity(message){this.validationMessage=message;}
+  focus(){this.focused=true;}
   querySelector(){return {focus(){}};}
 }
 const nodes={},plain=x=>JSON.parse(JSON.stringify(x));
@@ -121,7 +122,17 @@ for(const supported of [true,false]){
 ctx.capabilities.obsActions=true;
 show({protocol:'obs',delayMs:0,operation:'setCurrentProgramScene',sceneName:'missing'});
 sceneCache={state:'ready',complete:true,scenes:['ゲーム','<script>']};sceneListener();
-assert.equal(all().find(n=>n.tag==='datalist').children.length,2);
+const candidates=all().find(n=>n.tag==='select'&&n.size===6);
+assert.equal(candidates.children.length,2);
+assert.deepEqual(candidates.children.map(n=>n.textContent),['ゲーム','<script>']);
+const input=field('シーン名');input.selectionStart=2;input.selectionEnd=4;input.composing=true;
+sceneListener();assert.equal(field('シーン名'),input);assert.equal(input.value,'missing');
+assert.equal(input.selectionStart,2);assert.equal(input.selectionEnd,4);assert(input.composing);
+const click=text=>all().find(n=>n.tag==='button'&&n.textContent===text).onclick();
+click('シーン一覧から選択');click('キャンセル');assert.equal(input.value,'missing');
+candidates.selectedIndex=0;candidates.value='ゲーム';click('選択したシーンを使用');
+assert.equal(input.value,'ゲーム');assert.equal(config.chains[0].actions[0].sceneName,'ゲーム');
+choose('シーン名','missing');
 assert(all().some(n=>n.className==='error'&&n.textContent.includes('一覧にありません')));
 assert.equal(field('シーン名').validationMessage,''); // Missing scene is NOT invalid.
 choose('シーン名','ゲーム');assert(!all().some(n=>n.className==='error'));
@@ -132,4 +143,4 @@ for(const state of ['loading','stale','error','unavailable']){
 }
 choose('シーン名','名'.repeat(65));assert(field('シーン名').validationMessage);
 assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
-console.log('PASS OBS editor: seven operations, supported/unsupported creation/editing and Full/Key roundtrip, datalist/free input, missing-vs-unavailable/stale/failed, byte limits');
+console.log('PASS OBS editor: seven operations, supported/unsupported Full/Key roundtrip, unfiltered picker/apply/cancel, stable input/caret/composition, advisory and byte limits');
