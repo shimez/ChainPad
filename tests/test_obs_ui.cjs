@@ -25,10 +25,12 @@ async function main(){
   await save();assert(!('password' in JSON.parse(calls.at(-1).body)));assert.match(get('obsMessage').textContent,/接続結果/);
   get('obsPassword').value='test-only-replacement';get('obsPassword').oninput();await save();
   assert.equal(JSON.parse(calls.at(-1).body).password,'test-only-replacement');assert.equal(get('obsPassword').value,'');
-  f.confirm(false);get('obsClear').onclick();assert(get('obsUndoClear').hidden);
-  f.confirm(true);get('obsClear').onclick();assert(!get('obsUndoClear').hidden);assert.match(get('obsPasswordStatus').textContent,/削除予定/);
-  get('obsUndoClear').onclick();await save();assert(!('password' in JSON.parse(calls.at(-1).body)));
-  get('obsClear').onclick();await save();assert.equal(JSON.parse(calls.at(-1).body).password,'');
+  const clear=value=>{get('obsClear').checked=value;get('obsClear').onchange();};
+  assert(!get('obsClear').checked);
+  f.confirm(false);clear(true);assert(get('obsPassword').disabled);assert.match(get('obsPasswordStatus').textContent,/削除予定/);
+  clear(false);assert(!get('obsPassword').disabled);await save();assert(!('password' in JSON.parse(calls.at(-1).body)));
+  clear(true);await save();assert.equal(JSON.parse(calls.at(-1).body).password,'');assert(!get('obsClear').checked);assert(!get('obsPassword').disabled);
+  f.confirm(true);
   get('obsIp').value='300.1.2.3';let count=calls.length;await save();assert.equal(calls.length,count);
   get('obsIp').value='192.0.2.2';get('obsPort').value='4455.5';await save();assert.equal(calls.length,count);
   get('obsPort').value='4455';get('obsPassword').value='retain-on-failure';
@@ -49,7 +51,7 @@ async function main(){
   f.next(()=>{throw Error('offline');});await save();assert.equal(get('obsIp').value,'192.0.2.77');assert.match(get('obsMessage').textContent,/確認できません/);
   f.next(()=>json({...good(),settingsAvailable:false,settings:null,storageState:'corrupt'},200));await editor.reload();
   get('obsIp').value='192.0.2.3';get('obsPort').value='4455';count=calls.length;await save();assert.equal(calls.length,count);
-  get('obsClear').onclick();f.confirm(false);await save();assert.equal(calls.length,count);
+  clear(true);f.confirm(false);await save();assert.equal(calls.length,count);
   f.confirm(true);await save();assert.equal(JSON.parse(calls.at(-1).body).replaceInvalid,true);
   f.busy(true);editor.refresh();assert(get('obsSave').disabled);f.busy(false);
   for(const caps of [{},{obsWebSocket:false,obsSettingsApi:false},{obsWebSocket:true,obsSettingsApi:false}]){
@@ -71,6 +73,8 @@ async function main(){
   ctx.document.hidden=false;const stale=ctx.status();epoch++;resolve();await stale;assert.equal(updates,1);
   const leaving=ctx.status();ctx.status.paused=true;resolve();await leaving;assert.equal(timer,null);
   assert(html.indexOf('id="oscDestination"')<html.indexOf('id="obsSection"'));
+  for(const id of ['oscDestination','obsSection'])assert.match(html,new RegExp('<details class="network" id="'+id+'"(?: hidden)?>'));
+  assert.match(html,/<summary>OBS WebSocket設定<span id="obsConnection"/);
   console.log('PASS OBS UI: independent API, capabilities, password preserve/change/clear/undo, invalid input, 500/503, replacement confirmation, reconnect, polling single-flight/visibility, edit retention');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

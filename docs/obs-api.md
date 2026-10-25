@@ -322,9 +322,11 @@ from Config and Presets. Its panel is shown only when both `obsWebSocket` and
 
 - Enable, IPv4, port and password remain editable while OBS is disabled. IPv4
   and integer port 1–65535 are checked before saving; API validation is final.
-- Blank password omits the property. A new password replaces it. Clear Password
-  asks for confirmation and schedules an empty-string update at Save OBS; Undo
-  cancels that pending deletion. Saved secrets are never fetched or filled in.
+- Blank password omits the property. A new password replaces it. The unchecked
+  by default "保存時にパスワードをクリア" checkbox disables password input and
+  schedules an empty-string update at Save OBS. Unchecking cancels deletion and
+  re-enables input; confirmed persistence resets the checkbox. There is no
+  password-clear dialog. Saved secrets are never fetched or filled in.
 - Confirmed persistence clears the password input, including `503/saved:true`.
   That result is explicitly shown as saved with an apply/response problem, not
   connected or an ordinary unsaved failure. Failed/unknown saves retain edits;
@@ -344,7 +346,7 @@ from Config and Presets. Its panel is shown only when both `obsWebSocket` and
   also displayed; Error with 4009 explains authentication failure. Unknown codes
   remain numeric diagnostics, without guessed meanings.
 
-### M3 verification
+### M3 verification (approved base implementation, before UI refinement)
 
 - `node tests/test_obs_ui.cjs`: PASS — real editor logic, supported/unsupported
   capabilities, preserve/change/clear/undo, validation, saved-versus-apply failure,
@@ -378,3 +380,21 @@ from Config and Presets. Its panel is shown only when both `obsWebSocket` and
 
 M2's synchronous HTTP/Flash latency and unexposed Worker stack measurement remain
 known limitations. This UI does not change Worker, storage, API or Preset formats.
+
+### M3 UI refinement
+
+The approved M3 implementation is preserved in commit `0d57794`. The subsequent
+UI-only refinement uses the same native details/summary structure as Wi-Fi:
+"OSC送信先設定" and "OBS WebSocket設定" start collapsed and open independently.
+The existing OBS connection display lives in its summary, updating through the
+same polling while collapsed. Opening state is not persisted. The password-clear
+checkbox described above replaces the former Clear/Undo buttons and dialog.
+Wi-Fi and OSC saving, OBS API semantics and unsupported-build hiding are retained.
+
+Refinement verification: OBS UI, Wi-Fi password and WebUI storage-recovery Node
+tests PASS. Browser fixture confirms initial collapse, independent/simultaneous
+opening, automatic status refresh while collapsed, OSC save, OBS save/reconnect,
+checkbox input disabling/re-enabling, unsupported hiding, and 320/390px open and
+closed layouts in Light/Dark without horizontal overflow. The refinement has not
+been flashed to hardware; the hardware smoke above covers the approved M3 base.
+Normal-S3 build PASS: static RAM 114916 B, Flash 1594010 B.

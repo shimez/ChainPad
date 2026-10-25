@@ -14,8 +14,7 @@ const ObsSettingsUI = (() => {
       const writable = loaded && ['missing','ready','corrupt','unsupportedVersion'].includes(storage);
       get('obsFields').disabled = locked || !writable;
       get('obsPassword').disabled = clear;
-      get('obsClear').disabled = clear;
-      get('obsUndoClear').hidden = !clear;
+      get('obsClear').checked = clear;
       get('obsSave').disabled = !supported || !writable || locked;
       get('obsReconnect').disabled = !supported || !loaded || !savedEnabled || !get('obsEnabled').checked || locked;
       get('obsReload').disabled = locked;
@@ -80,7 +79,7 @@ const ObsSettingsUI = (() => {
       else if (get('obsPassword').value !== '') body.password = get('obsPassword').value;
       if (['corrupt','unsupportedVersion'].includes(storage)) {
         if (!Object.prototype.hasOwnProperty.call(body, 'password')) {
-          note('保存済みパスワードは不明です。新しい値を入力するかClear Passwordで削除を指定してください。', true); return;
+          note('保存済みパスワードは不明です。新しい値を入力するか「保存時にパスワードをクリア」を指定してください。', true); return;
         }
         if (!confirm('読み込めないOBS保存データを、画面上の設定で置き換えますか？')) return;
         body.replaceInvalid = true;
@@ -134,11 +133,10 @@ const ObsSettingsUI = (() => {
       get('obsDiagnostics').textContent = parts.join(' / ');
     }
     for (const id of fields) get(id).oninput = () => { edited = true; refresh(); };
-    get('obsClear').onclick = () => {
-      if (pending || externalBusy() || !confirm('Save OBS時に保存済みパスワードを削除しますか？')) return;
-      clear = true; edited = true; refresh();
+    get('obsClear').onchange = () => {
+      if (pending || externalBusy()) { refresh(); return; }
+      clear = get('obsClear').checked; edited = true; refresh();
     };
-    get('obsUndoClear').onclick = () => { clear = false; edited = true; refresh(); };
     get('obsSave').onclick = save;
     get('obsReconnect').onclick = reconnect;
     get('obsReload').onclick = reload;
