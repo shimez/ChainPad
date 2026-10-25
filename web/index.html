@@ -23,6 +23,7 @@ header,main{max-width:1280px;padding-left:16px;padding-right:16px}
 .preset-menu-items{position:absolute;right:0;top:100%;z-index:5;display:grid;gap:6px;min-width:180px;padding:8px;background:var(--panel);border:1px solid var(--line);border-radius:7px}.preset-menu-items button{text-align:left;white-space:nowrap}
 @media(min-width:1100px){main{grid-template-columns:200px minmax(0,1fr)}.fields.midi{grid-template-columns:1.2fr 1.4fr 1.2fr .65fr .65fr .65fr;gap:10px}}
 main>section{min-width:0}
+.obs-fields{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}.obs-enable{display:flex;align-items:center;gap:8px;margin-bottom:14px}.obs-buttons{justify-content:flex-end}#obsDiagnostics,#obsMessage{overflow-wrap:anywhere}#obsSection fieldset{border:0;padding:0;margin:0;min-width:0}#obsSection input:disabled{opacity:.5}
 .system-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0 0}.system-info>div{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--field);min-width:0}.system-info dt{font-size:13px;font-weight:700;margin-bottom:6px}.system-info dd{margin:0;overflow-wrap:anywhere}.system-info a{color:var(--accent)}
 #actions{gap:18px}.action-card{padding:10px;position:relative;min-width:0}
 .action-card:not(:last-child)::after{content:'↓';position:absolute;bottom:-19px;left:28px;color:var(--muted);font-size:14px;line-height:18px}
@@ -48,6 +49,14 @@ try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme
 <label>OSC IPv4<input id="oscHost" placeholder="192.168.1.100"></label>
 <label>OSC Port<input id="oscPort" type="number" min="1" max="65535"></label>
 </div><p class="hint">OSC Action / Linked Outputs共通の送信先です。変更後は「保存・適用」を押してください。</p></section>
+<section class="network panel" id="obsSection" hidden><h2>OBS WebSocket</h2>
+<fieldset id="obsFields" disabled><label class="obs-enable"><input id="obsEnabled" type="checkbox">Enable OBS WebSocket</label>
+<div class="fields obs-fields"><label>IP Address<input id="obsIp" placeholder="192.168.1.100" autocomplete="off"></label><label>Port<input id="obsPort" type="number" min="1" max="65535" step="1" value="4455"></label><label>Password<input id="obsPassword" type="password" autocomplete="new-password" aria-describedby="obsPasswordStatus"></label></div>
+<p id="obsPasswordStatus" class="hint" role="status"></p><div class="buttons"><button id="obsClear" type="button">Clear Password…</button><button id="obsUndoClear" type="button" hidden>削除を取り消す</button></div>
+<p class="hint">空欄なら保存済みパスワードを保持します。削除・変更はSave OBSで確定します。</p></fieldset>
+<p id="obsConnection" role="status">Connection: 取得中…</p><p id="obsDiagnostics" class="hint"></p><p id="obsStorage" class="hint"></p>
+<p id="obsMessage" role="status"></p><div class="buttons obs-buttons"><button id="obsReload" type="button">設定を再取得</button><button id="obsSave" class="primary" type="button" disabled>Save OBS</button><button id="obsReconnect" type="button" disabled>Reconnect</button></div>
+<p class="hint">OBS専用の保存です。保存・反映受付と接続成功は別です。Reconnectは編集中の値ではなく、本体に保存済みの設定を使用します。</p></section>
 <nav class="panel"><h2>Input</h2><div id="inputs"></div></nav>
 <section><div class="panel"><div class="input-heading"><h2 id="title">Action Chain</h2><details id="keyPresetMenu" class="preset-menu" hidden><summary aria-label="Key Preset操作">…</summary><div class="preset-menu-items"><button id="exportKey">Preset Export</button><button id="importKey">Preset Import</button></div></details></div><label>Input Event<select id="event"></select></label><p class="hint">Actionは登録順に実行されます。WaitはこのChainだけを待機させ、他のChainには影響を与えません。</p><p id="actionSlots" class="hint" role="status"></p><p id="waitWarning" class="danger" role="status" hidden></p></div><div id="actions"></div><button id="add">+ Add Action</button></section>
 <div class="toolbar"><button class="primary" id="save">保存・適用</button><span id="dirty" class="hint"></span></div>
@@ -75,11 +84,13 @@ try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme
 <script src="builtin-config-data.js"></script>
 <script src="action-ui.js"></script>
 <script src="rotation-ui.js"></script>
+<script src="obs-settings.js"></script>
 <script>
 'use strict';
 let config, capabilities, selected=0, dirty=false, statusTimer, saving=false, importTarget;
 const $=id=>document.getElementById(id);
 const passwordEditor=WifiPassword.create($,()=>changed());
+const obsEditor=ObsSettingsUI.create($,()=>saving);
 $('theme').value=document.documentElement.dataset.theme||'dark';
 $('theme').onchange=()=>{const theme=$('theme').value;document.documentElement.dataset.theme=theme;try{localStorage.setItem('chainpad-theme',theme);}catch{}};
 const names=Array.from({length:12},(_,i)=>`KEY ${String(i+1).padStart(2,'0')}`).concat('Encoder Push','Encoder');
@@ -120,7 +131,7 @@ $('keyboardLayout').onchange=()=>{
 function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);}
 function changed(){dirty=true;$('dirty').textContent='未保存の変更あり';waitWarning();if(config)document.querySelectorAll('.action-summary').forEach((el,i)=>{if(current()[i])el.textContent=actionSummary(current()[i]);});RotationEditor.refresh();}
 function waitWarning(){if(!config)return;const base=Math.floor(selected/2)*2;const pair=config.chains.filter(c=>c.input===base||c.input===base+1);const waits=pair.some(c=>c.actions.some(a=>a.protocol==='wait'&&a.delayMs>0));$('waitWarning').hidden=!waits;$('waitWarning').textContent=waits?'Wait中もRelease・別キー・同じキーの再入力は独立して実行されます。Releaseが先に実行され、待機後のNote On / KeyDownが後から届く場合があります。':'';}
-async function api(path,method='GET',body){const r=await fetch('/api/'+path,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?RotationPreview.stringify(body):undefined});const data=await r.json();if(!r.ok)throw Error(data.message||r.statusText);return data;}
+async function api(path,method='GET',body){const request=async()=>{const r=await fetch('/api/'+path,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?RotationPreview.stringify(body):undefined});const data=await r.json();if(!r.ok)throw Error(data.message||r.statusText);return data;};if(path!=='status'||method!=='GET')return request();if(api.statusPending)return api.statusPending;api.statusPending=request();try{return await api.statusPending;}finally{api.statusPending=null;}}
 function control(label,value,options,onchange,type='text',min,max){const wrap=document.createElement('label');wrap.textContent=label;const el=document.createElement(options?'select':'input');if(options){for(const [v,name]of options){const o=document.createElement('option');o.value=v;o.textContent=name;el.append(o);}}else{el.type=type;if(min!==undefined)el.min=min;if(max!==undefined)el.max=max;}el.value=value;el.onchange=()=>{onchange(type==='number'?Number(el.value):el.value);changed();};wrap.append(el);return wrap;}
 function defaults(protocol){if(protocol==='stopOtherChains')return {protocol,delayMs:0};if(protocol==='wait')return {protocol,delayMs:100};if(protocol==='osc')return {protocol,transport:'wifi',delayMs:0,address:'/avatar/parameters/Costume',type:'int',value:2};if(protocol==='midi')return {protocol,transport:capabilities.defaultMidiTransport,delayMs:0,message:'noteOn',channel:1,number:48,value:127};return {protocol,transport:'ble',delayMs:0,message:'keyDownUp',usage:104,modifiers:0};}
 function current(){return config.chains.find(c=>c.input===selected).actions;}
@@ -155,11 +166,12 @@ detail.append(fields);if(a.protocol==='keyboard'&&['keyDown','keyDownUp'].includ
 function selectInput(group){editingAction=-1;selected=group*2;$('keyPresetMenu').open=false;$('keyPresetMenu').hidden=group>=13;$('title').textContent=names[group];$('event').replaceChildren();const labels=group===13?['↩️Clockwise（時計回り）','↪️CounterClockWise（反時計回り）']:['Press（押した時）','Release（離した時）'];labels.forEach((name,i)=>{const o=document.createElement('option');o.value=group*2+i;o.textContent=name;$('event').append(o);});[...$('inputs').children].forEach((b,i)=>b.classList.toggle('active',i===group));renderActions();RotationEditor.refresh();}
 function rotationSummary(){RotationEditor.render();}
 async function load(){[config,capabilities]=await Promise.all([api('config'),api('capabilities')]);delete config.network.password;Presets.read(Presets.full(config),'full',capabilities);const s=await api('status');$('storageRecovery').hidden=s.storageState!=='unsupportedVersion';for(const id of ['ssid','oscHost','oscPort'])$(id).value=config.network[id];passwordEditor.load(config.network.passwordConfigured);dirty=false;$('dirty').textContent=s.configOutputsAllowed===false?'設定未読込（出力停止）':'保存済み';selectInput(Math.floor(selected/2));rotationSummary();message(s.configOutputsAllowed===false?s.bootMessage:'設定を読み込みました。',s.configOutputsAllowed===false);}
-async function status(){try{const s=await api('status');$('connections').replaceChildren();for(const [key,label]of [['wifi','Wi-Fi'],['usbMidi','USB MIDI'],['usbKeyboard','USB HID'],['bleMidi','BLE MIDI'],['bleKeyboard','BLE HID']]){const unsupported=(key==='usbMidi'&&s.usbMidiSupported===false)||(key==='usbKeyboard'&&s.usbKeyboardSupported===false);const tag=document.createElement('span');tag.className='tag'+(!unsupported&&s[key]?' on':'');tag.textContent=`${label}: ${unsupported?'非対応':s[key]?'接続':'未接続'}`;$('connections').append(tag);}$('systemName').textContent=s.name||'ChainPad';$('systemHardware').textContent=(s.hardware||'—').replace(/\s*\/\s*ChainOSCPad PCB$/,'');$('systemVersion').textContent=s.version||'—';$('systemIp').textContent=s.wifi&&s.ip&&s.ip!=='0.0.0.0'?s.ip:s.apIp||'—';}catch(e){$('connections').textContent='デバイスに接続できません: '+e.message;}finally{statusTimer=setTimeout(status,1500);}}
+async function status(){clearTimeout(statusTimer);if(document.hidden||status.paused||status.running)return;status.running=true;const epoch=obsEditor.epoch();try{const s=await api('status');if(epoch===obsEditor.epoch())obsEditor.updateStatus(s.obs);$('connections').replaceChildren();for(const [key,label]of [['wifi','Wi-Fi'],['usbMidi','USB MIDI'],['usbKeyboard','USB HID'],['bleMidi','BLE MIDI'],['bleKeyboard','BLE HID']]){const unsupported=(key==='usbMidi'&&s.usbMidiSupported===false)||(key==='usbKeyboard'&&s.usbKeyboardSupported===false);const tag=document.createElement('span');tag.className='tag'+(!unsupported&&s[key]?' on':'');tag.textContent=`${label}: ${unsupported?'非対応':s[key]?'接続':'未接続'}`;$('connections').append(tag);}$('systemName').textContent=s.name||'ChainPad';$('systemHardware').textContent=(s.hardware||'—').replace(/\s*\/\s*ChainOSCPad PCB$/,'');$('systemVersion').textContent=s.version||'—';$('systemIp').textContent=s.wifi&&s.ip&&s.ip!=='0.0.0.0'?s.ip:s.apIp||'—';}catch(e){if(epoch===obsEditor.epoch())obsEditor.statusFailed();$('connections').textContent='デバイスに接続できません: '+e.message;}finally{status.running=false;if(!document.hidden&&!status.paused)statusTimer=setTimeout(status,3000);}}
 function run(fn){return async()=>{try{await fn();}catch(e){message(e.message,true);}};}
 $('event').onchange=()=>{editingAction=-1;selected=Number($('event').value);renderActions();};
 $('add').onclick=()=>{const s=actionSlots();if(s.used>=s.limit||saving)return;current().push(defaults('osc'));editingAction=current().length-1;changed();renderActions();};
 async function saveConfig(replaceUnsupported=false){
+  if(typeof obsEditor!=='undefined'&&obsEditor.busy())throw Error('OBS操作の完了を待ってください。');
   if(!config)return;
   for(const id of ['ssid','oscHost','oscPort'])config.network[id]=id==='oscPort'?Number($(id).value):$(id).value;
   // Snapshot in the browser; the device receives just one chain per request.
@@ -180,7 +192,7 @@ async function saveConfig(replaceUnsupported=false){
     config.network.passwordConfigured=passwordEditor.saved(snapshot.network);
     delete config.network.password;
     dirty=false;$('dirty').textContent='保存済み';$('storageRecovery').hidden=true;message(r.message);
-  }finally{delete snapshot.network.password;saving=false;controls.forEach(([el,disabled])=>el.disabled=disabled);$('password').disabled=$('clearPassword').checked;rotationSummary();}
+  }finally{delete snapshot.network.password;saving=false;controls.forEach(([el,disabled])=>el.disabled=disabled);$('password').disabled=$('clearPassword').checked;rotationSummary();if(typeof obsEditor!=='undefined')obsEditor.refresh();}
 }
 $('save').onclick=run(()=>saveConfig());
 $('replaceUnsupported').onclick=run(async()=>{if(confirm('旧設定を上書きして、現在の編集内容をv2形式で保存しますか？'))await saveConfig(true);});
@@ -212,7 +224,10 @@ $('loadDefault').onclick=run(async()=>loadBuiltin('Default'));
 $('loadEmpty').onclick=run(async()=>loadBuiltin('Empty'));
 function applyImport(raw,target){if(saving)throw Error('保存完了後にImportしてください。');if(target.kind==='key'&&target.group>=13)throw Error('Encoder回転は全体設定を使用してください。');const parsed=Presets.read(raw,target.kind,capabilities);if(target.kind==='key'){for(const c of parsed.chains)config.chains.find(v=>v.input===target.group*2+c.input).actions=c.actions;selectInput(target.group);}else{parsed.config.network={ssid:$('ssid').value,passwordConfigured:config.network.passwordConfigured,...parsed.config.network};config=parsed.config;for(const id of ['oscHost','oscPort'])$(id).value=config.network[id];selectInput(Math.floor(selected/2));}changed();renderActions();rotationSummary();message(`${target.kind==='key'?names[target.group]+'のPress / Release':'全体設定'}を編集画面へImportしました。「保存・適用」で確定してください。${parsed.converted?'\nこの機種はUSB非対応のため、'+parsed.converted+'個のAction / OutputのTransportをBLEに変更しました。':''}`);}
 $('presetFile').onchange=run(async()=>{const file=$('presetFile').files[0];const target=importTarget;if(!file||!target)return;if(file.size>1024*1024)throw Error('Importファイルは1 MiB以下にしてください。');const raw=JSON.parse(await file.text());applyImport(raw,target);});
-names.forEach((name,i)=>$('inputs').append(button(name,()=>{if(config)selectInput(i);})));window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
-RotationEditor.init();run(load)();status();
+names.forEach((name,i)=>$('inputs').append(button(name,()=>{if(config)selectInput(i);})));window.addEventListener('beforeunload',e=>{if(dirty||obsEditor.dirty()){e.preventDefault();e.returnValue='';}});
+document.addEventListener('visibilitychange',()=>{clearTimeout(statusTimer);if(!document.hidden)status();});
+window.addEventListener('pagehide',()=>{status.paused=true;clearTimeout(statusTimer);});
+window.addEventListener('pageshow',()=>{status.paused=false;status();});
+RotationEditor.init();run(load)();obsEditor.init();status();
 </script>
 </html>

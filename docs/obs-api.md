@@ -3,7 +3,7 @@
 M2 is complete with **conditional user approval** following Host tests, five
 target builds and normal-S3 hardware verification. The limitations below are
 accepted for M2; no additional verification phase is required for this milestone.
-M3 implementation requires a separate instruction.
+M3 WebUI work is recorded separately below; the M2 backend contract is retained.
 
 ## Ownership and boot
 
@@ -311,3 +311,70 @@ deliberate file-corruption test is required; rename faults are covered on Host.
 
 M3 must distinguish saved, apply accepted/failed and actual connection state;
 preserve password omission semantics and explicitly confirm invalid-file replacement.
+
+## Phase 2 M3 — WebUI
+
+The existing single-page configurator places an independent OBS WebSocket panel
+directly below OSC. OSC keeps its existing responsive fields and Config-wide
+save/apply path. OBS uses only its own settings/reconnect APIs and is excluded
+from Config and Presets. Its panel is shown only when both `obsWebSocket` and
+`obsSettingsApi` are true (hidden on non-S3 and OBS TEST builds).
+
+- Enable, IPv4, port and password remain editable while OBS is disabled. IPv4
+  and integer port 1–65535 are checked before saving; API validation is final.
+- Blank password omits the property. A new password replaces it. Clear Password
+  asks for confirmation and schedules an empty-string update at Save OBS; Undo
+  cancels that pending deletion. Saved secrets are never fetched or filled in.
+- Confirmed persistence clears the password input, including `503/saved:true`.
+  That result is explicitly shown as saved with an apply/response problem, not
+  connected or an ordinary unsaved failure. Failed/unknown saves retain edits;
+  unknown outcomes recommend reloading before retrying.
+- Readable invalid storage requires explicit replacement confirmation and a new
+  password or explicit clear; `replaceInvalid:true` is never sent silently.
+- Reconnect uses saved settings; it is disabled for a disabled saved configuration
+  or unchecked Enable control. HTTP 202 means request accepted only. Save and
+  Reconnect are serialized; Config saving and OBS operations also exclude one
+  another while in progress.
+- Device and OBS status share a single-flight request and a 3-second polling
+  delay after completion. Hidden pages/navigation stop scheduling; visibility
+  return resumes polling. Responses started before an OBS mutation cannot replace
+  its post-operation status. Polls never refill the editor. Failed status fetches
+  show that the current state is unknown.
+- Ready displays Connected even with historical lastError=-1. Authenticating is
+  also displayed; Error with 4009 explains authentication failure. Unknown codes
+  remain numeric diagnostics, without guessed meanings.
+
+### M3 verification
+
+- `node tests/test_obs_ui.cjs`: PASS — real editor logic, supported/unsupported
+  capabilities, preserve/change/clear/undo, validation, saved-versus-apply failure,
+  replacement confirmation, reconnect, single-flight/visibility/navigation,
+  stale response suppression and edit retention.
+- `node tests/test_hid_action_ui.cjs`, `node tests/test_presets.cjs`,
+  `node tests/storage_fault/webui_get.cjs`: PASS — existing UI/Config/Preset paths.
+- Wi-Fi password, Stop Chain save/load, builtin Config, Maintenance and Rotation
+  preview Node regressions: PASS.
+- Normal S3/C3/C5/C6 and S3 OBS TEST builds: PASS. Final UI bytes and navigation
+  polling guard verified in all five firmware binaries. Static RAM is unchanged
+  from M2. Flash B: S3 1593818, C3 1448667, C5 1664469, C6 1610868,
+  S3 TEST 1586974. Normal-S3 firmware.bin SHA256:
+  `b6c7be7e13d8b3e400c7f55bf69e374dc2554b6c718d81a224ef445366f555fc`.
+- Local browser fixture (`node tests/obs_ui_server.cjs`): PASS — actual page load,
+  OBS-only PUT, existing OSC Config save, reconnect, unsupported UI, desktop
+  horizontal fields, OSC above OBS, and 320/390px Light/Dark without horizontal
+  overflow. Fixture tests do not establish physical device results.
+- Normal-S3 hardware smoke: PASS after user firmware upload/reboot. The actual
+  device-served WebUI displayed stored settings and Connected, including the
+  initial historical lastError=-1 without reporting a current connection error.
+  Save OBS sent an unchanged enabled/IP/port with password omitted; HTTP 200,
+  saved:true and applyState:accepted were confirmed. Public settings remained
+  unchanged and the password field stayed empty. Automatic polling returned to
+  Connected. Reconnect returned HTTP 202, displayed request acceptance rather
+  than connection success, then automatic polling showed Connected again.
+  Observed status-response intervals were 3066–3077 ms (3-second delay plus HTTP).
+  The only mutations were PUT /api/obs and POST /api/obs/reconnect; Config/OSC
+  saving was not triggered. Actual desktop layout had OSC above OBS, horizontal
+  OBS fields and no horizontal overflow. M2 fault tests were not repeated.
+
+M2's synchronous HTTP/Flash latency and unexposed Worker stack measurement remain
+known limitations. This UI does not change Worker, storage, API or Preset formats.
