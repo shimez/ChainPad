@@ -137,6 +137,27 @@ State decodeStored(const char* json, size_t size, ObsSettings& out, Error& error
   error = fields(doc.as<JsonObjectConst>(), nullptr, true, out);
   return error == Error::None ? State::Ready : State::Corrupt;
 }
+Error unwrapRequest(const char* json, size_t size, char* out, size_t capacity, size_t& written, bool& replaceInvalid) {
+  written = 0; replaceInvalid = false;
+  Budget budget; JsonDocument doc(&budget);
+  auto error = parse(json, size, doc);
+  if (error != Error::None) return error;
+  if (!doc["replaceInvalid"].isUnbound()) {
+    if (!doc["replaceInvalid"].is<bool>()) return Error::InvalidInput;
+    replaceInvalid = doc["replaceInvalid"];
+    doc.remove("replaceInvalid");
+  }
+  // Validate before reserialization: JSON serialization can turn 4455.0 into
+  // 4455, losing the original type. Use the same M1 validator with a placeholder
+  // only for omitted password; Store still resolves its real trusted source.
+  ObsSettings checked;
+  error = fields(doc.as<JsonObjectConst>(), &checked, false, checked);
+  if (error != Error::None) return error;
+  const size_t n = measureJson(doc);
+  if (!out || n >= capacity || n > MaxJsonBytes) return Error::TooLarge;
+  written = serializeJson(doc, out, capacity);
+  return written == n ? Error::None : Error::NoMemory;
+}
 size_t encodeStored(const ObsSettings& s, char* out, size_t capacity) { return encode(s, out, capacity, true); }
 size_t encodePublic(const ObsSettings& s, char* out, size_t capacity) { return encode(s, out, capacity, false); }
 } }

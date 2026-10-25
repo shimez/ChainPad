@@ -16,6 +16,7 @@
 #include "backends.h"
 #include "obs_backend.h"
 #include "obs_test_console.h"
+#include "obs_http.h"
 #include "diagnostics.h"
 #include "serial_output.h"
 #include "factory_reset.h"
@@ -49,15 +50,20 @@ void diagnosticCheckpoint(const char* reason) {
 bool inputReady = false;
 bool maintenanceRecovery = false;
 uint32_t restartAt = 0, lastActivity = 0;
+#if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
+obscontrol::Controller obsControl;
+bool obsMaintenance() { return maintenanceRecovery || restartAt || factoryResetBlocked(); }
+bool obsGlobalAllowed() { return !obsMaintenance() && configOutputsAllowed(); }
+#endif
 char bootSsid[33]{}, bootPassword[65]{};
 void jsonResponse(int status, JsonDocument& doc) {
+  web.sendHeader("Cache-Control", "no-store");
   String body;
   if (!checkedSettingsJson(doc, body)) {
     // No JSON allocation is needed for the fallback body. Preserve errors.
     web.send(status >= 400 ? status : 500, "application/json; charset=utf-8", "{\"ok\":false,\"message\":\"JSON generation failed\"}");
     return;
   }
-  web.sendHeader("Cache-Control", "no-store");
   web.send(status, "application/json; charset=utf-8", body);
 }
 void result(int status, const String& message) {
@@ -69,6 +75,9 @@ bool resetGuard() {
   result(409, "Factory Reset pending or failed; settings and outputs are locked"); return true;
 }
 void setupWeb() {
+#if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
+  registerObsHttp(web, obsControl, obsMaintenance, obsGlobalAllowed);
+#endif
   web.on("/api/factory-reset", HTTP_GET, [] {
     JsonDocument doc; doc["state"] = factoryResetStatus(); jsonResponse(200, doc);
   });
@@ -208,6 +217,15 @@ void setupWeb() {
     doc["inputOverflows"] = inputOverflows(); doc["pressedMask"] = pressedInputs();
     doc["inputsReady"] = inputReady; doc["bootMessage"] = bootMessage;
     doc["storageState"] = configStorageStateName(); doc["configOutputsAllowed"] = configOutputsAllowed() && !factoryResetBlocked();
+#if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
+    obsControl.tick(obsGlobalAllowed());
+    obsControl.statusJson(doc["obs"].to<JsonObject>());
+#elif CHAINPAD_HAS_OBS
+    auto obs = doc["obs"].to<JsonObject>();
+    obs["settingsOwner"] = "testConsole";
+    const char* names[] = {"Disabled", "Disconnected", "Connecting", "Authenticating", "Ready", "Error"};
+    obs["connectionState"] = names[unsigned(obsStatusSnapshot().state)];
+#endif
     auto rotation = doc["encoderRotation"].to<JsonObject>();
     rotation["mode"] = activeConfig().encoderRotation.mode == RotationMode::ActionChain ? "actionChain" : "rotationValue";
     rotation["rangeSteps"] = activeConfig().encoderRotation.axis.rangeSteps;
@@ -288,6 +306,9 @@ void setup() {
   memoryCheckpoint("config/loaded");
   memcpy(bootSsid, config.ssid, sizeof(bootSsid)); memcpy(bootPassword, config.password, sizeof(bootPassword));
   if (!maintenanceRecovery) backendsBegin();
+#if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
+  obsControl.begin();
+#endif
   memoryCheckpoint("backends/ready");
   WiFi.persistent(false);
   memoryPhase("wifi/mode");
@@ -317,8 +338,17 @@ void setup() {
 }
 void loop() {
   static uint32_t observedOverflows = 0;
+#if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
+  obsControl.observeLoop(micros());
+  obsControl.tick(obsGlobalAllowed());
+#else
   obsTick(!maintenanceRecovery && !restartAt && !factoryResetBlocked() && configOutputsAllowed());
+#endif
   web.handleClient();
+#if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
+  // HTTP may have scheduled Restart/Reset or changed Config permission.
+  obsControl.tick(obsGlobalAllowed());
+#endif
   // At most one command per loop, so pasted input cannot monopolize execution.
   if (console.available() > 0) {
     const int command = console.read();

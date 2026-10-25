@@ -193,6 +193,12 @@ void encodeCapabilities(JsonDocument& doc) {
   doc["maxWaitMs"] = MAX_WAIT_MS;
   doc["schemaVersion"] = 2;
   doc["wifiPasswordUpdate"] = "omit-preserves";
+  doc["obsWebSocket"] = bool(CHAINPAD_HAS_OBS);
+#if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
+  doc["obsSettingsApi"] = true;
+#else
+  doc["obsSettingsApi"] = false;
+#endif
   doc["rotationOutputCapacity"] = ROTATION_OUTPUT_CAPACITY;
   doc["rotationRuntimeSupported"] = true;
   doc["rotationOutputSendingSupported"] = true;

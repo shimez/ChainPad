@@ -20,6 +20,7 @@ std::map<std::string,std::string> files;
 struct Handle { std::string path; size_t pos=0; bool write=false; };
 std::map<int,Handle> handles;
 int next=3, writes=0, renames=0;
+int renameFailureMode=0; // M2: error after replacement, corrupt active, unreadable active.
 bool mounted=true, probeError=false, failOpenRead=false, failOpenWrite=false,
      shortWrite=false, noSpace=false, failSync=false, failClose=false, failRead=false,
      earlyEof=false, failStat=false, failRename=false, damageTemp=false, alterTemp=false,
@@ -59,10 +60,14 @@ int close(int fd) {
 int rename(const char* from,const char* to) {
   ++renames;assert(std::string(from)==Temp&&std::string(to)==Active);
   if(failRename)return -1;
-  files[to]=files.at(from);files.erase(from);return 0;
+  files[to]=files.at(from);files.erase(from);
+  if(renameFailureMode==2)files[to]="{";
+  if(renameFailureMode==3)failOpenRead=true;
+  return renameFailureMode?-1:0;
 }
 void reset(){
   assert(handles.empty());files.clear();next=3;writes=renames=0;mounted=true;
+  renameFailureMode=0;
   probeError=failOpenRead=failOpenWrite=shortWrite=noSpace=failSync=failClose=failRead=earlyEof=failStat=failRename=damageTemp=alterTemp=false;
   failWriteClose=failTempOpen=failTempRead=false;
   files["/littlefs/config.records"]="existing-config";files["/littlefs/pending.records"]="existing-transaction";
@@ -102,6 +107,7 @@ const std::string omit="{\"enabled\":false,\"ip\":\"192.0.2.2\",\"port\":1234}";
 Error save(Store& s,const std::string& j,bool replace=false){return s.save(j.data(),j.size(),replace);}
 Error decode(const std::string& j,ObsSettings& out){return decodeUpdate(j.data(),j.size(),nullptr,out);}
 void invalid(const std::string& j){ObsSettings out;out.port=77;assert(decode(j,out)!=Error::None);assert(out.port==77);}
+#ifndef CHAINPAD_OBS_CONTROL_TEST
 int main(){
   Error e;ObsSettings initial;
   assert(!initial.enabled&&!initial.ip[0]&&initial.port==4455&&!initial.password[0]);
@@ -183,3 +189,4 @@ int main(){
   assert(save(unmounted,clear,true)==Error::None&&!unmounted.settings()->password[0]);
   std::cout<<"PASS I/O/write/full/sync/rename/verify failures, interrupted tmp, Config isolation\n";
 }
+#endif

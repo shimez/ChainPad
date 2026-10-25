@@ -14,6 +14,9 @@ const char* errorName(Error error); // Fixed codes only: never includes input te
 bool equal(const ObsSettings& a, const ObsSettings& b);
 // Failed decoding never modifies out. nullptr means no trustworthy password source.
 Error decodeUpdate(const char* json, size_t size, const ObsSettings* previous, ObsSettings& out);
+// HTTP envelope only: remove an optional strict boolean replaceInvalid. Setting
+// validation and password resolution remain in Store::save/decodeUpdate.
+Error unwrapRequest(const char* json, size_t size, char* out, size_t capacity, size_t& written, bool& replaceInvalid);
 State decodeStored(const char* json, size_t size, ObsSettings& out, Error& error);
 // Caller-owned bounded output; zero return means failure. Public form has no password.
 size_t encodeStored(const ObsSettings& settings, char* out, size_t capacity);

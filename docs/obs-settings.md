@@ -1,5 +1,9 @@
 # OBS settings persistence — Phase 2 M1
 
+This document records the M1 storage contract and verification baseline. Normal
+S3 boot/HTTP integration added in M2 is described in [obs-api.md](obs-api.md);
+statements below about having no setup/loop caller describe the M1 milestone.
+
 ## Scope and ownership
 
 ESP32S3 only (`CHAINPAD_HAS_OBS`), using the existing fixed-size `ObsSettings`.

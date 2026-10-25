@@ -39,6 +39,7 @@ int main(){
   // promise of external cancellation; all following queued requests are retired.
   submit();submit();wire::beforeSend=[] {obsPanic();};rtos::step();rtos::step();ready();assert(requests()==before+1);
   before=requests();submit();cfg=settings();strcpy(cfg.ip,"192.0.2.2");assert(obsApplySettings(cfg));
+  assert(obsStatusSnapshot().state!=obs::State::Ready); // M2 must not expose the old generation's Ready.
   assert(obsDispatch("new-before-ready",id)==SendResult::Unavailable);rtos::step();ready();assert(requests()==before&&wire::hosts.back()=="192.0.2.2");
   submit();WiFi.lose();WiFi.state=WL_CONNECTED; // Lost+recovered BETWEEN worker iterations.
   assert(obsDispatch("stale-ready",id)==SendResult::Unavailable);rtos::step();ready();assert(requests()==before);
