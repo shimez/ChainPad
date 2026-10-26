@@ -47,8 +47,18 @@ bool terminalClose(uint16_t code) {
 void Protocol::connected() { state = State::Authenticating; pending = 0; wire[0] = 0; }
 Received Protocol::receive(const char* data, size_t size, const char* password, Authenticate auth) {
   if (!data || !size || size > MESSAGE_LIMIT || memchr(data, 0, size)) return Received::Invalid;
-  const bool discovery = pending && operation == Operation::GetSceneList;
-  if (!discovery && size > CONTROL_MESSAGE_LIMIT) return Received::Invalid;
+  const bool discovery = pending && obs::discovery(operation);
+  if (!discovery && size > CONTROL_MESSAGE_LIMIT) {
+    // A cancelled auxiliary request may still reply while an Action is pending.
+    // Inspect only its envelope, without allocating the returned names.
+    Budget budget; JsonDocument filter(&budget), envelope(&budget);
+    filter["op"] = true; filter["d"]["requestId"] = true;
+    if (deserializeJson(envelope, data, size, DeserializationOption::Filter(filter), DeserializationOption::NestingLimit(6))) return Received::Invalid;
+    char expected[32]; snprintf(expected, sizeof(expected), "chainpad-%lu", static_cast<unsigned long>(pending));
+    const char* id = envelope["d"]["requestId"];
+    if (envelope["op"] == 7 && id && (!pending || strcmp(id, expected))) return Received::Ignored;
+    return Received::Invalid;
+  }
   Budget budget(discovery ? 32768 : 8192); JsonDocument doc(&budget);
   const auto parseError = deserializeJson(doc, data, size, DeserializationOption::NestingLimit(6));
   if (discovery && sceneMemoryProbe) sceneMemoryProbe();
@@ -88,15 +98,22 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
   if (success && code != 100) return Received::Invalid;
   if (success && discovery) {
     // A bounded but incomplete list is a failure, never an authoritative cache.
-    auto list = d["responseData"]["scenes"];
-    if (!scenes || !list.is<JsonArray>() || list.size() > SCENE_COUNT_LIMIT) {
+    const bool inputs = operation == Operation::GetInputList;
+    auto list = d["responseData"][inputs ? "inputs" : "scenes"];
+    if (!scenes || !list.is<JsonArray>() || (!inputs && list.size() > SCENE_COUNT_LIMIT)) {
       success = false; code = -10; return Received::Result;
     }
     scenes->count = scenes->used = 0;
     for (auto entry : list.as<JsonArray>()) {
-      auto name = entry["sceneName"].as<JsonString>();
+      if (inputs) {
+        if (!entry["inputKindCaps"].is<uint32_t>()) {
+          scenes->count = scenes->used = 0; success = false; code = -11; return Received::Result;
+        }
+        if (!(entry["inputKindCaps"].as<uint32_t>() & 2u)) continue;
+      }
+      auto name = entry[inputs ? "inputName" : "sceneName"].as<JsonString>();
       if (!name.c_str() || name.size() != strlen(name.c_str()) || !validText(name.c_str(), TARGET_LIMIT) ||
-          name.size() + 1 > SCENE_BYTES_LIMIT - scenes->used) {
+          scenes->count >= SCENE_COUNT_LIMIT || name.size() + 1 > SCENE_BYTES_LIMIT - scenes->used) {
         scenes->count = scenes->used = 0; success = false; code = -10; return Received::Result;
       }
       scenes->offsets[scenes->count++] = scenes->used;

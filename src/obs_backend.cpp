@@ -129,7 +129,7 @@ void message(const char* bytes, size_t size) {
     }
     case Received::Result:
       responseMs = millis() - protocol.sentAt;
-      if (protocol.operation == Operation::GetSceneList && protocol.success) {
+      if (discovery(protocol.operation) && protocol.success) {
         protocol.scenes->id = protocol.pending; protocol.scenes->generation = session.session;
         { Lock lock; sceneReady = true; }
       }
@@ -192,6 +192,12 @@ void worker(void*) {
         started = now; socket.start(); closed = false; active = true;
       }
       if (active) {
+        // Auxiliary discovery never holds up queued Actions waiting for a reply.
+        // The socket remains healthy; late responses are ignored by request ID.
+        if (protocol.pending && discovery(protocol.operation) &&
+            (uxQueueMessagesWaiting(requestQueue) || uint32_t(millis() - protocol.sentAt) >= 250)) {
+          result(protocol.pending, false, -12, protocol.operation); protocol.pending = 0;
+        }
         socket.pump(); now = millis();
         if (identify && !fatal && current()) {
           identify = false;
@@ -214,8 +220,9 @@ void worker(void*) {
           Request r;
           if (xQueueReceive(requestQueue, &r, 0) == pdTRUE) {
             if (!(r.epoch == session) || !current()) result(r.id, false, -2, r.command.operation);
+            else if (discovery(r.command.operation) && uxQueueMessagesWaiting(requestQueue)) result(r.id, false, -12, r.command.operation);
             else {
-              if (r.command.operation == Operation::GetSceneList) {
+              if (discovery(r.command.operation)) {
                 // Reclaim an unconsumed old result only on the Worker, before
                 // parsing the next request. A loop watchdog never frees a slot.
                 Lock lock; sceneReady = false;

@@ -166,11 +166,11 @@ int main(){
   const auto actionCompleted=obsActionStatus().completed;
   assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];
   assert(obsScenesRefresh()==SendResult::Accepted && sceneJson()["requestId"]==id);
-  auto normal=submit();rtos::step();assert(wire::sent.back().find("GetSceneList")!=std::string::npos);
+  rtos::step();assert(wire::sent.back().find("GetSceneList")!=std::string::npos);
   sceneReply(id,"[{\"sceneName\":\"ゲーム\"},{\"sceneName\":\"<scene>\"}]");
   auto cache=sceneJson();assert(cache["complete"]==true && cache["scenes"].size()==2);
   assert(obsActionStatus().completed==actionCompleted); // Discovery not counted as an Action completion.
-  response(normal);backendsTick(0);assert(obsActionStatus().completed==actionCompleted+1);
+  auto normal=submit();rtos::step();response(normal);backendsTick(0);assert(obsActionStatus().completed==actionCompleted+1);
   assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
   sceneReply(id,"[{\"sceneName\":\""+std::string(193,'x')+"\"}]");
   cache=sceneJson();assert(cache["state"]=="error" && cache["complete"]==false && cache["scenes"][0]=="ゲーム");
@@ -204,12 +204,11 @@ int main(){
   // cache survives and the queued Action runs on the same connection/session.
   const auto generationBeforeMemoryFailure=obsStatusSnapshot().generation;
   assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
-  normal=submit();
   std::string dense="[";for(unsigned i=0;i<3000;++i)dense+=(i?",0":"0");dense+="]";
   sceneReply(id,dense);
   assert(sceneJson()["state"]=="error" && sceneJson()["scenes"][0]=="new" && sceneJson()["complete"]==false);
   assert(obsStatusSnapshot().state==obs::State::Ready && obsStatusSnapshot().generation==generationBeforeMemoryFailure);
-  response(normal);backendsTick(0);assert(obsActionStatus().last.id==normal && obsActionStatus().last.success);
+  normal=submit();rtos::step();response(normal);backendsTick(0);assert(obsActionStatus().last.id==normal && obsActionStatus().last.success);
   std::cout<<"PASS discovery JSON budget exhaustion: retained cache, Ready/session preserved, queued Action completed\n";
   // Panic between publication and loop consumption rejects the old generation
   // even before the Worker has processed the disconnect.
@@ -259,6 +258,52 @@ int main(){
   memory=obsSceneMemorySnapshot();assert(!memory.active && memory.valid==5 && heapfake::samples==10);
   ready();
   std::cout<<"PASS opt-in scene memory capture: inactive overhead guard, caps, three stages, one-shot, busy arm and timeout cleanup\n";
+  static_assert(sizeof(obs::SceneList)==4172, "Shared list slots must not grow");
+  auto inputJson=[](){JsonDocument d;obsInputsJson(d.to<JsonObject>());return d;};
+  auto inputReply=[&](uint32_t requestId,const std::string& inputs){
+    wire::text("{\"op\":7,\"d\":{\"requestId\":\"chainpad-"+std::to_string(requestId)+"\",\"requestType\":\"GetInputList\",\"requestStatus\":{\"result\":true,\"code\":100},\"responseData\":{\"inputs\":"+inputs+"}}}");
+    rtos::step();backendsTick(0);
+  };
+  assert(obsInputsRefresh()==SendResult::Accepted);id=inputJson()["requestId"];
+  assert(obsScenesRefresh()==SendResult::Busy);rtos::step();
+  inputReply(id,"[{\"inputName\":\"Mic\",\"inputKindCaps\":2},{\"inputName\":\"Video\",\"inputKindCaps\":1},{\"inputName\":\"Media\",\"inputKindCaps\":3}]");
+  assert(inputJson()["complete"]==true && inputJson()["inputs"].size()==2);
+  assert(inputJson()["inputs"][1]=="Media" && sceneJson()["scenes"].size()==0 && sceneJson()["complete"]==false);
+  assert(obsInputsRefresh()==SendResult::Accepted);id=inputJson()["requestId"];rtos::step();
+  std::string tooMany="[";
+  for(unsigned i=0;i<33;++i)tooMany+=(i?",":"")+std::string("{\"inputName\":\"audio")+std::to_string(i)+"\",\"inputKindCaps\":2}";
+  inputReply(id,tooMany+"]");
+  assert(inputJson()["error"]=="listLimitOrInvalid" && inputJson()["inputs"].size()==2);
+  // The limit counts audio candidates, not excluded video-only sources.
+  assert(obsInputsRefresh()==SendResult::Accepted);id=inputJson()["requestId"];rtos::step();
+  std::string manyVideo="[{\"inputName\":\"Mic\",\"inputKindCaps\":2}";
+  for(unsigned i=0;i<40;++i)manyVideo+=",{\"inputName\":\"video\",\"inputKindCaps\":1}";
+  inputReply(id,manyVideo+"]");
+  assert(inputJson()["complete"]==true && inputJson()["inputs"].size()==1);
+  assert(obsInputsRefresh()==SendResult::Accepted);id=inputJson()["requestId"];rtos::step();
+  inputReply(id,"[{\"inputName\":\"partial\",\"inputKindCaps\":2},{\"inputName\":\"Mic\"}]");
+  assert(inputJson()["error"]=="audioCapabilitiesUnavailable" && inputJson()["complete"]==false);
+  assert(inputJson()["inputs"][0]=="Mic"); // Failed refresh preserves old slot.
+  const auto priorityGeneration=obsStatusSnapshot().generation;
+  assert(obsInputsRefresh()==SendResult::Accepted);id=inputJson()["requestId"];rtos::step();
+  normal=submit();rtos::step();backendsTick(0);
+  assert(inputJson()["error"]=="actionPriorityOrTimeout");
+  assert(wire::sent.back().find("SetCurrentProgramScene")!=std::string::npos);
+  // A large delayed response must not invalidate the in-flight Action/session.
+  inputReply(id,"[{\"inputName\":\"late\",\"inputKindCaps\":2,\"unused\":\""+std::string(3000,'x')+"\"}]");
+  response(normal);backendsTick(0);
+  assert(obsActionStatus().last.id==normal && obsActionStatus().last.success);
+  assert(obsStatusSnapshot().generation==priorityGeneration && obsStatusSnapshot().state==obs::State::Ready);
+  assert(inputJson()["inputs"][0]=="Mic" && inputJson()["complete"]==false);
+  // Queued discovery yields too; a new refresh cannot fill the Action queue.
+  assert(obsInputsRefresh()==SendResult::Accepted);normal=submit();rtos::step();rtos::step();backendsTick(0);
+  response(normal);backendsTick(0);
+  normal=submit();assert(obsInputsRefresh()==SendResult::Busy);rtos::step();response(normal);backendsTick(0);
+  assert(obsInputsRefresh()==SendResult::Accepted);rtos::step();rtos::step(251);backendsTick(0);
+  assert(inputJson()["error"]=="actionPriorityOrTimeout" && obsStatusSnapshot().generation==priorityGeneration);
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();sceneReply(id,"[{\"sceneName\":\"back-to-scene\"}]");
+  assert(sceneJson()["complete"]==true && inputJson()["inputs"].size()==0);
+  std::cout<<"PASS shared audio list: caps filtering, old-v5 fallback, ownership, queued/in-flight Action priority, late replies and bounded wait\n";
   cfg=settings();cfg.enabled=false;assert(obsApplySettings(cfg));rtos::step();assert(obsStatusSnapshot().state==obs::State::Disabled);
   oscBefore=oscSent;assert(engine.trigger({0,0}));
   assert(oscSent==oscBefore+1 && !strcmp(obsActionStatus().admission,"disabled"));

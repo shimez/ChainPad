@@ -143,4 +143,22 @@ for(const state of ['loading','stale','error','unavailable']){
 }
 choose('シーン名','名'.repeat(65));assert(field('シーン名').validationMessage);
 assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
+for(const operation of ['setInputMute','toggleInputMute']){
+  show({protocol:'obs',delayMs:0,operation,inputName:'missing',...(operation==='setInputMute'?{inputMuted:true}:{})});
+  const muteFields=all().find(n=>n.className.split(' ').includes('obs-mute'));
+  assert.equal(muteFields.children.findIndex(n=>n.className==='obs-name-picker'),operation==='setInputMute'?5:4);
+  sceneCache={state:'ready',complete:true,scenes:['Mic','<audio>']};sceneListener();
+  const audio=field('入力名');audio.selectionStart=1;audio.composing=true;
+  sceneListener();assert.equal(field('入力名'),audio);assert.equal(audio.selectionStart,1);assert(audio.composing);
+  assert(all().some(n=>n.className==='error'&&n.textContent.includes('ミュート対象一覧にありません')));
+  assert.equal(audio.validationMessage,'');
+  click('ミュート対象一覧から選択');click('キャンセル');assert.equal(audio.value,'missing');
+  const choices=all().find(n=>n.tag==='select'&&n.size===6);choices.selectedIndex=0;choices.value='Mic';
+  click('選択したミュート対象を使用');assert.equal(config.chains[0].actions[0].inputName,'Mic');
+  choose('入力名','future mic');assert.equal(audio.validationMessage,'');
+  assert.equal(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0].inputName,'future mic');
+  sceneCache={state:'error',complete:false,scenes:[],error:'audioCapabilitiesUnavailable'};sceneListener();
+  assert(!all().some(n=>n.className==='error'));
+  assert(all().some(n=>String(n.textContent).includes('音声候補の抽出に非対応')));
+}
 console.log('PASS OBS editor: seven operations, supported/unsupported Full/Key roundtrip, unfiltered picker/apply/cancel, stable input/caret/composition, advisory and byte limits');

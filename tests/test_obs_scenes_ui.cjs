@@ -40,6 +40,16 @@ async function main(){
   reply={state:'loading',complete:false,scenes:[],generation:4};manager.tick(ready(4));await flush();assert.equal(calls.length,hiddenCount);
   await manager.refresh();
   now+=20001;const beforeTimeout=calls.length;manager.tick(ready(4));assert.equal(manager.snapshot().state,'error');assert.equal(calls.length,beforeTimeout);
+  manager.select('inputs');assert.equal(calls.length,beforeTimeout);
+  reply={state:'ready',complete:true,inputs:['Mic','Media'],generation:4,ageMs:0};
+  await manager.refresh();assert.equal(calls.at(-1).path,'/api/obs/inputs/refresh');
+  assert(manager.snapshot().complete);assert.equal(manager.snapshot().scenes[0],'Mic');
+  hold=new Promise(resolve=>release=resolve);
+  const pendingInputs=manager.refresh();manager.select('scenes');release();await pendingInputs;hold=null;
+  assert(!manager.snapshot().complete);assert.equal(manager.snapshot().scenes.length,0);
+  manager.select('inputs');reply={state:'error',complete:false,inputs:[],generation:4,error:'audioCapabilitiesUnavailable'};
+  await manager.refresh();assert.equal(manager.snapshot().error,'audioCapabilitiesUnavailable');
+  assert(!manager.snapshot().complete);
   console.log('PASS scene manager: manual-only discovery across startup/Ready/reconnect, bounded result polling, expiry, late response isolation, failures and hidden-page pause');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

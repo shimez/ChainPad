@@ -17,7 +17,8 @@ class ObsHandler : public RequestHandler {
   bool repliedEarly = false;
   static bool route(const String& uri) {
     return !strcmp(uri.c_str(), "/api/obs") || !strcmp(uri.c_str(), "/api/obs/reconnect") ||
-      !strcmp(uri.c_str(), "/api/obs/scenes") || !strcmp(uri.c_str(), "/api/obs/scenes/refresh");
+      !strcmp(uri.c_str(), "/api/obs/scenes") || !strcmp(uri.c_str(), "/api/obs/scenes/refresh") ||
+      !strcmp(uri.c_str(), "/api/obs/inputs") || !strcmp(uri.c_str(), "/api/obs/inputs/refresh");
   }
   void clearBody() {
     if (body) { volatile char* p = body.get(); for (size_t i = 0; i < used; ++i) p[i] = 0; }
@@ -79,8 +80,9 @@ public:
     if (!route(uri)) return false;
     if (repliedEarly) { clearBody(); return true; }
     control.tick(outputsAllowed());
-    const bool scenes = !strcmp(uri.c_str(), "/api/obs/scenes");
-    const bool refreshScenes = !strcmp(uri.c_str(), "/api/obs/scenes/refresh");
+    const bool inputs = !strcmp(uri.c_str(), "/api/obs/inputs") || !strcmp(uri.c_str(), "/api/obs/inputs/refresh");
+    const bool scenes = !strcmp(uri.c_str(), "/api/obs/scenes") || !strcmp(uri.c_str(), "/api/obs/inputs");
+    const bool refreshScenes = !strcmp(uri.c_str(), "/api/obs/scenes/refresh") || !strcmp(uri.c_str(), "/api/obs/inputs/refresh");
     if (scenes || refreshScenes) {
       int http = 200;
       if ((scenes && method != HTTP_GET) || (refreshScenes && method != HTTP_POST)) http = 405;
@@ -88,11 +90,13 @@ public:
         if (maintenance()) http = 409;
         else if (!complete || used) http = 400;
         else {
-          const auto admission = obsScenesRefresh();
+          const auto admission = inputs ? obsInputsRefresh() : obsScenesRefresh();
           http = admission == SendResult::Accepted ? 202 : admission == SendResult::Busy ? 429 : 503;
         }
       }
-      JsonDocument doc; obsScenesJson(doc.to<JsonObject>()); doc["ok"] = http < 400;
+      JsonDocument doc;
+      if (inputs) obsInputsJson(doc.to<JsonObject>()); else obsScenesJson(doc.to<JsonObject>());
+      doc["ok"] = http < 400;
       const size_t size = measureJson(doc);
       std::unique_ptr<char[]> output(size <= 10000 ? new (std::nothrow) char[size + 1] : nullptr);
       web.sendHeader("Cache-Control", "no-store");

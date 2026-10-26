@@ -288,3 +288,7 @@ Non-S3 static RAM is unchanged. TEST static RAM drops96 B from its previous
 one-list reduction. Non-S3/TEST Flash totals also include recent WebUI refinements
 since their last builds and are not isolated optimization deltas. Runtime heap and
 stack margins remain for the normal-S3 hardware measurement.
+# Current extension
+
+See [mute input discovery](obs-inputs.md) for the shared two-slot cache and
+Action-priority scheduling now used by both scene and input discovery.
