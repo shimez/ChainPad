@@ -68,7 +68,7 @@ const ObsActionsUI = (() => {
       const field=control(key==='sceneName'?'シーン名':'入力名',a[key],null,value=>{a[key]=value;update();});
       const input=field.lastChild, warning=document.createElement('small');
       input.oninput=()=>{a[key]=input.value;changed();update();};
-      let list,refresh,panel,choicesKey='';
+      let list,refresh,refreshField,panel,choicesKey='';
       if(key==='sceneName'){
         input.setAttribute('autocomplete','off');
         panel=document.createElement('div');panel.hidden=true;panel.style.gridColumn='1 / -1';
@@ -79,7 +79,10 @@ const ObsActionsUI = (() => {
         cancel.onclick=()=>{panel.hidden=true;refresh.focus();};
         panel.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();cancel.onclick();}};
         panel.append(list,apply,cancel);
-        refresh=document.createElement('button');refresh.type='button';refresh.textContent='シーン一覧から選択';refresh.style.alignSelf='start';
+        refreshField=document.createElement('div');refreshField.style.display='grid';refreshField.style.gap='5px';refreshField.style.fontSize='13px';
+        const caption=document.createElement('span');caption.textContent='シーン候補';
+        refresh=document.createElement('button');refresh.type='button';refresh.textContent='シーン一覧から選択';refresh.style.height='42px';
+        refreshField.append(caption,refresh);
         refresh.onclick=()=>{panel.hidden=false;void scenes.refresh();update();};
         scenes.subscribe(()=>{refresh.disabled=!supported||scenes.busy();update();});
         refresh.disabled=!supported||scenes.busy();
@@ -106,7 +109,7 @@ const ObsActionsUI = (() => {
         }
         warning.className=error?'error':'hint';warning.textContent=message;
       }
-      field.append(warning);fields.append(field);if(refresh)fields.append(refresh,panel);update();
+      field.append(warning);fields.append(field);if(refresh)fields.append(refreshField,panel);update();
     }
     if(a.operation==='setInputMute')fields.append(control('ミュート',String(a.inputMuted),[['true','ミュート'],['false','解除']],value=>a.inputMuted=value==='true'));
     fields.append(note);

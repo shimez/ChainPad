@@ -17,13 +17,12 @@ const ObsSettingsUI = (() => {
       get('obsClear').checked = clear;
       get('obsSave').disabled = !supported || !writable || locked;
       get('obsReconnect').disabled = !supported || !loaded || !savedEnabled || !get('obsEnabled').checked || locked;
-      get('obsReload').disabled = locked;
       get('obsPasswordStatus').textContent = clear ? 'Password: 削除予定（Save OBSで確定）' :
         !['ready','missing'].includes(storage) ? 'Password: 不明。新しい値の入力または明示的な削除が必要です。' :
         `Password: ${configured ? '設定済み' : '未設定'}${get('obsPassword').value ? ' — 変更予定' : ''}`;
       get('obsStorage').textContent = !loaded ? '設定未取得' :
         ['corrupt','unsupportedVersion'].includes(storage) ? `保存データ: ${storage}。保存時に置換確認を行います。` :
-        storage === 'ioError' ? '保存データを読み込めません。再取得または本体の再起動を行ってください。' :
+        storage === 'ioError' ? '保存データを読み込めません。ページの再読み込みまたは本体の再起動を行ってください。' :
         `保存データ: ${storage}${edited ? ' — 未保存の変更あり' : ''}`;
     }
     async function request(path, method = 'GET', body) {
@@ -61,7 +60,7 @@ const ObsSettingsUI = (() => {
         const {response, data} = await request('obs');
         if (!response.ok || !data.storageState) { note(errorText(data, response.status), true); return; }
         snapshot(data, true); note('OBS設定を読み込みました。');
-      } catch { note('OBS設定を取得できません。編集内容は保持しています。再取得してください。', true); }
+      } catch { note('OBS設定を取得できません。ページを再読み込みしてください。', true); }
       finally { pending = false; refresh(); }
     }
     async function save() {
@@ -94,13 +93,13 @@ const ObsSettingsUI = (() => {
           else { loaded = false; savedEnabled = false; }
           if (response.ok && data.ok === true && data.applyState === 'accepted')
             note('OBS設定を保存しました（反映受付済み）。接続結果はConnectionで確認してください。');
-          else note('OBS設定は保存されましたが、反映または応答に問題があります。' + errorText(data, response.status) + ' 設定を再取得し、必要に応じてReconnectしてください。', true);
+          else note('OBS設定は保存されましたが、反映または応答に問題があります。' + errorText(data, response.status) + ' ページを再読み込みし、必要に応じてReconnectしてください。', true);
           get('obsConnection').textContent = 'Connection: 更新待ち…';
         } else {
           if (data.storageState) snapshot(data, false);
           note(errorText(data, response.status), true);
         }
-      } catch { note('保存結果を確認できません。編集内容は保持しています。再保存の前に設定を再取得してください。', true); }
+      } catch { note('保存結果を確認できません。編集内容は保持しています。再保存の前にページを再読み込みして設定を確認してください。', true); }
       finally { ++epoch; delete body.password; pending = false; refresh(); }
     }
     async function reconnect() {
@@ -139,7 +138,6 @@ const ObsSettingsUI = (() => {
     };
     get('obsSave').onclick = save;
     get('obsReconnect').onclick = reconnect;
-    get('obsReload').onclick = reload;
     async function init() {
       try {
         const {response, data} = await request('capabilities');

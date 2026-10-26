@@ -55,7 +55,7 @@ try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme
 <p id="obsPasswordStatus" class="hint" role="status"></p><label class="obs-clear"><input id="obsClear" type="checkbox">保存時にパスワードをクリア</label>
 <p class="hint">空欄なら保存済みパスワードを保持します。削除・変更はSave OBSで確定します。</p></fieldset>
 <p id="obsDiagnostics" class="hint"></p><p id="obsStorage" class="hint"></p>
-<p id="obsMessage" role="status"></p><div class="buttons obs-buttons"><button id="obsReload" type="button">設定を再取得</button><button id="obsSave" class="primary" type="button" disabled>Save OBS</button><button id="obsReconnect" type="button" disabled>Reconnect</button></div>
+<p id="obsMessage" role="status"></p><div class="buttons obs-buttons"><button id="obsSave" class="primary" type="button" disabled>Save OBS</button><button id="obsReconnect" type="button" disabled>Reconnect</button></div>
 <p class="hint">OBS専用の保存です。保存・反映受付と接続成功は別です。Reconnectは編集中の値ではなく、本体に保存済みの設定を使用します。</p></details>
 <nav class="panel"><h2>Input</h2><div id="inputs"></div></nav>
 <section><div class="panel"><div class="input-heading"><h2 id="title">Action Chain</h2><details id="keyPresetMenu" class="preset-menu" hidden><summary aria-label="Key Preset操作">…</summary><div class="preset-menu-items"><button id="exportKey">Preset Export</button><button id="importKey">Preset Import</button></div></details></div><label>Input Event<select id="event"></select></label><p class="hint">Actionは登録順に実行されます。WaitはこのChainだけを待機させ、他のChainには影響を与えません。</p><p id="actionSlots" class="hint" role="status"></p><p id="waitWarning" class="danger" role="status" hidden></p></div><div id="actions"></div><button id="add">+ Add Action</button></section>

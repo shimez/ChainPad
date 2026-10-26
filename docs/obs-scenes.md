@@ -198,3 +198,10 @@ Static RAM is unchanged from `af0a928`; Flash deltas are shown below (bytes).
 | C5 | 65768 | 1676825 | +1408 |
 | C6 | 141580 | 1623208 | +1408 |
 | S3 OBS TEST | 138636 | 1600918 | +1408 |
+
+Subsequent UI adjustment: removed the OBS settings reload button (initial loading
+remains; recovery messages now refer to browser reload). The scene picker trigger
+has a caption and the same 42 px control height as adjacent fields. Browser layout
+inspection confirms equal input/button top coordinates in a shared row. OBS UI,
+Action editor and scene-manager Node suites PASS; normal S3 build PASS, RAM141964 B
+(unchanged), Flash1610386 B (+192 B from the follow-up above).
