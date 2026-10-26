@@ -26,7 +26,7 @@ SendResult obsDispatch(const obs::Command& command,uint32_t& id){
   id=fake::sceneAdmission==SendResult::Accepted?++fake::sceneRequests:0;return fake::sceneAdmission;
 }
 bool obsNextResult(ObsResult&){return false;}
-bool obsTakeSceneList(obs::SceneList&){return false;}
+const obs::SceneList* obsTakeSceneList(uint32_t,uint32_t){return nullptr;}
 }
 using chimera::obscontrol::Controller;
 bool maintenance(){return fake::maintenance;}

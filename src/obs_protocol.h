@@ -18,7 +18,8 @@ struct Protocol {
   int code = 0;
   Operation operation = Operation::SetCurrentProgramScene;
   char wire[1536]{};
-  SceneList* scenes = nullptr; // Worker-owned scratch; never allocated on its stack.
+  SceneList* scenes = nullptr; // Reserved Worker pool slot; never on its stack.
+  void (*sceneMemoryProbe)() = nullptr; // Optional sample while parsed JSON is alive.
   void connected();
   Received receive(const char*, size_t, const char*, Authenticate);
   bool request(const char*, uint32_t, uint32_t);

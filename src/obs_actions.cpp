@@ -5,13 +5,13 @@ namespace chimera {
 namespace { ObsActionStatus status; }
 #if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
 namespace {
-obs::SceneList sceneCache;
+const obs::SceneList* sceneCache = nullptr;
 uint32_t scenePending = 0, sceneRequestedAt = 0, sceneUpdatedAt = 0;
 bool sceneAvailable = false, sceneStale = true;
 const char* sceneError = nullptr;
 void sceneTick() {
   const auto connection = obsStatusSnapshot();
-  if (connection.state != obs::State::Ready || connection.generation != sceneCache.generation ||
+  if (connection.state != obs::State::Ready || !sceneCache || connection.generation != sceneCache->generation ||
       uint32_t(millis() - sceneUpdatedAt) >= 60000) sceneStale = true;
   // Covers dropped diagnostic results as well as delayed queue processing.
   if (scenePending && uint32_t(millis() - sceneRequestedAt) >= 20000) {
@@ -22,11 +22,11 @@ void sceneResult(const ObsResult& result) {
   if (result.id != scenePending) return;
   scenePending = 0;
   if (!result.success) { sceneError = result.code == -10 ? "listLimitOrInvalid" : "requestFailed"; sceneStale = true; return; }
-  // There is at most one discovery in flight, so its mailbox cannot be replaced
-  // by another list before this single consumer handles the result.
-  if (!obsTakeSceneList(sceneCache) || sceneCache.id != result.id) {
-    sceneAvailable = false; sceneStale = true; sceneError = "resultUnavailable"; return;
+  const auto* next = obsTakeSceneList(result.id, obsStatusSnapshot().generation);
+  if (!next) {
+    sceneStale = true; sceneError = "resultUnavailable"; return;
   }
+  sceneCache = next;
   sceneAvailable = true; sceneStale = false; sceneError = nullptr; sceneUpdatedAt = millis();
   sceneTick();
 }
@@ -56,7 +56,7 @@ void obsScenesJson(JsonObject json) {
   json["error"] = sceneError;
   if (sceneAvailable) json["ageMs"] = uint32_t(millis() - sceneUpdatedAt); else json["ageMs"] = nullptr;
   auto names = json["scenes"].to<JsonArray>();
-  if (sceneAvailable) for (unsigned i = 0; i < sceneCache.count; ++i) names.add(sceneCache.names + sceneCache.offsets[i]);
+  if (sceneAvailable) for (unsigned i = 0; i < sceneCache->count; ++i) names.add(sceneCache->names + sceneCache->offsets[i]);
 #else
   json["state"] = "unsupported"; json["complete"] = false; json["scenes"].to<JsonArray>();
 #endif

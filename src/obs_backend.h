@@ -21,6 +21,17 @@ struct ObsStatus {
   uint32_t lastClose = 0;
   uint32_t generation = 0; // Connection generation; cache freshness only.
 };
+struct ObsHeapSample { uint32_t free = 0, minimum = 0, largest = 0; };
+struct ObsMemoryPoint {
+  ObsHeapSample internal, psram;
+  uint32_t atMs = 0, stackLowBytes = 0;
+};
+struct ObsSceneMemory {
+  ObsMemoryPoint points[3]; // before request, parsed JSON alive, after cleanup
+  uint32_t requestId = 0, generation = 0;
+  uint8_t valid = 0;
+  bool armed = false, active = false;
+};
 #if CHAINPAD_HAS_OBS
 void obsBegin();
 bool obsApplySettings(const ObsSettings& snapshot); // Also explicitly retries terminal errors.
@@ -30,7 +41,11 @@ void obsPanic();
 void obsTick(bool allowed); // Permission + loop metrics only; never network I/O.
 ObsStatus obsStatusSnapshot(); // Approximate independent counters, no secret data.
 bool obsNextResult(ObsResult& result);
-bool obsTakeSceneList(obs::SceneList&);
+// Loop-only: successful take swaps ownership. Returned data stays immutable until
+// the next successful take; a failed take leaves the previous view valid.
+const obs::SceneList* obsTakeSceneList(uint32_t requestId, uint32_t generation);
+bool obsArmSceneMemory(); // Loop-only, next discovery only; false while measuring.
+ObsSceneMemory obsSceneMemorySnapshot();
 #else
 inline void obsBegin() {}
 inline bool obsApplySettings(const ObsSettings&) { return false; }
@@ -40,6 +55,8 @@ inline void obsPanic() {}
 inline void obsTick(bool) {}
 inline ObsStatus obsStatusSnapshot() { return {}; }
 inline bool obsNextResult(ObsResult&) { return false; }
-inline bool obsTakeSceneList(obs::SceneList&) { return false; }
+inline const obs::SceneList* obsTakeSceneList(uint32_t, uint32_t) { return nullptr; }
+inline bool obsArmSceneMemory() { return false; }
+inline ObsSceneMemory obsSceneMemorySnapshot() { return {}; }
 #endif
 }

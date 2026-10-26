@@ -7,6 +7,7 @@
 #include "engine.h"
 #include "backends.h"
 #include "inputs.h"
+#include "obs_backend.h"
 #include <LittleFS.h>
 #include <esp_heap_caps.h>
 #include <esp_memory_utils.h>
@@ -72,7 +73,7 @@ void printMemoryDiagnostics(Print& out) {
     if (valid) outputPrintf(out, "ALLOC FAIL phase=%s api=%s size=%lu caps=0x%lx free=%lu min=%lu largest=%lu\n",
       f.phase, f.function, f.size, f.caps, f.free, f.minimum, f.largest);
   }
-  for (const char* name : {"loopTask", "input-scan", "nimble_host", "wifi", "tiT", "esp_timer", "IDLE"}) {
+  for (const char* name : {"loopTask", "input-scan", "nimble_host", "wifi", "tiT", "esp_timer", "IDLE", "chainpad-obs"}) {
     TaskHandle_t task = xTaskGetHandle(name);
     if (task) outputPrintf(out, "STACK %s lowWaterBytes=%u\n", name, unsigned(uxTaskGetStackHighWaterMark(task)));
     else outputPrintf(out, "STACK %s not found\n", name);
@@ -106,6 +107,12 @@ void printDiagnostics(Print& out, const char* reason) {
     unsigned(ram.total_allocated_bytes), unsigned(stack));
   outputPrintf(out, "RAM PSRAM: free=%u minFree=%u largest=%u allocated=%u\n",
     unsigned(psram.total_free_bytes), unsigned(psram.minimum_free_bytes), unsigned(psram.largest_free_block), unsigned(psram.total_allocated_bytes));
+#if CHAINPAD_HAS_OBS
+  const auto obs = obsStatusSnapshot();
+  const char* obsStates[] = {"Disabled", "Disconnected", "Connecting", "Authenticating", "Ready", "Error"};
+  outputPrintf(out, "OBS: state=%s generation=%lu workerStackMin=%lu lastError=%d\n",
+    obsStates[unsigned(obs.state)], obs.generation, obs.stackLowBytes, obs.lastError);
+#endif
   outputPrintf(out, "Static sizes: Action=%u Chain=%u Config=%u Engine=%u; recordLimit=%u\n",
     unsigned(sizeof(Action)), unsigned(sizeof(Chain)), unsigned(sizeof(Config)), unsigned(sizeof(Engine)), unsigned(MAX_RECORD_BYTES));
   outputPrintf(out, "Active Config address: %p\n", static_cast<void*>(&config));
@@ -140,6 +147,23 @@ void printDiagnostics(Print& out, const char* reason) {
     status.retries, status.overflows, inputOverflows());
 #if CHAINPAD_SERIAL_BUFFERED
   serialout::printStats(out);
+#endif
+}
+void printObsSceneMemory(Print& out) {
+#if CHAINPAD_HAS_OBS
+  const auto record = obsSceneMemorySnapshot();
+  outputPrintf(out, "OBS MEM armed=%u active=%u request=%lu generation=%lu mask=%u (bytes)\n",
+    unsigned(record.armed), unsigned(record.active), record.requestId, record.generation, unsigned(record.valid));
+  const char* labels[] = {"before", "json-alive", "after"};
+  for (unsigned i=0;i<3;++i) {
+    if (!(record.valid & (1u<<i))) continue;
+    const auto& p = record.points[i];
+    outputPrintf(out, "OBS MEM %s t=%lu workerStackMin=%lu\n", labels[i], p.atMs, p.stackLowBytes);
+    outputPrintf(out, " internal free=%lu minFree=%lu largest=%lu\n", p.internal.free, p.internal.minimum, p.internal.largest);
+    outputPrintf(out, " PSRAM free=%lu minFree=%lu largest=%lu\n", p.psram.free, p.psram.minimum, p.psram.largest);
+  }
+#else
+  out.println("OBS memory capture unsupported");
 #endif
 }
 }

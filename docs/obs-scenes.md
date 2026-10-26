@@ -39,13 +39,14 @@ free-input hint; the selection button fetches a newer list.
 Internal `Operation::GetSceneList` uses the existing request FIFO4, in-flight1
 and result FIFO8. It is explicitly excluded from Action parsing/serialization.
 HTTP admits a request without waiting for OBS. The Worker owns socket I/O and
-parsing, then copies a successful list to a one-slot static mailbox.
+parsing into the nonpublished slot of a fixed two-slot SceneList pool. A successful
+list is handed to the loop by swapping ownership, without copying its payload.
 `obsActionsTick()` remains the sole normal-build result FIFO consumer. It routes
 discovery results into the loop-owned cache; these do not increment Action
 completion diagnostics. Worker counters still include discovery. Normal Actions
 and discovery share FIFO admission/order, so refresh can return busy.
 
-The mailbox includes request ID and connection generation. A result must match
+Each pool slot includes request ID and connection generation. A result must match
 the pending ID; freshness requires Ready and the current generation. Disconnect,
 generation change or age >=60000 ms makes the cache nonauthoritative. A 20000 ms
 pending watchdog also covers dropped result records. Pending refreshes coalesce.
@@ -219,3 +220,68 @@ and Presets Node suites PASS. Browser computed colors match the text/indicator
 in both themes; startup and repeated status checks issued zero scene requests,
 and manual refresh issued one. Normal S3 final build PASS: RAM141964 B unchanged,
 Flash1611154 B (+768 B from `228ac24`). No Worker or persistence changes.
+
+## Fixed two-buffer ownership optimization
+
+S3 hardware measurement procedure and opt-in capture commands:
+[OBS memory test](obs-memory-test.md).
+
+The previous three-buffer resource record above is historical. The current
+implementation has two backend-owned SceneList slots (4172 B each) and a loop-owned
+const view, replacing Worker scratch, the payload-copy mailbox and loop cache.
+The 16400 B Assembly and its allocation policy remain unchanged.
+
+- `scenePublished` identifies the loop-owned slot. Only the loop's successful
+  `obsTakeSceneList(requestId, generation)` changes it. HTTP generation and result
+  consumption both run synchronously on the same loop, so a slot is not released
+  while an HTTP response is serializing it.
+- Before a discovery request starts, the Worker clears `sceneReady` under the
+  existing gate and reserves the other slot. Parsing writes only this reserved
+  slot, without holding the gate. Ordinary Actions do not access either list.
+- The Worker fills ID/generation and publishes `sceneReady` under the gate after
+  complete validation. It then posts the ordinary completion record. Parsing,
+  HTTP encoding and network I/O never run inside the ownership critical section.
+- Take requires ready data, exact request ID/generation and a currently valid
+  Ready lifecycle. It swaps the published index under the gate and returns a const
+  view. Failed takes keep the old cache and mark it nonauthoritative.
+- Partial/invalid results never publish. Disconnect/Panic processing abandons the
+  nonpublished result, retaining the public slot. Lifecycle checks also reject a
+  result if Panic/settings invalidation occurs before Worker disconnect handling.
+- A loop watchdog only clears the pending request: it never releases/reassigns a
+  Worker slot. If a completion was dropped or expired, the Worker reclaims that
+  nonpublished slot when starting the next discovery. Delayed completion IDs cannot
+  take the new result. A repeated take cannot swap a slot twice.
+
+No heap allocations, extra task, result consumer or waiting admission were added.
+The public HTTP/Action schemas, old-list retention, manual-only WebUI discovery,
+scene limits, assembly size and JSON budgets remain unchanged.
+
+Verification: `tests/run_obs.ps1` PASS with added parked-result/normal-Action
+interleaving, wrong ID/generation, double-take rejection, partial parse failure,
+Panic before consumption, loop watchdog, dropped result FIFO recovery and request
+timeout/reconnect/reuse cases. `tests/run_obs_control.ps1` and full/trace/C3/C5/C6
+`tests/run_host.ps1` PASS. Scene-manager, HID/OBS editor and Presets Node tests PASS.
+These are production-code Host tests, not S3 runtime memory/stack measurements.
+
+Normal S3 linked measurement against `dc39178`: static RAM141964 ->137708 B
+(-4256 B), Flash1611154 ->1611294 B (+140 B). The savings include the removed
+4172 B payload, obsolete queue metadata and linker alignment changes. `nm` confirms
+sceneBuffers8344 B, sceneCache pointer4 B, sceneReady1 B, scenePublished1 B;
+the former sceneStorage/sceneScratch/sceneControl symbols are absent. Assembly
+remains16400 B and taskStack8192 B. There is no new scene-related heap allocation.
+
+Final sequential builds all PASS:
+
+| Target | Static RAM B | Flash B |
+|---|---:|---:|
+| S3 | 137708 | 1611294 |
+| C3 | 136364 | 1461999 |
+| C5 | 65768 | 1677785 |
+| C6 | 141580 | 1624168 |
+| S3 OBS TEST | 138540 | 1601958 |
+
+Non-S3 static RAM is unchanged. TEST static RAM drops96 B from its previous
+138636 B: it already excluded the loop cache, so it does not get the normal-S3
+one-list reduction. Non-S3/TEST Flash totals also include recent WebUI refinements
+since their last builds and are not isolated optimization deltas. Runtime heap and
+stack margins remain for the normal-S3 hardware measurement.

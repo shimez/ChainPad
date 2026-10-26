@@ -9,6 +9,7 @@
 #include <freertos/queue.h>
 #include <ArduinoJson.h>
 #include <iostream>
+#include <esp_heap_caps.h>
 using namespace chimera;
 // Production Engine/dispatch/OBS adapter/Worker; unrelated output transports are sinks.
 static unsigned hidSent=0, oscSent=0;
@@ -155,9 +156,9 @@ int main(){
   rtos::step();ready();backendsTick(0);assert(requests()==before);
   // Discovery shares the request queue, but only the Action adapter drains results.
   auto sceneJson=[](){JsonDocument d;obsScenesJson(d.to<JsonObject>());return d;};
-  auto sceneReply=[&](uint32_t requestId,const std::string& scenes){
+  auto sceneReply=[&](uint32_t requestId,const std::string& scenes,bool drain=true){
     wire::text("{\"op\":7,\"d\":{\"requestId\":\"chainpad-"+std::to_string(requestId)+"\",\"requestType\":\"GetSceneList\",\"requestStatus\":{\"result\":true,\"code\":100},\"responseData\":{\"scenes\":"+scenes+"}}}");
-    rtos::step();backendsTick(0);
+    rtos::step();if(drain)backendsTick(0);
   };
   const auto actionCompleted=obsActionStatus().completed;
   assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];
@@ -181,6 +182,69 @@ int main(){
   assert(obsScenesRefresh()==SendResult::Accepted);rtos::step();wire::text(std::string(obs::MESSAGE_LIMIT+1,'x'));rtos::step();backendsTick(0);
   assert(sceneJson()["state"]=="error" && sceneJson()["complete"]==false && sceneJson()["scenes"][0]=="old");
   assert(obsApplySettings(settings()));rtos::step();ready();
+  // A completed list remains Worker-owned until the loop accepts its exact ID.
+  // HTTP continues to see the old published slot, even while normal Actions run.
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  sceneReply(id,"[{\"sceneName\":\"new\"}]",false);
+  assert(sceneJson()["scenes"][0]=="old");
+  assert(!obsTakeSceneList(id+1,obsStatusSnapshot().generation));
+  assert(!obsTakeSceneList(id,obsStatusSnapshot().generation+1));
+  normal=submit();rtos::step();response(normal);
+  assert(sceneJson()["scenes"][0]=="old");
+  backendsTick(0);assert(sceneJson()["scenes"][0]=="new" && sceneJson()["complete"]==true);
+  assert(!obsTakeSceneList(id,obsStatusSnapshot().generation)); // No second swap.
+  // Partial parser writes and validation failure cannot corrupt the public slot.
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  sceneReply(id,"[{\"sceneName\":\"partial\"},{\"sceneName\":\""+std::string(193,'x')+"\"}]");
+  assert(sceneJson()["scenes"][0]=="new" && sceneJson()["complete"]==false);
+  // Panic between publication and loop consumption rejects the old generation
+  // even before the Worker has processed the disconnect.
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  sceneReply(id,"[{\"sceneName\":\"panic-stale\"}]",false);obsPanic();backendsTick(0);
+  assert(sceneJson()["scenes"][0]=="new" && sceneJson()["complete"]==false);
+  rtos::step();ready();
+  // Loop watchdog expires an unconsumed success; it must not free or swap slots.
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  sceneReply(id,"[{\"sceneName\":\"watchdog-stale\"}]",false);rtos::step(20001);
+  assert(sceneJson()["state"]=="error" && sceneJson()["scenes"][0]=="new");
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  backendsTick(0);assert(sceneJson()["state"]=="loading" && sceneJson()["scenes"][0]=="new");
+  sceneReply(id,"[{\"sceneName\":\"after-watchdog\"}]");
+  assert(sceneJson()["complete"]==true && sceneJson()["scenes"][0]=="after-watchdog");
+  // A dropped discovery result does not leak a slot or block ordinary requests.
+  for(int i=0;i<8;++i){normal=submit();rtos::step();response(normal);}
+  const auto sceneDrops=obsStatusSnapshot().resultDrops;
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  sceneReply(id,"[{\"sceneName\":\"dropped\"}]",false);
+  assert(obsStatusSnapshot().resultDrops==sceneDrops+1);
+  rtos::step(20001);assert(sceneJson()["state"]=="error");backendsTick(0);
+  assert(sceneJson()["scenes"][0]=="after-watchdog");
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  sceneReply(id,"[{\"sceneName\":\"recovered\"}]");
+  assert(sceneJson()["complete"]==true && sceneJson()["scenes"][0]=="recovered");
+  // Request timeout disconnects but preserves the published slot and permits reuse.
+  assert(obsScenesRefresh()==SendResult::Accepted);rtos::step();rtos::step(3001);backendsTick(0);
+  assert(sceneJson()["complete"]==false && sceneJson()["scenes"][0]=="recovered");
+  ready();assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  sceneReply(id,"[{\"sceneName\":\"after-timeout\"}]");
+  assert(sceneJson()["complete"]==true && sceneJson()["scenes"][0]=="after-timeout");
+  std::cout<<"PASS two-slot scenes: retained cache, exact-ID/generation handoff, normal Actions while parked, partial failure, Panic, watchdog, result drop and timeout recovery\n";
+  // Memory probes are opt-in, one discovery only, with separate heap caps.
+  assert(heapfake::samples==0 && obsSceneMemorySnapshot().valid==0);
+  assert(obsArmSceneMemory());normal=submit();rtos::step();response(normal);backendsTick(0);
+  assert(heapfake::samples==0 && obsSceneMemorySnapshot().armed);
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  assert(!obsArmSceneMemory());assert(obsSceneMemorySnapshot().active && obsSceneMemorySnapshot().valid==1);
+  sceneReply(id,"[{\"sceneName\":\"measured\"}]");
+  auto memory=obsSceneMemorySnapshot();
+  assert(!memory.active && !memory.armed && memory.valid==7 && memory.requestId==id && heapfake::samples==6);
+  for(const auto& point:memory.points){assert(point.internal.free==80000 && point.psram.free==8000000);}
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();sceneReply(id,"[]");
+  assert(heapfake::samples==6 && obsSceneMemorySnapshot().requestId==memory.requestId);
+  assert(obsArmSceneMemory());assert(obsScenesRefresh()==SendResult::Accepted);rtos::step();rtos::step(3001);backendsTick(0);
+  memory=obsSceneMemorySnapshot();assert(!memory.active && memory.valid==5 && heapfake::samples==10);
+  ready();
+  std::cout<<"PASS opt-in scene memory capture: inactive overhead guard, caps, three stages, one-shot, busy arm and timeout cleanup\n";
   cfg=settings();cfg.enabled=false;assert(obsApplySettings(cfg));rtos::step();assert(obsStatusSnapshot().state==obs::State::Disabled);
   oscBefore=oscSent;assert(engine.trigger({0,0}));
   assert(oscSent==oscBefore+1 && !strcmp(obsActionStatus().admission,"disabled"));

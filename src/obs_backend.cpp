@@ -8,6 +8,7 @@
 #include <freertos/task.h>
 #include <freertos/queue.h>
 #include <atomic>
+#include <esp_heap_caps.h>
 #include <cstring>
 
 namespace chimera {
@@ -17,10 +18,12 @@ constexpr unsigned REQUESTS = 4, RESULTS = 8, STACK_BYTES = 8192;
 struct Settings { ObsSettings value; uint32_t generation = 0; };
 struct Request { uint32_t id; Epoch epoch; Command command; };
 StaticQueue_t requestControl, resultControl, settingControl;
-StaticQueue_t sceneControl;
-uint8_t sceneStorage[sizeof(SceneList)];
-QueueHandle_t sceneQueue = nullptr;
-SceneList sceneScratch;
+SceneList sceneBuffers[2];
+// gate protects ownership, not parsing/copying. The loop owns scenePublished;
+// the Worker may write only the other slot while sceneReady is false.
+uint8_t scenePublished = 0;
+bool sceneReady = false;
+ObsSceneMemory sceneMemory;
 uint8_t requestStorage[REQUESTS * sizeof(Request)], resultStorage[RESULTS * sizeof(ObsResult)], settingStorage[sizeof(Settings)];
 QueueHandle_t requestQueue = nullptr, resultQueue = nullptr, settingQueue = nullptr;
 StaticTask_t taskControl;
@@ -41,6 +44,21 @@ Assembly assembly;
 Epoch session;
 bool fatal = false, identify = false, closed = false;
 uint32_t started = 0, authenticatingAt = 0;
+uint32_t measuredRequest = 0; // Worker-only; never reset by the loop.
+void sampleSceneMemory(unsigned index) {
+  if (!measuredRequest) return;
+  ObsMemoryPoint point;
+  auto sample = [](uint32_t caps) {
+    multi_heap_info_t info{}; heap_caps_get_info(&info, caps);
+    return ObsHeapSample{uint32_t(info.total_free_bytes), uint32_t(info.minimum_free_bytes), uint32_t(info.largest_free_block)};
+  };
+  // Heap walks and HWM scans occur outside the gate, only for one armed request.
+  point.internal = sample(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  point.psram = sample(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  point.atMs = millis(); point.stackLowBytes = uxTaskGetStackHighWaterMark(nullptr);
+  Lock lock;
+  sceneMemory.points[index] = point; sceneMemory.valid |= uint8_t(1u << index);
+}
 bool station() { return (WiFi.getMode() & WIFI_STA) && WiFi.status() == WL_CONNECTED; }
 bool current() { Lock lock; return lifecycle.current(session); }
 void result(uint32_t id, bool success, int code, Operation operation) {
@@ -51,6 +69,7 @@ void result(uint32_t id, bool success, int code, Operation operation) {
   if (code == -2) ++discarded;
 }
 void discard() {
+  { Lock lock; sceneReady = false; } // Never revoke the loop's published view.
   result(protocol.pending, false, -2, protocol.operation); protocol.pending = 0;
   Request r;
   while (xQueueReceive(requestQueue, &r, 0) == pdTRUE) result(r.id, false, -2, r.command.operation);
@@ -111,8 +130,8 @@ void message(const char* bytes, size_t size) {
     case Received::Result:
       responseMs = millis() - protocol.sentAt;
       if (protocol.operation == Operation::GetSceneList && protocol.success) {
-        sceneScratch.id = protocol.pending; sceneScratch.generation = session.session;
-        xQueueOverwrite(sceneQueue, &sceneScratch);
+        protocol.scenes->id = protocol.pending; protocol.scenes->generation = session.session;
+        { Lock lock; sceneReady = true; }
       }
       result(protocol.pending, protocol.success, protocol.code, protocol.operation); protocol.pending = 0; break;
     case Received::Ignored: ++ignored; break;
@@ -195,18 +214,38 @@ void worker(void*) {
           Request r;
           if (xQueueReceive(requestQueue, &r, 0) == pdTRUE) {
             if (!(r.epoch == session) || !current()) result(r.id, false, -2, r.command.operation);
-            else if (!protocol.request(r.command, r.id, now)) result(r.id, false, -6, r.command.operation);
             else {
-              bool claimed;
-              { Lock lock; claimed = lifecycle.claim(r.epoch); }
-              if (!claimed) { protocol.pending = 0; result(r.id, false, -2, r.command.operation); }
-              else if (!socket.sendTXT(protocol.wire)) {
-                result(r.id, false, -3, r.command.operation); protocol.pending = 0; closed = true;
+              if (r.command.operation == Operation::GetSceneList) {
+                // Reclaim an unconsumed old result only on the Worker, before
+                // parsing the next request. A loop watchdog never frees a slot.
+                Lock lock; sceneReady = false;
+                protocol.scenes = &sceneBuffers[1 - scenePublished];
+                if (sceneMemory.armed) {
+                  sceneMemory.armed = false; sceneMemory.active = true;
+                  sceneMemory.requestId = measuredRequest = r.id;
+                  sceneMemory.generation = r.epoch.session;
+                }
+              }
+              if (measuredRequest == r.id) sampleSceneMemory(0);
+              if (!protocol.request(r.command, r.id, now)) result(r.id, false, -6, r.command.operation);
+              else {
+                bool claimed;
+                { Lock lock; claimed = lifecycle.claim(r.epoch); }
+                if (!claimed) { protocol.pending = 0; result(r.id, false, -2, r.command.operation); }
+                else if (!socket.sendTXT(protocol.wire)) {
+                  result(r.id, false, -3, r.command.operation); protocol.pending = 0; closed = true;
+                }
               }
             }
           }
         }
       }
+    }
+    if (measuredRequest && protocol.pending != measuredRequest) {
+      // pump() has returned: library payload and parser document are released.
+      sampleSceneMemory(2);
+      measuredRequest = 0;
+      { Lock lock; sceneMemory.active = false; }
     }
     vTaskDelay(pdMS_TO_TICKS(10));
   }
@@ -214,13 +253,12 @@ void worker(void*) {
 }
 void obsBegin() {
   if (task) return;
-  protocol.scenes = &sceneScratch;
-  sceneQueue = xQueueCreateStatic(1, sizeof(SceneList), sceneStorage, &sceneControl);
+  protocol.sceneMemoryProbe = [] { sampleSceneMemory(1); };
   requestQueue = xQueueCreateStatic(REQUESTS, sizeof(Request), requestStorage, &requestControl);
   resultQueue = xQueueCreateStatic(RESULTS, sizeof(ObsResult), resultStorage, &resultControl);
   settingQueue = xQueueCreateStatic(1, sizeof(Settings), settingStorage, &settingControl);
   WiFi.onEvent([](arduino_event_id_t, arduino_event_info_t) { Lock lock; lifecycle.wifiLost(); }, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-  if (requestQueue && resultQueue && settingQueue && sceneQueue)
+  if (requestQueue && resultQueue && settingQueue)
     task = xTaskCreateStaticPinnedToCore(worker, "chainpad-obs", STACK_BYTES, nullptr, 1, taskStack, &taskControl, ARDUINO_RUNNING_CORE);
   if (!task) { lastError = -9; published = obs::State::Error; }
 }
@@ -274,6 +312,22 @@ ObsStatus obsStatusSnapshot() {
   s.lastError = lastError; s.lastClose = lastClose; return s;
 }
 bool obsNextResult(ObsResult& r) { return resultQueue && xQueueReceive(resultQueue, &r, 0) == pdTRUE; }
-bool obsTakeSceneList(SceneList& list) { return sceneQueue && xQueueReceive(sceneQueue, &list, 0) == pdTRUE; }
+const SceneList* obsTakeSceneList(uint32_t requestId, uint32_t generation) {
+  Lock lock;
+  const auto next = uint8_t(1 - scenePublished);
+  const auto& list = sceneBuffers[next];
+  if (!sceneReady || list.id != requestId || list.generation != generation ||
+      lifecycle.epoch.session != generation || !lifecycle.claim(lifecycle.epoch) ||
+      published.load() != State::Ready) return nullptr;
+  scenePublished = next; sceneReady = false;
+  return &list;
+}
+bool obsArmSceneMemory() {
+  Lock lock;
+  if (!task || sceneMemory.active) return false;
+  sceneMemory = {}; sceneMemory.armed = true;
+  return true;
+}
+ObsSceneMemory obsSceneMemorySnapshot() { Lock lock; return sceneMemory; }
 }
 #endif

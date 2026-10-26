@@ -9,4 +9,5 @@ void beginMemoryDiagnostics();
 void memoryCheckpoint(const char* phase);
 void memoryPhase(const char* phase);
 void printMemoryDiagnostics(Print& out);
+void printObsSceneMemory(Print& out);
 }

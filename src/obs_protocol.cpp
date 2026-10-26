@@ -50,7 +50,9 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
   const bool discovery = pending && operation == Operation::GetSceneList;
   if (!discovery && size > CONTROL_MESSAGE_LIMIT) return Received::Invalid;
   Budget budget(discovery ? 32768 : 8192); JsonDocument doc(&budget);
-  if (deserializeJson(doc, data, size, DeserializationOption::NestingLimit(6)) || !doc["op"].is<unsigned>() || !doc["d"].is<JsonObject>()) return Received::Invalid;
+  const auto parseError = deserializeJson(doc, data, size, DeserializationOption::NestingLimit(6));
+  if (discovery && sceneMemoryProbe) sceneMemoryProbe();
+  if (parseError || !doc["op"].is<unsigned>() || !doc["d"].is<JsonObject>()) return Received::Invalid;
   auto d = doc["d"].as<JsonObject>(); const unsigned op = doc["op"];
   if (op == 0) {
     if (state != State::Authenticating || wire[0] || !d["rpcVersion"].is<unsigned>() || d["rpcVersion"].as<unsigned>() < 1) return Received::Invalid;

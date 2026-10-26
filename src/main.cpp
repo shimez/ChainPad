@@ -391,14 +391,24 @@ void loop() {
       console.setTxTimeoutMs(0);
 #endif
     }
+    else if (command == 'o') {
+      const bool armed = obsArmSceneMemory();
+      serialReport(console, 160, [&](Print& out) {
+        out.println(armed ? "OBS MEM armed: manually refresh scenes, then O=read" : "OBS MEM busy or unsupported");
+      });
+    }
+    else if (command == 'O') {
+      serialReport(console, 1024, [&](Print& out) { printObsSceneMemory(out); });
+    }
     else if (command == 'd') {
       diagnosticsEnabled = !diagnosticsEnabled; lastDiagnostics = millis();
       serialReport(console, 2560, [&](Print& out) {
         out.println(diagnosticsEnabled ? "Diagnostics ON" : "Diagnostics OFF");
         if (diagnosticsEnabled) printDiagnostics(out, "enabled");
       });
-    } else if (command == '?') serialReport(console, 256, [&](Print& out) {
+    } else if (command == '?') serialReport(console, 384, [&](Print& out) {
       out.println("m=snapshot; h=startup/allocations/stacks; d=toggle 5s + save logging (default OFF); bytes; file -1=absent -2=open failed");
+      out.println("o=arm next manual OBS scene memory capture; O=read capture (no refresh)");
     });
   }
   uint32_t now = millis();
