@@ -12,7 +12,7 @@ async function configurator(){
   const stored=JSON.parse(fs.readFileSync('web/builtin/ChainPad-Configuration-Default.json','utf8'));
   stored.network={ssid:'original',passwordConfigured:true,oscHost:'10.0.0.1',oscPort:9000};
   const ctx=vm.createContext({TextEncoder,selected:0,dirty:false,saving:false,config:undefined,capabilities:{},$:get,
-    RotationPreview:{clone:structuredClone,stringify:JSON.stringify},selectInput(){},rotationSummary(){},cancelActionDrag(){},
+    RotationPreview:{clone:structuredClone,stringify:JSON.stringify},obsScenes:{init(){}},selectInput(){},rotationSummary(){},cancelActionDrag(){},
     changed(){ctx.dirty=true;},renderActions(){},message(){},document:{querySelectorAll:()=>Object.values(all)},
     fetch:async(path,options)=>{
       if(path==='/api/config')return new Response(JSON.stringify(stored));

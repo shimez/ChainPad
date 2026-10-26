@@ -1,3 +1,4 @@
+param([ValidateSet('native','C5','C6')][string]$Target = 'native')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -9,6 +10,9 @@ if (-not (Test-Path "$ws\WebSockets.cpp.upstream-2.7.2")) { throw 'Build S3 firs
 $build = Join-Path $root '.pio\obs-tests'
 New-Item -ItemType Directory -Force $build | Out-Null
 $common = "/nologo /std:c++17 /EHsc /utf-8 /D_CRT_SECURE_NO_WARNINGS /DCHAINPAD_HAS_OBS=1 /DCHAINPAD_OBS_NATIVE_TEST=1 /I`"$root\tests\obs\native`" /Fo:`"$build\\`""
+if ($Target -ne 'native') {
+  $common = $common.Replace('/DCHAINPAD_OBS_NATIVE_TEST=1', "/DCONFIG_IDF_TARGET_ESP32$Target=1 /DCHAINPAD_HOST_TEST=1")
+}
 $sources = @('tests\obs\protocol_tests.cpp','tests\obs\native_crypto.cpp','src\obs_protocol.cpp','src\obs_auth.cpp') | ForEach-Object { "`"$root\$_`"" }
 $command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe $common /I`"$json`" /I`"$root\src`" /Fe:`"$build\protocol.exe`" $($sources -join ' ') && `"$build\protocol.exe`""
 & cmd.exe /d /c $command

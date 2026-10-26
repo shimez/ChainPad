@@ -18,12 +18,15 @@ for chip in ('s3', 'c3', 'c5', 'c6'):
     image = (build / 'firmware.bin').read_bytes()
     assert 'obsTestByte' not in symbols and b'OBS TEST ' not in image, env
     assert 'obs_poc' not in symbols and b'poc-' not in image, env
-    if chip == 's3':
+    if chip in ('s3', 'c5', 'c6'):
         assert 'WebSocketsClient' in symbols and 'chimera::obs::Protocol::receive' in symbols
         assert b'chainpad-obs' in image and b'SetCurrentProgramScene' in image
     else:
-        assert 'WebSockets' not in symbols and 'chimera::obs::' not in symbols
-        assert b'chainpad-obs' not in image and b'SetCurrentProgramScene' not in image
+        # Portable Action codecs retain schema helpers on unsupported targets.
+        assert 'WebSockets' not in symbols and 'chimera::obs::Protocol::' not in symbols
+        assert 'chimera::obs::authentication' not in symbols
+        # Diagnostics can name an absent task; require no executable Worker.
+        assert 'chimera::obsBegin' not in symbols and b'SetCurrentProgramScene' not in image
         assert not list(build.glob('lib*/libWebSockets.a'))
         assert not (root / '.pio/libdeps' / env / 'WebSockets').exists()
         for name in ('obs_backend', 'obs_protocol', 'obs_auth', 'obs_test_console'):
@@ -43,8 +46,8 @@ partitions = (build / 'partitions.bin').read_bytes()
 assert factory[0x8000:0x8000 + len(partitions)] == partitions
 print('PASS explicit S3 test image: backend API linked, test-only console, no example credentials, image placement')
 
-# Phase boundaries: no model, storage, Engine, Wi-Fi policy or UI changes.
-unchanged = ['src/model.h', 'src/model.cpp', 'src/engine.cpp', 'src/engine.h',
-             'src/config_store.cpp', 'src/wifi_setup_flow.h', 'src/factory_reset.cpp', 'web']
+# Integration boundaries: preserve scheduling, storage and Wi-Fi/reset policy.
+unchanged = ['src/engine.cpp', 'src/engine.h', 'src/config_store.cpp',
+             'src/wifi_setup_flow.h', 'src/factory_reset.cpp']
 assert not subprocess.check_output(['git', 'diff', '6faa8641dee13c005a76562e2c6d5d87d55ef596', '--', *unchanged], cwd=root)
-print('PASS Phase 1 boundaries: Action/model/storage/UI/Wi-Fi policy unchanged; public capability API deferred to Phase 2')
+print('PASS integration boundaries: Engine/storage/Wi-Fi/reset policy unchanged')

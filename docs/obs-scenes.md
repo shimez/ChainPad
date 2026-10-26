@@ -1,5 +1,8 @@
 # OBS Action editor and scene discovery — Phase 3 / Work 2
 
+> Current connection/discovery support includes standard S3/C5/C6. Historical
+> S3-only statements below describe the original milestone. See [final integration](obs-integration.md).
+
 Work-1 baseline: `6a82a09`. The [seven-operation Action schema](obs-actions.md)
 and Config/storage v2 and Key Preset v1 envelopes are unchanged.
 

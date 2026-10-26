@@ -11,6 +11,9 @@
 #include <iostream>
 #include <esp_heap_caps.h>
 using namespace chimera;
+#if defined(CONFIG_IDF_TARGET_ESP32C5) || defined(CONFIG_IDF_TARGET_ESP32C6)
+static_assert(CHAINPAD_HAS_OBS && !CHAINPAD_HAS_USB, "OBS must not enable USB HID/MIDI on C-series");
+#endif
 // Production Engine/dispatch/OBS adapter/Worker; unrelated output transports are sinks.
 static unsigned hidSent=0, oscSent=0;
 namespace chimera {
@@ -197,6 +200,17 @@ int main(){
   assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
   sceneReply(id,"[{\"sceneName\":\"partial\"},{\"sceneName\":\""+std::string(193,'x')+"\"}]");
   assert(sceneJson()["scenes"][0]=="new" && sceneJson()["complete"]==false);
+  // Exhaust the discovery JSON budget with a bounded wire message. The old
+  // cache survives and the queued Action runs on the same connection/session.
+  const auto generationBeforeMemoryFailure=obsStatusSnapshot().generation;
+  assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();
+  normal=submit();
+  std::string dense="[";for(unsigned i=0;i<3000;++i)dense+=(i?",0":"0");dense+="]";
+  sceneReply(id,dense);
+  assert(sceneJson()["state"]=="error" && sceneJson()["scenes"][0]=="new" && sceneJson()["complete"]==false);
+  assert(obsStatusSnapshot().state==obs::State::Ready && obsStatusSnapshot().generation==generationBeforeMemoryFailure);
+  response(normal);backendsTick(0);assert(obsActionStatus().last.id==normal && obsActionStatus().last.success);
+  std::cout<<"PASS discovery JSON budget exhaustion: retained cache, Ready/session preserved, queued Action completed\n";
   // Panic between publication and loop consumption rejects the old generation
   // even before the Worker has processed the disconnect.
   assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();

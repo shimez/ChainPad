@@ -1,5 +1,9 @@
 # OBS HTTP / Worker integration — Phase 2 M2
 
+> Current integration: standard S3/C5/C6 builds enable these APIs; only C3 remains
+> unsupported. S3-only statements and size tables below describe historical milestones.
+> See [final integration](obs-integration.md).
+
 M2 is complete with **conditional user approval** following Host tests, five
 target builds and normal-S3 hardware verification. The limitations below are
 accepted for M2; no additional verification phase is required for this milestone.

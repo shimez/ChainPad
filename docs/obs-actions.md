@@ -1,5 +1,8 @@
 # OBS Action Chain — Phase 3 / Work 1
 
+> OBS execution is now enabled on standard S3/C5/C6 builds; C3 preserves stored
+> Actions without executing OBS. See [final integration](obs-integration.md).
+
 This is the historical work-1 record (`6a82a09`). The implemented editor,
 scene discovery, current receive limits and resource measurements are documented
 in [Phase 3 / Work 2](obs-scenes.md), which supersedes the work-2 handoff below.

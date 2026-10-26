@@ -52,6 +52,11 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
   Budget budget(discovery ? 32768 : 8192); JsonDocument doc(&budget);
   const auto parseError = deserializeJson(doc, data, size, DeserializationOption::NestingLimit(6));
   if (discovery && sceneMemoryProbe) sceneMemoryProbe();
+  if (discovery && parseError == DeserializationError::NoMemory) {
+    // Auxiliary discovery may exhaust its budget or the heap. Fail only this
+    // request; do not publish partial names or tear down a healthy connection.
+    success = false; code = -10; return Received::Result;
+  }
   if (parseError || !doc["op"].is<unsigned>() || !doc["d"].is<JsonObject>()) return Received::Invalid;
   auto d = doc["d"].as<JsonObject>(); const unsigned op = doc["op"];
   if (op == 0) {

@@ -38,7 +38,10 @@ SOFTWARE.
 
 ## 依存ライブラリ
 
-Firmware: pioarduino platform-espressif32、Espressif Arduino Core / ESP-IDF、TinyUSB、NimBLE-Arduino 2.5.1、ArduinoJson 7.4.2。
+Firmware: pioarduino platform-espressif32、Espressif Arduino Core / ESP-IDF、TinyUSB、NimBLE-Arduino 2.5.1、ArduinoJson 7.4.2、links2004/WebSockets 2.7.2。
+
+WebSocketsには`scripts/patch_websockets.py`による環境別・ハッシュ検証付きパッチを適用します。
+変更内容は`scripts/patches/WebSockets-2.7.2.patch`を参照してください。
 
 Receiver: Python / Tcl-Tk、python-osc 1.9.3、Mido 1.3.3、python-rtmidi 1.5.8、Bleak 0.22.3とWindows依存ライブラリ。
 

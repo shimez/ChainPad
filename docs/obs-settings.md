@@ -1,5 +1,8 @@
 # OBS settings persistence — Phase 2 M1
 
+> Current integration enables OBS on standard S3/C5/C6 builds. S3-only gating and
+> non-S3 size measurements below are historical. See [final integration](obs-integration.md).
+
 This document records the M1 storage contract and verification baseline. Normal
 S3 boot/HTTP integration added in M2 is described in [obs-api.md](obs-api.md);
 statements below about having no setup/loop caller describe the M1 milestone.

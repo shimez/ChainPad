@@ -6,14 +6,14 @@
 
 // OBS is independent of USB capability. Host storage/Engine tests use the stub.
 #ifndef CHAINPAD_HAS_OBS
-#if defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CHAINPAD_HOST_TEST)
+#if (defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C5) || defined(CONFIG_IDF_TARGET_ESP32C6)) && !defined(CHAINPAD_HOST_TEST)
 #define CHAINPAD_HAS_OBS 1
 #else
 #define CHAINPAD_HAS_OBS 0
 #endif
 #endif
-#if CHAINPAD_HAS_OBS && !defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CHAINPAD_OBS_NATIVE_TEST)
-#error "OBS networking is supported only on ESP32S3"
+#if CHAINPAD_HAS_OBS && !defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CONFIG_IDF_TARGET_ESP32C6) && !defined(CHAINPAD_OBS_NATIVE_TEST)
+#error "OBS requires ESP32S3, ESP32C5 or ESP32C6"
 #endif
 
 // Hardware capability, not a user setting. USB Serial/JTAG on the C-series

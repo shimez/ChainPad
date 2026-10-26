@@ -38,13 +38,12 @@ for env in ('xiao_esp32s3_obs_test', 'xiao_esp32s3_obs_trace'):
         assert 'chimera::hidtrace::dumpTick' in linked
     print('PASS', env, 'buffered output linked')
 
-protected = ['src/obs_backend.cpp', 'src/obs_backend.h', 'src/obs_lifecycle.h',
-             'src/obs_protocol.cpp', 'src/obs_auth.cpp', 'src/engine.cpp', 'src/model.h',
-             'src/config_store.cpp', 'src/wifi_setup_flow.h', 'web']
+protected = ['src/obs_lifecycle.h', 'src/obs_auth.cpp', 'src/engine.cpp',
+             'src/config_store.cpp', 'src/wifi_setup_flow.h']
 assert not subprocess.check_output(['git', 'diff', 'e5c2c65', '--', *protected], cwd=root)
 main = (root / 'src/main.cpp').read_text(encoding='utf-8')
 assert 'console.printf(' not in main and 'console.println(' not in main and 'console.write(' not in main
 assert main.count('serialout::output().pump(') == 1
 source = (root / 'src/serial_output.cpp').read_text(encoding='utf-8')
 assert 'malloc(' not in source and 'new ' not in source and '.flush(' not in source
-print('PASS application CDC output centralized; OBS/Engine/storage/Wi-Fi/UI unchanged; no output heap allocation')
+print('PASS application CDC output centralized; lifecycle/auth/Engine/storage/Wi-Fi preserved; no output heap allocation')

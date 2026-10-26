@@ -1,4 +1,4 @@
-"""Exact, fail-closed WebSockets 2.7.2 patch for the S3 OBS backend.
+"""Exact, fail-closed WebSockets 2.7.2 patch for the OBS backend.
 
 Only environment-local libdeps are touched. Delete that dependency directory to
 restore upstream. Reviewed patch text is kept alongside this script.
@@ -49,6 +49,7 @@ if __name__ == '__main__':
     patch(Path(sys.argv[1]))
 elif 'Import' in globals():
     Import('env')
-    if env.subst('$PIOENV') not in ('xiao_esp32s3', 'xiao_esp32s3_obs_test', 'xiao_esp32s3_obs_trace'):
-        raise RuntimeError('OBS patch must run only in an explicit S3 environment')
+    if env.subst('$PIOENV') not in ('xiao_esp32s3', 'xiao_esp32s3_obs_test', 'xiao_esp32s3_obs_trace',
+                                   'xiao_esp32c5', 'xiao_esp32c6', 'xiao_esp32c6_hid_trace'):
+        raise RuntimeError('OBS patch must run only in an explicit OBS environment')
     patch(Path(env.subst('$PROJECT_LIBDEPS_DIR')) / env.subst('$PIOENV') / 'WebSockets' / 'src')

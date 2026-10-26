@@ -33,6 +33,7 @@ std::deque<ObsResult> results;
 bool obsApplySettings(const ObsSettings&) { ++applies; return true; }
 SendResult obsDispatch(const char*, uint32_t& id) { ++sends; id = UINT32_MAX; return SendResult::Accepted; }
 void obsPanic() { ++panics; }
+ObsSceneMemory obsSceneMemorySnapshot() { return {}; }
 ObsStatus obsStatusSnapshot() {
   ObsStatus s;
   s.state = obs::State::Ready; s.lastError = INT_MIN;
