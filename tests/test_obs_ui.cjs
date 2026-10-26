@@ -42,6 +42,11 @@ async function main(){
   const inflight=save();count=calls.length;await save();await get('obsReconnect').onclick();assert.equal(calls.length,count);assert(get('obsFields').disabled);release();await inflight;
   get('obsIp').value='192.0.2.77';get('obsIp').oninput();
   editor.updateStatus({connectionState:'Ready',lastError:-1,applyState:'accepted'});
+  assert.equal(get('obsConnection').className,'obs-summary-status obs-state-ready');
+  for(const [state,tone] of [['Error','error'],['Connecting','pending'],['Authenticating','pending'],['Disconnected','disconnected'],['Disabled','disconnected']]){
+    editor.updateStatus({connectionState:state});assert.equal(get('obsConnection').className,'obs-summary-status obs-state-'+tone);
+  }
+  editor.updateStatus({connectionState:'Ready',lastError:-1,applyState:'accepted'});
   assert.equal(get('obsConnection').textContent,'Connection: Connected');assert.equal(get('obsIp').value,'192.0.2.77');
   editor.statusFailed();assert.match(get('obsConnection').textContent,/不明/);assert.equal(get('obsIp').value,'192.0.2.77');
   editor.updateStatus({connectionState:'Error',lastError:4009});assert.match(get('obsDiagnostics').textContent,/認証エラー/);

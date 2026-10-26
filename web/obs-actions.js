@@ -9,7 +9,7 @@ const ObsActionsUI = (() => {
       !/[\x00-\x1f\x7f]/.test(name) && ![...name].some(c=>{const n=c.codePointAt(0);return n>=0xd800&&n<=0xdfff;});
   }
   function create() {
-    let enabled=false, busy=false, ready=false, generation=null, freshUntil=0, deadline=0, epoch=0, refreshQueued=false;
+    let enabled=false, busy=false, ready=false, generation=null, freshUntil=0, deadline=0, epoch=0;
     let state={state:'unavailable',complete:false,scenes:[]};
     const listeners=new Set();
     const emit=()=>listeners.forEach(fn=>fn());
@@ -26,7 +26,7 @@ const ObsActionsUI = (() => {
         if(generation!==null && data.generation!==generation){state={...state,state:'stale',complete:false};return;}
         state=data;freshUntil=Date.now()+Math.max(0,60000-(data.ageMs??60000));
       } catch {if(token===epoch)state={...state,state:'error',complete:false};}
-      finally {busy=false;emit();if(refreshQueued&&ready){refreshQueued=false;void request(true);}}
+      finally {busy=false;emit();}
     }
     function init(capabilities) {
       enabled=capabilities.obsActions===true;
@@ -40,9 +40,7 @@ const ObsActionsUI = (() => {
       if(transition){
         ++epoch;ready=nowReady;generation=nextGeneration;
         state={...state,state:'stale',complete:false};emit();
-        refreshQueued=nowReady;
       }
-      if(refreshQueued&&!busy){refreshQueued=false;void request(true);return;}
       // Poll only an admitted discovery, never an idle Ready connection.
       if(state.state==='loading'&&!busy){
         if(Date.now()>=deadline){state={...state,state:'error',complete:false};emit();}
@@ -51,7 +49,7 @@ const ObsActionsUI = (() => {
     }
     return {init,tick,refresh:()=>request(true),snapshot,busy:()=>busy,
       subscribe(fn){listeners.clear();listeners.add(fn);},clear(){listeners.clear();},
-      failed(){++epoch;ready=false;refreshQueued=false;state={...state,state:'error',complete:false};emit();}};
+      failed(){++epoch;ready=false;state={...state,state:'error',complete:false};emit();}};
   }
   function render(a, fields, control, changed, rerender, capabilities, scenes) {
     const supported=capabilities.obsActions===true;

@@ -102,7 +102,7 @@ for(const operation of ['setCurrentProgramScene','startStream','stopStream','sta
   const a={protocol:'obs',delayMs:0,operation,...(operation==='setCurrentProgramScene'?{sceneName:'画面'}:operation.includes('InputMute')?{inputName:'マイク'}:{}),...(operation==='setInputMute'?{inputMuted:true}:{})};
   const before=JSON.stringify(a);show(a);
   assert.equal(JSON.stringify(a),before);assert(field('Action'));
-  assert.equal(all().find(n=>n.className==='action-kind').textContent,'OBS（非対応）');
+  assert.equal(all().find(n=>n.className==='action-kind').textContent,'🎬 OBS（非対応）');
   assert(ctx.actionSummary(a).length>0);
   assert.deepEqual(plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]),a);
 }

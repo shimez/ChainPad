@@ -26,9 +26,9 @@ still allow creation/editing and preserve parameters through Config save/load
 and Full/Key Presets. Connection/discovery APIs remain normal-S3-only; their
 routes are not registered on non-S3 or OBS TEST builds.
 
-The first Ready observation after page load refreshes the list. Later refreshes
-occur only on Ready transition/connection generation change or explicit selection
-button use. The existing visible-page status poll fetches scene results only while
+Scene discovery is manual-only: neither device boot, page load, Ready transitions
+nor connection generation changes request a list. Only the selection button starts
+a refresh. The existing visible-page status poll fetches scene results only while
 a discovery is loading (bounded to 20 seconds), never on an idle Ready connection.
 Requests are single-flight; no second timer is added. Hidden pages do not initiate
 discovery requests. Freshness expiry removes absence warnings and shows a neutral
@@ -163,7 +163,7 @@ list can produce a red missing-name advisory. No advisory blocks persistence.
 `/api/status.obs.generation` now exposes the existing Worker session generation.
 This detects reconnection even if status polling misses the disconnected interval,
 without idle scene GETs. Client request epochs discard pre-disconnect/old-generation
-replies. A Ready transition during an outstanding request queues one refresh.
+replies. Connection transitions invalidate pending results without queuing a refresh.
 The Action schema, Worker queues, cache limits and single result consumer remain.
 
 Audio input selection is deferred for the current OBS WebSocket 5.x compatibility
@@ -205,3 +205,17 @@ has a caption and the same 42 px control height as adjacent fields. Browser layo
 inspection confirms equal input/button top coordinates in a shared row. OBS UI,
 Action editor and scene-manager Node suites PASS; normal S3 build PASS, RAM141964 B
 (unchanged), Flash1610386 B (+192 B from the follow-up above).
+
+Latest UI refinement: OBS Action selectors/cards (including unsupported cards) use
+`🎬 OBS`. Connection text and indicator use red for Error (including authentication
+errors), yellow for Connecting/Authenticating and accepted-operation update waits,
+gray for Disabled/Disconnected/unknown status, and green for Ready. Historical
+error codes do not turn a Ready connection red. Light/dark palettes are supported.
+Scene discovery is now manual-only as described above; the original automatic
+Ready refresh behavior and its historical test record are superseded.
+
+Verification of this refinement: OBS-settings UI, scene-manager, HID/OBS editor
+and Presets Node suites PASS. Browser computed colors match the text/indicator
+in both themes; startup and repeated status checks issued zero scene requests,
+and manual refresh issued one. Normal S3 final build PASS: RAM141964 B unchanged,
+Flash1611154 B (+768 B from `228ac24`). No Worker or persistence changes.

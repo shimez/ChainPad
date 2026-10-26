@@ -5,6 +5,10 @@ const ObsSettingsUI = (() => {
     let clear = false, savedEnabled = false, configured = false, storage = '';
     let epoch = 0;
     const fields = ['obsEnabled','obsIp','obsPort','obsPassword'];
+    function connection(text, tone) {
+      get('obsConnection').textContent = 'Connection: ' + text;
+      get('obsConnection').className = 'obs-summary-status obs-state-' + tone;
+    }
     function note(text, error = false) {
       get('obsMessage').textContent = text;
       get('obsMessage').classList.toggle('error', error);
@@ -94,7 +98,7 @@ const ObsSettingsUI = (() => {
           if (response.ok && data.ok === true && data.applyState === 'accepted')
             note('OBS設定を保存しました（反映受付済み）。接続結果はConnectionで確認してください。');
           else note('OBS設定は保存されましたが、反映または応答に問題があります。' + errorText(data, response.status) + ' ページを再読み込みし、必要に応じてReconnectしてください。', true);
-          get('obsConnection').textContent = 'Connection: 更新待ち…';
+          connection('更新待ち…', 'pending');
         } else {
           if (data.storageState) snapshot(data, false);
           note(errorText(data, response.status), true);
@@ -110,19 +114,23 @@ const ObsSettingsUI = (() => {
         if (data.storageState) snapshot(data, false);
         if (response.status === 202 && data.ok === true && data.applyState === 'accepted') {
           note('保存済み設定で再接続要求を受け付けました。接続結果はConnectionで確認してください。');
-          get('obsConnection').textContent = 'Connection: 更新待ち…';
+          connection('更新待ち…', 'pending');
         } else note(errorText(data, response.status), true);
       } catch { note('再接続要求の結果を確認できません。Connectionの更新を確認してください。', true); }
       finally { ++epoch; pending = false; refresh(); }
     }
     function statusFailed() {
-      get('obsConnection').textContent = 'Connection: 取得できません（現在の状態は不明）';
+      connection('取得できません（現在の状態は不明）', 'disconnected');
+      get('obsDiagnostics').classList.toggle('error', false);
       get('obsDiagnostics').textContent = '';
     }
     function updateStatus(status) {
       if (!status) { statusFailed(); return; }
       const names = {Disabled:'Disabled',Disconnected:'Disconnected',Connecting:'Connecting',Authenticating:'Authenticating',Ready:'Connected',Error:'Connection Error'};
-      get('obsConnection').textContent = 'Connection: ' + (names[status.connectionState] || '不明');
+      const tone = status.connectionState === 'Error' ? 'error' : status.connectionState === 'Ready' ? 'ready' :
+        ['Connecting','Authenticating'].includes(status.connectionState) ? 'pending' : 'disconnected';
+      connection(names[status.connectionState] || '不明', tone);
+      get('obsDiagnostics').classList.toggle('error', status.connectionState === 'Error');
       const parts = [];
       if (status.connectionState === 'Error' && (status.lastError === 4009 || status.lastClose === 4009)) parts.push('認証エラー: OBSのパスワードを確認してください。');
       if (status.lastError != null) parts.push(`過去の診断 lastError: ${status.lastError}`);
