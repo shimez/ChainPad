@@ -59,9 +59,7 @@ Action Chainは、複数のActionを組み合わせ、順番に実行する仕�
 2.  OSCメッセージを送信してカメラのSpoutモードをONにする
 3.  OSCメッセージを送信してカメラのスムージングをONにする
 4.  3000ミリ秒待機（Wait）
-5.  HIDでF13キーを押して、OBSのシーンを切り替える（蓋絵解除）※
-
-※ OBSの操作を行うにはOBS側でホットキーの設定が必要です
+5.  OBS WebSocketを利用してOBSのシーンを切り替える（蓋絵解除）
 
 このように、Action Chainを使うことで複数の操作や時間差のある動作をまとめて実行できます。
 
@@ -76,11 +74,12 @@ Presetを利用することで、設定のバックアップや復元、共有�
 
 ### 3-1. 画面構成
 
-ChainPadの設定画面は主に8つのエリアに分かれています。
+ChainPadの設定画面は主に9つのエリアに分かれています。
 
 - 配列・テーマ設定エリア
 - 本体情報表示エリア
 - OSC送信先設定エリア
+- OBS WebSocket設定エリア
 - 入力選択エリア
 - 入力設定エリア
 - 保存ボタンエリア
@@ -110,18 +109,36 @@ OSC送信先設定エリアでは、OSCの送信先に関する情報を設定�
 - OSC IPv4欄にはVRChatなどのアプリを実行しているPCのIPアドレスを入力してください。
 - OSC PortはVRChatでの利用時は変更する必要はありません。
 
-### 3-5. 入力選択エリア
+### 3-5. OBS WebSocket設定
+
+OBS WebSocket設定エリアでは、OBSとWi-Fi経由で接続して操作するための設定を行います。
+![ChainPad WebUI OBS WebSocket設定エリア](./images/chainpad-webui-area11.png)
+
+#### OBS Studio側の設定作業
+
+1. OBSの「ツール(T)」→「WebSocket サーバー設定」を選択する
+2. 表示された「WebSocket サーバー設定」画面にある「WebSocketサーバーを有効にする」にチェックを入れる☑
+3. 「サーバー設定」欄の「接続情報を表示」ボタンをクリックし、接続に必要な情報（IPアドレス、サーバーポート、サーバーパスワード）を確認する
+
+#### ChainPad側の設定作業
+
+1. 「Enable OBS WebSocket」にチェックを入れる☑
+2. IP Address／Port／Password欄にOBS Studio側で確認したIPアドレス、サーバーポート、サーバーパスワードを入力する
+3. 「Save OBS」ボタンをクリックする
+4. 右上の接続状況表示が「●Connection: Connected」となる事を確認する
+
+### 3-6. 入力選択エリア
 
 入力選択エリアでは設定を行うキー・エンコーダーを選択します。
 ![ChainPad WebUI 入力選択エリア](./images/chainpad-webui-area04.png)
 
-### 3-6. 入力設定エリア
+### 3-7. 入力設定エリア
 
 入力設定エリアでは、入力選択エリアで選んだキー・エンコーダーを操作したときの動作を設定します。
 
 > **重要： 編集した設定は「保存・適用」ボタンを押すまで有効になりません。**
 
-#### 3-6-1. キー（KEY）の場合
+#### 3-7-1. キー（KEY）の場合
 
 キーの場合、キーを押した時と離した時の動作を設定可能です。
 ![ChainPad WebUI 入力設定エリア：キー](./images/chainpad-webui-area05.png)
@@ -131,12 +148,12 @@ OSC送信先設定エリアでは、OSCの送信先に関する情報を設定�
 - 入力設定エリアの一番下にある「+ Add Action」をクリックすることでActionが追加されます。Actionは押した時と離した時の合計で16個まで追加可能です。
 - 各Actionの左端にある「≡」をドラッグ＆ドロップすることで、Actionの実行順を並べ替えることができます。
 
-#### 3-6-2. エンコーダープッシュ（Encoder Push）の場合
+#### 3-7-2. エンコーダープッシュ（Encoder Push）の場合
 
 エンコーダープッシュの設定はキーと同様です。
 ![ChainPad WebUI 入力設定エリア：エンコーダープッシュ](./images/chainpad-webui-area06.png)
 
-#### 3-6-3. エンコーダー（Encoder）の場合
+#### 3-7-3. エンコーダー（Encoder）の場合
 
 エンコーダーの設定は、Encoder Modeによって大きく変わります。
 
@@ -167,14 +184,14 @@ Linked Outputs欄で、出力するOSC/MIDI CCの設定を行います。<br>
 Preview（ブラウザ上でのOutputのテスト）欄ではOSC/MIDI出力される値をブラウザ上で確認することができます。<br>
 Preview Positionにエンコーダーのポジション（何クリック分回したか）を入力すると、OSC/MIDI CCで送信される値を実際に送信せず確認することが可能です。<br>
 
-### 3-7. 保存ボタン
+### 3-8. 保存ボタン
 
 ![ChainPad WebUI 保存ボタン](./images/chainpad-webui-area08.png)
 
 - 「保存・適用」ボタンを押すことで、編集・読み込みした設定をChainPad本体に保存します。
 - 設定の保存状況に応じて、ボタン周辺のメッセージが変化します。
 
-### 3-8. 設定Import/Exportエリア
+### 3-9. 設定Import/Exportエリア
 
 ![ChainPad WebUI 設定Import/Exportエリア](./images/chainpad-webui-area09.png)
 
@@ -185,7 +202,7 @@ Preview Positionにエンコーダーのポジション（何クリック分回�
 
 > **重要： Importした設定は「保存・適用」ボタンを押すまで有効になりません。**
 
-### 3-9. メンテナンスエリア
+### 3-10. メンテナンスエリア
 
 ![ChainPad WebUI メンテナンスエリア](./images/chainpad-webui-area10.png)
 
@@ -218,14 +235,24 @@ Preview Positionにエンコーダーのポジション（何クリック分回�
 - 種類欄で送信するメッセージの種類を選択します。
 - 下部にある「L Ctrl」などのチェックボックスで修飾キーの設定が可能です
 
-### 4-4. Wait
+### 4-4. OBS
+
+![ChainPad WebUI OBSアクション](./images/chainpad-webui-action-obs.png)
+
+- OBS操作欄で実行する操作を選択します
+- 「シーン切り替え」操作のシーン名欄は自由入力に加えて「シーン一覧から選択」ボタンを利用しOBS上にあるシーンの一覧を取得して選択することも可能です
+- 「ミュート設定」「ミュート切り替え」操作の入力名欄は自由入力に加えて「ミュート対象一覧から選択」ボタンを利用しOBS上にある音声入力の一覧を取得して選択することも可能です
+
+> ミュート対象の一覧取得はOBS WebSocket 5.6.0以降に対応しています。非対応の場合も、入力名を手入力して操作できます。
+
+### 4-5. Wait
 
 ![ChainPad WebUI Waitアクション](./images/chainpad-webui-action-wait.png)
 
 - 待機時間欄に値を記入することで、次のActionの実行まで指定時間（何ミリ秒）待機させることが可能です。
 - Waitによる待機は該当のAction Chainにのみ有効です。別キーの操作、同じキーの別操作（押すに対する離すなど）、同じキーの再操作のAction Chainは独立して実行されます。
 
-### 4-5. 他のChainを中断
+### 4-6. 他のChainを中断
 
 ![ChainPad WebUI 他のChainを中断](./images/chainpad-webui-action-interrupt.png)
 
@@ -240,6 +267,7 @@ ChainPadでは、以下の目的でWi-Fiを使用します
 
 - ChainPadの設定
 - OSC送信（Wi-Fiを利用したVRChatなどの操作）
+- OBS WebSocket通信（Wi-Fiを利用したOBSの操作）
 
 ChainPadの設定画面には認証機能がありません。公衆Wi-Fiのような不特定多数が利用する環境での使用は非推奨です。
 

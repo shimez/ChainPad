@@ -4,29 +4,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ChainPad — マルチプロトコルマクロキーパッド</title>
-<meta name="description" content="マルチプロトコルマクロキーパッドChainPadの公式ポータル。OSC・MIDI・Keyboard HIDを組み合わせて、ひとつのキーからつながる操作を実現します。">
+<meta name="description" content="マルチプロトコルマクロキーパッドChainPadの公式ポータル。OSC・MIDI・Keyboard HID・OBS WebSocketを組み合わせて、VRChatの演出からOBSの配信・録画まで、ひとつのキーで操作できます。">
 <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg">
 <style>
 :root{color-scheme:light dark;--bg:#10151d;--panel:#1b2330;--text:#eef5ff;--muted:#a9b8cc;--line:#374557;--accent:#66dbc1;font:16px system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(1040px,calc(100% - 40px));margin:auto}nav{display:flex;gap:20px;flex-wrap:wrap;padding:24px 0;border-bottom:1px solid var(--line)}a{color:var(--accent);text-underline-offset:4px}a:focus-visible{outline:3px solid var(--accent);outline-offset:5px}header{padding:64px 0 40px}.brand{display:flex;align-items:center;gap:18px}.brand img{width:100px;height:100px}h1{font-size:clamp(40px,7vw,68px);margin:0;letter-spacing:-.04em}h2{font-size:25px;margin:0 0 14px}h3{font-size:19px;margin:0 0 10px}p,li{line-height:1.8}header p{font-size:20px;max-width:720px}.muted,small{color:var(--muted)}.button{display:inline-block;background:var(--accent);color:var(--bg);padding:14px 22px;border-radius:9px;text-decoration:none;font-weight:700}.links{display:flex;gap:20px;align-items:center;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px}.card p:last-child{margin-bottom:0}section{margin:32px 0 48px}ol{padding-left:24px}code{overflow-wrap:anywhere}footer{border-top:1px solid var(--line);padding:24px 0 40px;font-size:14px}.board-list{display:flex;gap:10px;flex-wrap:wrap}.board-list span{border:1px solid var(--line);border-radius:24px;padding:6px 14px}@media(max-width:700px){.grid{grid-template-columns:1fr}header{padding-top:32px}.brand{gap:12px}.brand img{width:72px;height:72px}}@media(prefers-color-scheme:light){:root{--bg:#f3f6f8;--panel:#fff;--text:#182a38;--muted:#506275;--line:#bdcbd5;--accent:#087565}}
 .intro-lead{font-size:clamp(20px,3vw,28px);font-weight:700;margin-bottom:8px}.demo-video{display:block;width:100%;height:auto;max-height:75vh;margin:24px 0;background:#000;border:1px solid var(--line);border-radius:14px}
+.use-cases{grid-template-columns:repeat(2,minmax(0,1fr))}@media(max-width:700px){.use-cases{grid-template-columns:1fr}}
 </style>
 </head>
 <body><main>
 <nav aria-label="メインナビゲーション"><a href="getting-started/">Getting Started</a><a href="manual/">マニュアル</a><a href="assembly-guide/">組み立てガイド</a><a href="https://github.com/shimez/ChainPad">GitHub</a></nav>
-<header><small>PROJECT CHIMERA</small><div class="brand"><img src="favicon.svg" alt="" width="100" height="100"><h1>ChainPad</h1></div><p>マルチプロトコルマクロキーパッド</p><p class="muted">ChainPadは、1つのキー操作にOSC・MIDI・HIDなど複数のアクションを組み合わせて実行できる、12キー＋ロータリーエンコーダーのキーパッドです。</p><div class="links"><a class="button" href="getting-started/">Getting Started →</a><a href="https://github.com/shimez/ChainPad#readme">使い方・仕様を見る</a></div></header>
+<header><small>PROJECT CHIMERA</small><div class="brand"><img src="favicon.svg" alt="" width="100" height="100"><h1>ChainPad</h1></div><p>マルチプロトコルマクロキーパッド</p><p class="muted">ChainPadは、1つのキー操作にOSC・MIDI・HID・OBS操作を組み合わせて実行できる、12キー＋ロータリーエンコーダーのキーパッドです。</p><div class="links"><a class="button" href="getting-started/">Getting Started →</a><a href="https://github.com/shimez/ChainPad#readme">使い方・仕様を見る</a></div></header>
 <section aria-labelledby="possibilities">
 <h2 id="possibilities">ChainPadでできること</h2>
-<p class="intro-lead">1つのキーで、OSC / MIDI / HIDをまとめて操作。</p>
-<p class="muted">VRChatの演出から音楽、PCのショートカットまで。いつも使う操作を組み合わせて、手元のキーから呼び出せます。</p>
-<video class="demo-video" controls playsinline preload="metadata" aria-label="ChainPadの紹介動画"><source src="media/ChainPad_004.mp4" type="video/mp4">動画を再生できない場合は、<a href="media/ChainPad_004.mp4">紹介動画を開いてください</a>。</video>
-<div class="grid">
-<article class="card"><h3>VRChat演出</h3><p>OSCを使ってカメラの設定やアバターの機能を操作。配信準備やアバター演出の切り替えを手元のキーにまとめられます。</p></article>
-<article class="card"><h3>音楽・ライブ</h3><p>MIDI NoteやCCで対応する音楽ソフトや機器をコントロール。VRChatのMIDI対応ワールドの操作にも使えます。</p></article>
-<article class="card"><h3>PC操作</h3><p>キーボードショートカットでOBSのシーン切り替えやマイクのミュートを操作。よく使う機能をキーに割り当て、配信中もすばやく呼び出せます。</p></article>
+<p class="intro-lead">1つのキーで、OSC / MIDI / HID / OBSをまとめて操作。</p>
+<p class="muted">VRChatの演出から音楽、PCのショートカット、OBSの配信・録画まで。いつも使う操作を組み合わせて、手元のキーから呼び出せます。</p>
+<video class="demo-video" controls playsinline preload="metadata" aria-label="ChainPadの紹介動画"><source src="media/ChainPad_OSCWebSocket004.mp4" type="video/mp4">動画を再生できない場合は、<a href="media/ChainPad_OSCWebSocket004.mp4">紹介動画を開いてください</a>。</video>
+<div class="grid use-cases">
+<article class="card"><h3>VRChat演出（OSC）</h3><p>OSCを使ってカメラの設定やアバターの機能を操作。配信準備やアバター演出の切り替えを手元のキーにまとめられます。</p></article>
+<article class="card"><h3>音楽・ライブ（MIDI）</h3><p>MIDI NoteやCCで対応する音楽ソフトや機器をコントロール。VRChatのMIDI対応ワールドの操作にも使えます。</p></article>
+<article class="card"><h3>PC操作（HID）</h3><p>よく使うキーボードショートカットをキーに割り当て。アプリの操作やメディアの再生・停止など、日常の作業も手元からすばやく呼び出せます。</p></article>
+<article class="card"><h3>OBS直接コントロール（OBS WebSocket）</h3><p>OBS WebSocketで、シーン切り替えや配信・録画の開始／停止、音声ソースのミュートをWi-Fiから直接操作。OSC・MIDI・HIDと組み合わせて、配信中の操作を1つのキーにまとめられます。</p></article>
 </div>
 </section>
-<section aria-labelledby="features"><h2 id="features">ChainPadの特徴</h2><div class="grid"><article class="card"><h3>🛜 OSC / 🎹 MIDI / ⌨ HID</h3><p>OSCメッセージ、MIDI Note・CC、キーボード操作を一連の作業（Action Chain）に。Waitで操作の間に待機時間も挟めます。</p></article><article class="card"><h3>PressとReleaseを自由に</h3><p>押したとき・離したときの動作を別々に設定。1キーあたりPress/Release合計で16 Actionsまで設定できます。</p></article><article class="card"><h3>アプリ不要</h3><p>専用アプリケーションの導入は不要です。OSCはWiFiで直接、MIDI/HIDはBluetooth/USBデバイスとして接続しメッセージを送信します。設定はブラウザから行います。</p></article></div></section>
-<section aria-labelledby="simple"><div class="card"><h2 id="simple">各機能をシンプルに使いたい場合はこちら</h2><p>ChainPadは、OSC・MIDI・Keyboard HIDを自由に組み合わせたい上級者向けです。各機能をシンプルに使いたい方は、用途に合ったFirmwareを選べるChainOSCPadのポータルをご覧ください。</p><p><a href="https://shimez.github.io/ChainOSCPad-Portal/">ChainOSCPad ポータルへ →</a></p></div></section>
+<section aria-labelledby="features"><h2 id="features">ChainPadの特徴</h2><div class="grid"><article class="card"><h3>プロトコルをまたぐAction Chain</h3><p>OSCメッセージ、MIDI Note・CC、キーボード操作、OBSの直接操作を一連の作業（Action Chain）に。Waitで操作の間に待機時間も挟めます。</p></article><article class="card"><h3>PressとReleaseを自由に</h3><p>押したとき・離したときの動作を別々に設定。1キーあたりPress/Release合計で16 Actionsまで設定できます。</p></article><article class="card"><h3>ブラウザで設定、直接つながる</h3><p>ChainPad専用の常駐アプリは不要です。OSC・OBS操作はWi-Fiで直接、MIDI/HIDはBluetooth/USBデバイスとして接続します。設定はブラウザから行います。</p></article></div></section>
+<section aria-labelledby="simple"><div class="card"><h2 id="simple">各機能をシンプルに使いたい場合はこちら</h2><p>ChainPadは、OSC・MIDI・Keyboard HID・OBS操作を自由に組み合わせたい上級者向けです。各機能をシンプルに使いたい方は、用途に合ったFirmwareを選べるChainOSCPadのポータルをご覧ください。</p><p><a href="https://shimez.github.io/ChainOSCPad-Portal/">ChainOSCPad ポータルへ →</a></p></div></section>
 <section aria-labelledby="hardware"><h2 id="hardware">対応ハードウェア</h2><div class="card"><div class="board-list"><span>XIAO ESP32S3</span><span>XIAO ESP32C6</span><span>XIAO ESP32C5</span></div><p>現行ChainOSCPad PCBの12キー・エンコーダー・プッシュ・LEDに対応。S3はUSB / BLE MIDI・HID、C6 / C5はBLE MIDI・HIDを利用できます。OSCはWi-Fiで送信します。</p><p class="muted">XIAO ESP32C3は動作上の問題により対応を一時停止し、Web Installerの対象から除外しています。</p><p class="muted">Encoder Pushも合計16 Actions、Encoder回転は時計回り・反時計回りに各8 Actionsです。</p></div></section>
 <section id="start" aria-labelledby="start-title"><h2 id="start-title">はじめ方</h2><p><a href="getting-started/">Getting Started →</a></p></section>
 <section aria-labelledby="resources"><h2 id="resources">ドキュメント・サポート</h2><div class="links"><a href="manual/">マニュアル</a><a href="https://github.com/shimez/ChainPad#readme">使い方・仕様</a><a href="https://shimez.github.io/ChainPad/installer/">Web Installer</a><a href="https://github.com/shimez/ChainPad/tree/main/tools/ChainPadReceiver">PC Receiver</a><a href="https://github.com/shimez/ChainPad/blob/main/docs/resource-diagnostics.md">リソース診断</a><a href="https://github.com/shimez/ChainPad/issues">不具合報告・相談</a><a href="build.json">Firmwareビルド情報</a></div></section>
