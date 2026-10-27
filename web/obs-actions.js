@@ -86,9 +86,9 @@ const ObsActionsUI = (() => {
         cancel.onclick=()=>{panel.hidden=true;refresh.focus();};
         panel.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();cancel.onclick();}};
         panel.append(list,apply,cancel);
-        refreshField=document.createElement('div');refreshField.style.display='grid';refreshField.style.gap='5px';refreshField.style.fontSize='13px';
+        refreshField=document.createElement('div');refreshField.style.display='grid';refreshField.style.gridTemplateColumns='minmax(0,1fr)';refreshField.style.gap='5px';refreshField.style.fontSize='13px';
         const caption=document.createElement('span');caption.textContent=label+'候補';
-        refresh=document.createElement('button');refresh.className='obs-list-button';refresh.type='button';refresh.textContent=label+'一覧から選択';refresh.style.height='42px';
+        refresh=document.createElement('button');refresh.className='obs-list-button';refresh.type='button';refresh.textContent=label+'一覧から選択';refresh.style.minHeight='42px';
         refreshField.append(caption,refresh);
         refresh.onclick=()=>{panel.hidden=false;void scenes.refresh();update();};
         scenes.subscribe(()=>{refresh.disabled=!supported||scenes.busy();update();});
