@@ -110,11 +110,11 @@ for(const supported of [true,false]){
   ctx.capabilities.obsActions=supported;
   for(const [operation,label] of vm.runInContext('ObsActionsUI.operations',ctx)){
     show(action('keyDown'));choose('Action','obs');choose('OBS操作',operation);
-    const a=config.chains[0].actions[0];assert.equal(a.operation,operation);
+    const a=config.chains[0].actions[0];assert.equal(a.operation,operation==='groupItemVisibility'?'setSceneItemVisibility':operation);
     if(operation==='setCurrentProgramScene'){assert(field('シーン名'));choose('シーン名','手入力');}
     if(operation.includes('InputMute')){assert(field('入力名'));choose('入力名','マイク');}
     if(operation==='setInputMute'){choose('ミュート','false');assert.equal(a.inputMuted,false);}
-    if(operation==='setSceneItemVisibility'){choose('シーン名','手入力');choose('アイテムID','0');choose('表示操作','toggle');}
+    if(a.operation==='setSceneItemVisibility'){choose(operation==='groupItemVisibility'?'グループ名':'シーン名','手入力');choose('アイテムID','0');choose('表示操作','toggle');}
     const saved=plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]);
     assert.deepEqual(saved,plain(a));assert.deepEqual(plain(P.read(P.key(config,0),'key',ctx.capabilities).chains[0].actions[0]),saved);
     show(saved);choose('OBS操作',operation);assert.deepEqual(plain(config.chains[0].actions[0]),saved);
@@ -169,7 +169,9 @@ for(const containerType of ['scene','group'])for(const visibility of ['enable','
   show(a);assert.equal(a.sceneItemId,Number.MAX_SAFE_INTEGER); // close / reopen preserves ID
   const nameLabel=containerType==='group'?'グループ名':'シーン名';
   choose(nameLabel,'所属先');assert.equal(a.sceneItemId,Number.MAX_SAFE_INTEGER);
-  choose('シーン／グループ',containerType);assert.equal(a.sceneItemId,Number.MAX_SAFE_INTEGER);
+  assert.equal(field('シーン／グループ'),undefined);
+  assert.equal(field('OBS操作').value,containerType==='group'?'groupItemVisibility':'setSceneItemVisibility');
+  choose('OBS操作',containerType==='group'?'groupItemVisibility':'setSceneItemVisibility');assert.equal(a.sceneItemId,Number.MAX_SAFE_INTEGER);
   click('アイテム一覧から選択');sceneCache={state:'ready',complete:true,scenes:[{sourceName:'same',sceneItemId:0},{sourceName:'same',sceneItemId:42}]};sceneListener();
   const choices=all().find(n=>n.tag==='select'&&n.size===6);
   assert.deepEqual(choices.children.map(n=>n.textContent),['same — ID: 0','same — ID: 42']);
@@ -179,7 +181,8 @@ for(const containerType of ['scene','group'])for(const visibility of ['enable','
   assert.deepEqual(plain(P.read(P.key(config,0),'key',ctx.capabilities).chains[0].actions[0]),plain(a));
   choose(nameLabel,'別の所属先');assert.equal(a.sceneItemId,null);assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
   choose('アイテムID','0');assert.equal(a.sceneItemId,0);assert.equal(field('アイテムID').validationMessage,'');
-  choose('シーン／グループ',containerType==='scene'?'group':'scene');assert.equal(a.sceneItemId,null);
+  choose('OBS操作',containerType==='scene'?'groupItemVisibility':'setSceneItemVisibility');assert.equal(a.sceneItemId,null);
+  assert.equal(a.operation,'setSceneItemVisibility');assert.equal(a.containerType,containerType==='scene'?'group':'scene');
   choose('アイテムID','');assert.equal(a.sceneItemId,null);
 }
 console.log('PASS item UI: reopen preserves ID, explicit container changes clear it, duplicate-name selection, manual fallback and Full/Key validation');

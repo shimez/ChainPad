@@ -1,7 +1,8 @@
 // Shared scene/audio-input discovery is input assistance only.
 const ObsActionsUI = (() => {
-  const operations = [['setCurrentProgramScene','シーン切り替え'],['startStream','配信開始'],['stopStream','配信停止'],['startRecord','録画開始'],['stopRecord','録画停止'],['setInputMute','ミュート設定'],['toggleInputMute','ミュート切り替え'],['setSceneItemVisibility','シーンアイテム表示制御']];
+  const operations = [['setCurrentProgramScene','シーン切り替え'],['startStream','配信開始'],['stopStream','配信停止'],['startRecord','録画開始'],['stopRecord','録画停止'],['setInputMute','ミュート設定'],['toggleInputMute','ミュート切り替え'],['setSceneItemVisibility','シーンアイテム表示制御'],['groupItemVisibility','グループ内アイテム表示制御']];
   function defaults(operation='setCurrentProgramScene') {
+    if(operation==='groupItemVisibility')return {...defaults('setSceneItemVisibility'),containerType:'group'};
     return {protocol:'obs',delayMs:0,operation,...(operation==='setCurrentProgramScene'?{sceneName:''}:operation==='setInputMute'?{inputName:'',inputMuted:true}:operation==='toggleInputMute'?{inputName:''}:operation==='setSceneItemVisibility'?{containerType:'scene',sceneName:'',sceneItemId:null,visibility:'enable'}:{})};
   }
   function validName(name) {
@@ -60,14 +61,20 @@ const ObsActionsUI = (() => {
       failed(){++epoch;ready=false;state={...state,state:'error',complete:false};emit();}};
   }
   function render(a, fields, control, changed, rerender, capabilities, scenes) {
+    fields.className+=' obs-fields';
     const supported=capabilities.obsActions===true;
     let picker;
     if(['setInputMute','toggleInputMute'].includes(a.operation))fields.className+=' obs-mute'+(a.operation==='toggleInputMute'?' obs-mute-toggle':'');
     const note=document.createElement('p');note.className='hint';note.style.gridColumn='1 / -1';
     note.textContent=supported?'OBS接続設定を共通利用します。':'この機種ではOBS Action非対応です。設定は保持・編集できますが、実行時はスキップします。';
-    fields.append(control('OBS操作',a.operation,operations,op=>{
-      if(op===a.operation)return;
+    // The group operation is an editor-only choice; the persisted operation stays unchanged.
+    const selectedOperation=a.operation==='setSceneItemVisibility'&&a.containerType==='group'?'groupItemVisibility':a.operation;
+    fields.append(control('OBS操作',selectedOperation,operations,op=>{
+      if(op===selectedOperation)return;
       const next=defaults(op);
+      if(a.operation==='setSceneItemVisibility'&&next.operation===a.operation){
+        a.containerType=next.containerType;a.sceneItemId=null;rerender();return;
+      }
       if('inputName' in next && 'inputName' in a)next.inputName=a.inputName;
       for(const key of Object.keys(a))delete a[key];Object.assign(a,next);rerender();
     }));
@@ -91,6 +98,7 @@ const ObsActionsUI = (() => {
         const apply=document.createElement('button'),cancel=document.createElement('button');
         apply.type=cancel.type='button';apply.textContent='選択した'+label+'を使用';cancel.textContent='キャンセル';
         apply.onclick=()=>{if(list.selectedIndex<0)return;input.value=list.value;a[key]=input.value;changed();panel.hidden=true;update();input.focus();};
+        list.ondblclick=()=>apply.onclick();
         cancel.onclick=()=>{panel.hidden=true;refresh.focus();};
         panel.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();cancel.onclick();}};
         panel.append(list,apply,cancel);
@@ -143,7 +151,6 @@ const ObsActionsUI = (() => {
     let nameLabel=containerLabel()+'名';
     const validId=()=>Number.isSafeInteger(a.sceneItemId)&&a.sceneItemId>=0;
     const invalidate=()=>{a.sceneItemId=null;idInput.value='';panel.hidden=true;active='';scenes.select(itemKind(),a.sceneName);update();};
-    const typeField=control('シーン／グループ',a.containerType,[['scene','シーン'],['group','グループ']],v=>{if(v===a.containerType)return;a.containerType=v;invalidate();});
     const nameField=control(nameLabel,a.sceneName,null,v=>{if(v===a.sceneName)return;a.sceneName=v;invalidate();});
     const nameInput=nameField.lastChild;nameInput.setAttribute('autocomplete','off');
     nameInput.oninput=()=>{if(nameInput.value!==a.sceneName){a.sceneName=nameInput.value;invalidate();changed();}};
@@ -163,7 +170,7 @@ const ObsActionsUI = (() => {
     }
     const targets=document.createElement('div');targets.className='obs-item-targets';
     targets.append(pair(nameField,candidate(containerLabel(),'names')),pair(idField,candidate('アイテム','items')));
-    fields.append(typeField,targets,pair(control('表示操作',a.visibility,[['enable','Enable（表示）'],['disable','Disable（非表示）'],['toggle','Toggle（切り替え）']],v=>a.visibility=v)));
+    fields.append(targets,pair(control('表示操作',a.visibility,[['enable','Enable（表示）'],['disable','Disable（非表示）'],['toggle','Toggle（切り替え）']],v=>a.visibility=v)));
     const apply=document.createElement('button'),cancel=document.createElement('button');apply.type=cancel.type='button';apply.textContent='選択した候補を使用';cancel.textContent='キャンセル';
     apply.onclick=()=>{
       if(list.selectedIndex<0)return;
@@ -171,6 +178,7 @@ const ObsActionsUI = (() => {
       else if(a.sceneName!==list.value){a.sceneName=list.value;nameInput.value=a.sceneName;invalidate();}
       panel.hidden=true;changed();update();
     };
+    list.ondblclick=()=>apply.onclick();
     cancel.onclick=()=>{panel.hidden=true;};panel.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();cancel.onclick();}};
     panel.append(list,apply,cancel);fields.append(panel,warning);
     function update(){
