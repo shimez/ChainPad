@@ -18,7 +18,10 @@ class ObsHandler : public RequestHandler {
   static bool route(const String& uri) {
     return !strcmp(uri.c_str(), "/api/obs") || !strcmp(uri.c_str(), "/api/obs/reconnect") ||
       !strcmp(uri.c_str(), "/api/obs/scenes") || !strcmp(uri.c_str(), "/api/obs/scenes/refresh") ||
-      !strcmp(uri.c_str(), "/api/obs/inputs") || !strcmp(uri.c_str(), "/api/obs/inputs/refresh");
+      !strcmp(uri.c_str(), "/api/obs/inputs") || !strcmp(uri.c_str(), "/api/obs/inputs/refresh") ||
+      !strcmp(uri.c_str(), "/api/obs/groups") || !strcmp(uri.c_str(), "/api/obs/groups/refresh") ||
+      !strcmp(uri.c_str(), "/api/obs/scene-items") || !strcmp(uri.c_str(), "/api/obs/scene-items/refresh") ||
+      !strcmp(uri.c_str(), "/api/obs/group-items") || !strcmp(uri.c_str(), "/api/obs/group-items/refresh");
   }
   void clearBody() {
     if (body) { volatile char* p = body.get(); for (size_t i = 0; i < used; ++i) p[i] = 0; }
@@ -60,9 +63,12 @@ public:
       clearBody();
       const int size = web.clientContentLength();
       const bool put = !strcmp(uri.c_str(), "/api/obs") && web.method() == HTTP_PUT;
+      const bool itemRefresh = web.method() == HTTP_POST &&
+        (!strcmp(uri.c_str(), "/api/obs/scene-items/refresh") || !strcmp(uri.c_str(), "/api/obs/group-items/refresh"));
+      const bool jsonBody = put || itemRefresh;
       const auto type = web.header("Content-Type");
       const bool json = !strcmp(type.c_str(), "application/json") || !strcmp(type.c_str(), "application/json; charset=utf-8");
-      if (size < 0 || size > int(obssettings::MaxJsonBytes) || (put && !json) || (!put && size != 0) || web.hasHeader("Transfer-Encoding")) {
+      if (size < 0 || size > int(obssettings::MaxJsonBytes) || (jsonBody && !json) || (!jsonBody && size != 0) || web.hasHeader("Transfer-Encoding")) {
         send(web, {400, false, "invalidRequest"}); repliedEarly = true; web.client().stop(); return;
       }
       body.reset(new (std::nothrow) char[obssettings::MaxJsonBytes + 1]);
@@ -83,19 +89,43 @@ public:
     const bool inputs = !strcmp(uri.c_str(), "/api/obs/inputs") || !strcmp(uri.c_str(), "/api/obs/inputs/refresh");
     const bool scenes = !strcmp(uri.c_str(), "/api/obs/scenes") || !strcmp(uri.c_str(), "/api/obs/inputs");
     const bool refreshScenes = !strcmp(uri.c_str(), "/api/obs/scenes/refresh") || !strcmp(uri.c_str(), "/api/obs/inputs/refresh");
-    if (scenes || refreshScenes) {
+    const bool groups = !strcmp(uri.c_str(), "/api/obs/groups") || !strcmp(uri.c_str(), "/api/obs/groups/refresh");
+    const bool sceneItems = !strcmp(uri.c_str(), "/api/obs/scene-items") || !strcmp(uri.c_str(), "/api/obs/scene-items/refresh");
+    const bool groupItems = !strcmp(uri.c_str(), "/api/obs/group-items") || !strcmp(uri.c_str(), "/api/obs/group-items/refresh");
+    if (scenes || refreshScenes || groups || sceneItems || groupItems) {
+      const auto kind = groupItems ? obs::Operation::GetGroupSceneItemList : sceneItems ? obs::Operation::GetSceneItemList :
+        groups ? obs::Operation::GetGroupList : inputs ? obs::Operation::GetInputList : obs::Operation::GetSceneList;
+      const bool refresh = refreshScenes || !strcmp(uri.c_str(), "/api/obs/groups/refresh") || !strcmp(uri.c_str(), "/api/obs/scene-items/refresh") || !strcmp(uri.c_str(), "/api/obs/group-items/refresh");
+      String target;
+      bool validTarget = true;
+      if (obs::itemList(kind)) {
+        if (refresh) {
+          // Arduino WebServer's raw POST path does not parse URL arguments.
+          // Read the target from the already bounded raw body, never web.arg().
+          JsonDocument request;
+          validTarget = complete && used && !deserializeJson(request, body.get(), used, DeserializationOption::NestingLimit(2)) &&
+            request.is<JsonObject>() && request.size() == 1 && request["sceneName"].is<const char*>();
+          if (validTarget) {
+            auto name = request["sceneName"].as<JsonString>();
+            validTarget = name.size() == strlen(name.c_str()) && obs::validText(name.c_str(), obs::TARGET_LIMIT);
+            if (validTarget) target = name.c_str();
+          }
+        } else target = web.arg("sceneName");
+      }
       int http = 200;
-      if ((scenes && method != HTTP_GET) || (refreshScenes && method != HTTP_POST)) http = 405;
-      else if (refreshScenes) {
+      if ((!refresh && method != HTTP_GET) || (refresh && method != HTTP_POST)) http = 405;
+      else if (!validTarget || !obs::validText(target.c_str(), obs::TARGET_LIMIT, !obs::itemList(kind)) || target.length() != strlen(target.c_str())) http = 400;
+      else if (refresh) {
         if (maintenance()) http = 409;
-        else if (!complete || used) http = 400;
+        else if (!complete || (!obs::itemList(kind) && used)) http = 400;
         else {
-          const auto admission = inputs ? obsInputsRefresh() : obsScenesRefresh();
+          const auto admission = obsNamesRefresh(kind, target.c_str());
           http = admission == SendResult::Accepted ? 202 : admission == SendResult::Busy ? 429 : 503;
         }
       }
       JsonDocument doc;
-      if (inputs) obsInputsJson(doc.to<JsonObject>()); else obsScenesJson(doc.to<JsonObject>());
+      if (http == 400) { doc["state"] = "error"; doc["complete"] = false; }
+      else obsNamesJson(doc.to<JsonObject>(), kind, target.c_str());
       doc["ok"] = http < 400;
       const size_t size = measureJson(doc);
       std::unique_ptr<char[]> output(size <= 10000 ? new (std::nothrow) char[size + 1] : nullptr);

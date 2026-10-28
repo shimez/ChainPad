@@ -11,15 +11,17 @@ const Presets = (() => {
     if (!object(raw)) fail('Actionが不正です。');
     const a = clone(raw);
     if (a.protocol === 'obs') {
-      const named=['setCurrentProgramScene','setInputMute','toggleInputMute'].includes(a.operation);
+      const item=a.operation==='setSceneItemVisibility';
+      const named=item||['setCurrentProgramScene','setInputMute','toggleInputMute'].includes(a.operation);
       const mute=a.operation==='setInputMute';
-      if (!['setCurrentProgramScene','startStream','stopStream','startRecord','stopRecord','setInputMute','toggleInputMute'].includes(a.operation) || a.delayMs!==0 ||
-          Object.keys(a).length!==3+Number(named)+Number(mute)) fail('OBS Actionが不正です。');
+      if (!['setCurrentProgramScene','startStream','stopStream','startRecord','stopRecord','setInputMute','toggleInputMute','setSceneItemVisibility'].includes(a.operation) || a.delayMs!==0 ||
+          Object.keys(a).length!==3+Number(named)+Number(mute)+(item?3:0)) fail('OBS Actionが不正です。');
       if(named){
-        const name=a[a.operation==='setCurrentProgramScene'?'sceneName':'inputName'];
+        const name=a[a.operation==='setCurrentProgramScene'||item?'sceneName':'inputName'];
         if(!text(name,192)||!name.length||/[\x00-\x1f\x7f]/.test(name)||[...name].some(c=>{const cp=c.codePointAt(0);return cp>=0xd800&&cp<=0xdfff;})) fail('OBS対象名はUTF-8で1〜192 bytes（制御文字不可）にしてください。');
       }
       if(mute&&typeof a.inputMuted!=='boolean')fail('OBS inputMutedはbooleanで指定してください。');
+      if(item&&(!['scene','group'].includes(a.containerType)||!Number.isSafeInteger(a.sceneItemId)||a.sceneItemId<0||!['enable','disable','toggle'].includes(a.visibility)))fail('OBS所属先の種類・アイテムID・表示操作が不正です。');
       return a; // Preserve known OBS Actions even on hardware without networking.
     }
     if (a.protocol === 'stopOtherChains') {

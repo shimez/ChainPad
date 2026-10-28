@@ -35,7 +35,7 @@ struct Action {
   int32_t intValue = 2;
   float floatValue = 0;
   bool boolValue = false;
-  char stringValue[MAX_OSC_STRING_BYTES + 1] = "";
+  union { char stringValue[MAX_OSC_STRING_BYTES + 1] = ""; obs::ItemSettings obsItem; };
   MidiMessage message = MidiMessage::NoteOn;
   KeyMessage keyMessage = KeyMessage::Down;
   uint8_t channel = 1;

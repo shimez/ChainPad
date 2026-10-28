@@ -22,6 +22,9 @@ public:
   HTTPMethod method_=HTTP_GET;
   int length=0, code=0;
   std::map<std::string,std::string> requestHeaders, responseHeaders;
+  std::map<std::string,std::string> arguments;
+  // Match Arduino WebServer Parsing.cpp: the raw POST branch skips _parseArguments.
+  String arg(const char* name){return method_==HTTP_POST && handler->canRaw(*this,"") ? String("") : String(arguments[name]);}
   std::string response;
   void collectHeaders(const char**,size_t){}
   void addHandler(RequestHandler* h){handler.reset(h);}

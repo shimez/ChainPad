@@ -15,6 +15,7 @@ struct Protocol {
   State state = State::Disconnected;
   uint32_t pending = 0, sentAt = 0;
   bool success = false;
+  bool itemEnabled = false;
   int code = 0;
   Operation operation = Operation::SetCurrentProgramScene;
   char wire[1536]{};

@@ -10,6 +10,7 @@ uint32_t scenePending = 0, sceneRequestedAt = 0, sceneUpdatedAt = 0;
 bool sceneAvailable = false, sceneStale = true;
 const char* sceneError = nullptr;
 obs::Operation requestedKind = obs::Operation::GetSceneList, cachedKind = obs::Operation::GetSceneList;
+char requestedTarget[obs::TARGET_LIMIT + 1]{}, cachedTarget[obs::TARGET_LIMIT + 1]{};
 void sceneTick() {
   const auto connection = obsStatusSnapshot();
   if (connection.state != obs::State::Ready || !sceneCache || connection.generation != sceneCache->generation ||
@@ -29,18 +30,23 @@ void sceneResult(const ObsResult& result) {
   }
   sceneCache = next;
   cachedKind = requestedKind;
+  memcpy(cachedTarget, requestedTarget, sizeof(cachedTarget));
   sceneAvailable = true; sceneStale = false; sceneError = nullptr; sceneUpdatedAt = millis();
   sceneTick();
 }
 }
 #endif
-static SendResult namesRefresh(obs::Operation kind) {
+SendResult obsNamesRefresh(obs::Operation kind, const char* target) {
+  if (!obs::discovery(kind) || !obs::validText(target, obs::TARGET_LIMIT, !obs::itemList(kind)) ||
+      (!obs::itemList(kind) && target[0])) return SendResult::Failed;
 #if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
   sceneTick();
-  if (scenePending) return requestedKind == kind ? SendResult::Accepted : SendResult::Busy;
+  if (scenePending) return requestedKind == kind && !strcmp(requestedTarget, target) ? SendResult::Accepted : SendResult::Busy;
   if (obsStatusSnapshot().queued) return SendResult::Busy;
   requestedKind = kind;
+  memcpy(requestedTarget, target, strlen(target) + 1);
   obs::Command command; command.operation = kind;
+  memcpy(command.target, target, strlen(target) + 1);
   const auto result = obsDispatch(command, scenePending);
   sceneStale = true;
   sceneError = result == SendResult::Accepted ? nullptr : result == SendResult::Busy ? "busy" : "unavailable";
@@ -51,12 +57,17 @@ static SendResult namesRefresh(obs::Operation kind) {
   return SendResult::Unavailable;
 #endif
 }
-static void namesJson(JsonObject json, obs::Operation kind) {
-  const char* field = kind == obs::Operation::GetInputList ? "inputs" : "scenes";
+void obsNamesJson(JsonObject json, obs::Operation kind, const char* target) {
+  const bool items = obs::itemList(kind);
+  const char* field = items ? "items" : kind == obs::Operation::GetGroupList ? "groups" : kind == obs::Operation::GetInputList ? "inputs" : "scenes";
+  if (items) {
+    json["sceneName"] = target;
+    json["containerType"] = kind == obs::Operation::GetGroupSceneItemList ? "group" : "scene";
+  }
 #if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
   sceneTick();
-  const bool available = sceneAvailable && cachedKind == kind;
-  const bool requested = requestedKind == kind;
+  const bool available = sceneAvailable && cachedKind == kind && !strcmp(cachedTarget, target);
+  const bool requested = requestedKind == kind && !strcmp(requestedTarget, target);
   json["state"] = requested && scenePending ? "loading" : requested && sceneError ? "error" : !available ? "unavailable" : sceneStale ? "stale" : "ready";
   json["complete"] = available && !sceneStale;
   json["requestId"] = requested ? scenePending : 0;
@@ -64,15 +75,20 @@ static void namesJson(JsonObject json, obs::Operation kind) {
   json["error"] = requested ? sceneError : nullptr;
   if (available) json["ageMs"] = uint32_t(millis() - sceneUpdatedAt); else json["ageMs"] = nullptr;
   auto names = json[field].to<JsonArray>();
-  if (available) for (unsigned i = 0; i < sceneCache->count; ++i) names.add(sceneCache->names + sceneCache->offsets[i]);
+  if (available) for (unsigned i = 0; i < sceneCache->count; ++i) {
+    if (items) {
+      auto item = names.add<JsonObject>(); item["sourceName"] = sceneCache->items.names + sceneCache->offsets[i];
+      item["sceneItemId"] = sceneCache->itemId(i);
+    } else names.add(sceneCache->names + sceneCache->offsets[i]);
+  }
 #else
   json["state"] = "unsupported"; json["complete"] = false; json[field].to<JsonArray>();
 #endif
 }
-SendResult obsScenesRefresh() { return namesRefresh(obs::Operation::GetSceneList); }
-SendResult obsInputsRefresh() { return namesRefresh(obs::Operation::GetInputList); }
-void obsScenesJson(JsonObject json) { namesJson(json, obs::Operation::GetSceneList); }
-void obsInputsJson(JsonObject json) { namesJson(json, obs::Operation::GetInputList); }
+SendResult obsScenesRefresh() { return obsNamesRefresh(obs::Operation::GetSceneList); }
+SendResult obsInputsRefresh() { return obsNamesRefresh(obs::Operation::GetInputList); }
+void obsScenesJson(JsonObject json) { obsNamesJson(json, obs::Operation::GetSceneList); }
+void obsInputsJson(JsonObject json) { obsNamesJson(json, obs::Operation::GetInputList); }
 const ObsActionStatus& obsActionStatus() { return status; }
 SendResult obsActionDispatch(const Action& a) {
   status.requestId = 0;
@@ -83,6 +99,9 @@ SendResult obsActionDispatch(const Action& a) {
   (void)a; status.admission = "testConsoleOwned"; return SendResult::Unavailable;
 #else
   obs::Command command; command.operation = a.obsOperation; command.muted = a.boolValue;
+  if (a.obsOperation == obs::Operation::SetSceneItemVisibility) {
+    command.itemId = a.obsItem.id(); command.visibility = a.obsItem.visibility;
+  }
   if (obs::named(command.operation)) memcpy(command.target, a.obsTarget, sizeof(command.target));
   const auto result = obsDispatch(command, status.requestId);
   switch (result) {

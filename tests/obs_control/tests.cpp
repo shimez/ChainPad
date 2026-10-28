@@ -2,10 +2,12 @@
 #include "../obs_settings/tests.cpp"
 #include "obs_control.h"
 #include "obs_http.h"
+#include "obs_actions.h"
 namespace fake {
 bool accepted=true, allowed=false, maintenance=false, global=true;
 unsigned applies=0, ticks=0;
 SendResult sceneAdmission=SendResult::Unavailable;unsigned sceneRequests=0;
+obs::Command lastDiscovery;
 ObsSettings applied;
 ObsStatus status;
 void reset(){accepted=true;allowed=false;maintenance=false;global=true;applies=ticks=0;applied={};status={};}
@@ -23,6 +25,7 @@ void obsTick(bool permitted){fake::allowed=permitted;++fake::ticks;}
 ObsStatus obsStatusSnapshot(){auto s=fake::status;if(!fake::allowed||!fake::applied.enabled)s.state=obs::State::Disabled;return s;}
 SendResult obsDispatch(const obs::Command& command,uint32_t& id){
   assert(obs::discovery(command.operation));
+  fake::lastDiscovery=command;
   id=fake::sceneAdmission==SendResult::Accepted?++fake::sceneRequests:0;return fake::sceneAdmission;
 }
 bool obsNextResult(ObsResult&){return false;}
@@ -68,6 +71,37 @@ int main(){
   WebServer web;registerObsHttp(web,control,maintenance,outputs);
   web.request(HTTP_GET,"/api/obs/scenes");assert(response(web,200)["complete"]==false);
   web.request(HTTP_GET,"/api/obs/inputs");assert(response(web,200)["inputs"].is<JsonArray>());
+  web.request(HTTP_GET,"/api/obs/groups");assert(response(web,200)["groups"].is<JsonArray>());
+  web.request(HTTP_POST,"/api/obs/groups/refresh");response(web,503);assert(fake::lastDiscovery.operation==obs::Operation::GetGroupList);
+  for(const char* route:{"/api/obs/scene-items","/api/obs/group-items"}){
+    std::string refresh=std::string(route)+"/refresh";
+    web.arguments.clear();web.request(HTTP_POST,refresh.c_str());response(web,400);
+    web.arguments["sceneName"]="group / 日本語";web.request(HTTP_GET,route);auto items=response(web,200);
+    assert(items["items"].is<JsonArray>()&&items["sceneName"]=="group / 日本語");
+    // URL arguments are unavailable on the real raw POST path. An old query-only request fails.
+    web.request(HTTP_POST,refresh.c_str());response(web,400);
+    const std::string targetBody=R"({"sceneName":"group / 日本語"})";
+    web.arguments["sceneName"]="stale-query-must-not-be-used";
+    web.request(HTTP_POST,refresh.c_str(),targetBody);response(web,503);
+    assert(fake::lastDiscovery.operation==(strstr(route,"group-items")?obs::Operation::GetGroupSceneItemList:obs::Operation::GetSceneItemList));
+    assert(!strcmp(fake::lastDiscovery.target,"group / 日本語"));
+    web.request(HTTP_GET,refresh.c_str());response(web,405);
+    web.request(HTTP_POST,refresh.c_str(),"{}");response(web,400);
+    web.request(HTTP_POST,refresh.c_str(),"{\"sceneName\":\""+std::string(193,'x')+"\"}");response(web,400);
+    web.request(HTTP_POST,refresh.c_str(),R"({"sceneName":"a\u0000b"})");response(web,400);
+    web.request(HTTP_POST,refresh.c_str(),targetBody,"text/plain");response(web,400);
+    web.request(HTTP_POST,refresh.c_str(),std::string(1025,'x'));response(web,400);
+    web.request(HTTP_POST,refresh.c_str(),R"({"sceneName":"g","extra":true})");response(web,400);
+    fake::maintenance=true;web.request(HTTP_POST,refresh.c_str(),targetBody);response(web,409);fake::maintenance=false;
+    fake::sceneAdmission=SendResult::Accepted;
+    web.request(HTTP_POST,refresh.c_str(),targetBody);auto admitted=response(web,202);
+    assert(admitted["state"]=="loading"&&admitted["sceneName"]=="group / 日本語");
+    assert(!strcmp(fake::lastDiscovery.target,"group / 日本語"));
+    hostMillis+=20001;obsActionsTick(); // Expire the stub's intentionally unanswered request.
+    fake::sceneAdmission=SendResult::Unavailable;
+  }
+  fake::sceneRequests=0;
+  web.arguments.clear();
   web.request(HTTP_GET,"/api/obs/inputs/refresh");response(web,405);
   web.request(HTTP_POST,"/api/obs/inputs/refresh","{}");response(web,400);
   fake::maintenance=true;web.request(HTTP_POST,"/api/obs/inputs/refresh");response(web,409);fake::maintenance=false;

@@ -62,11 +62,21 @@ bool parseAction(JsonVariantConst j, Action& a) {
     const auto name = j["operation"].as<JsonString>();
     if (name.size() != strlen(name.c_str()) || !obs::parseOperation(name.c_str(), a.obsOperation)) return false;
     const bool named = obs::named(a.obsOperation), mute = a.obsOperation == obs::Operation::SetInputMute;
-    if (j.as<JsonObjectConst>().size() != size_t(3 + named + mute)) return false;
+    const bool item = a.obsOperation == obs::Operation::SetSceneItemVisibility;
+    if (j.as<JsonObjectConst>().size() != size_t(3 + named + mute + (item ? 3 : 0))) return false;
     a.obsTarget[0] = 0; a.boolValue = false;
-    if (named && (!text(j[a.obsOperation == obs::Operation::SetCurrentProgramScene ? "sceneName" : "inputName"], a.obsTarget, sizeof(a.obsTarget)) ||
+    if (named && (!text(j[a.obsOperation == obs::Operation::SetCurrentProgramScene || item ? "sceneName" : "inputName"], a.obsTarget, sizeof(a.obsTarget)) ||
                   !obs::validText(a.obsTarget, obs::TARGET_LIMIT))) return false;
     if (mute) { if (!j["inputMuted"].is<bool>()) return false; a.boolValue = j["inputMuted"]; }
+    if (item) {
+      if (!j["sceneItemId"].is<uint64_t>() || j["sceneItemId"].as<uint64_t>() > obs::ITEM_ID_LIMIT ||
+          !(j["containerType"] == "scene" || j["containerType"] == "group")) return false;
+      a.obsItem = {}; a.obsItem.id(j["sceneItemId"].as<uint64_t>()); a.obsItem.group = j["containerType"] == "group";
+      if (j["visibility"] == "enable") a.obsItem.visibility = obs::Visibility::Enable;
+      else if (j["visibility"] == "disable") a.obsItem.visibility = obs::Visibility::Disable;
+      else if (j["visibility"] == "toggle") a.obsItem.visibility = obs::Visibility::Toggle;
+      else return false;
+    }
     a.protocol = Protocol::Obs; a.delayMs = 0; return true;
   }
   if (p == "stopOtherChains") {
@@ -265,7 +275,11 @@ template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocum
         const char* operation = obs::operationName(a.obsOperation);
         if (!operation) return false;
         j["protocol"] = "obs"; j["operation"] = operation;
-        if (obs::named(a.obsOperation)) j[a.obsOperation == obs::Operation::SetCurrentProgramScene ? "sceneName" : "inputName"] = a.obsTarget;
+        if (obs::named(a.obsOperation)) j[a.obsOperation == obs::Operation::SetCurrentProgramScene || a.obsOperation == obs::Operation::SetSceneItemVisibility ? "sceneName" : "inputName"] = a.obsTarget;
+        if (a.obsOperation == obs::Operation::SetSceneItemVisibility) {
+          j["containerType"] = a.obsItem.group ? "group" : "scene";
+          j["sceneItemId"] = a.obsItem.id(); j["visibility"] = obs::visibilityName(a.obsItem.visibility);
+        }
         if (a.obsOperation == obs::Operation::SetInputMute) j["inputMuted"] = a.boolValue;
         continue;
       }

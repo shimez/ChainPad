@@ -3,11 +3,15 @@
 // Shared by full host and each BLE-only target: real codec and LittleFS path.
 void obsActionTests() {
   Config source, decoded; String error;
-  source.chains[0].count = 7;
+  source.chains[0].count = 10;
   for (unsigned i=0;i<7;++i) {
     auto& a=source.chains[0].actions[i]; a.protocol=Protocol::Obs;
     a.obsOperation=obs::Operation(i); a.boolValue=i==5;
     strcpy(a.obsTarget,"日本語 🎙 target");
+  }
+  for(unsigned i=7;i<10;++i){
+    auto& a=source.chains[0].actions[i];a.protocol=Protocol::Obs;a.obsOperation=obs::Operation::SetSceneItemVisibility;
+    strcpy(a.obsTarget,"group / 日本語");a.obsItem={};a.obsItem.id(i==7?0:obs::ITEM_ID_LIMIT);a.obsItem.group=i!=7;a.obsItem.visibility=obs::Visibility(i-7);
   }
   JsonDocument doc; assert(encodeConfig(source,doc));
   assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
@@ -16,6 +20,15 @@ void obsActionTests() {
   JsonDocument restored; assert(encodeConfig(config,restored));
   String before,after; serializeJson(doc,before); serializeJson(restored,after);
   assert(before==after);
+  auto item=doc["chains"][0]["actions"][7];
+  for(const char* invalid:{"-1","1.5","true","null","\"1\"","9007199254740992"}){
+    JsonDocument v;deserializeJson(v,invalid);item["sceneItemId"]=v.as<JsonVariantConst>();assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  }
+  item["sceneItemId"]=0;assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  item["containerType"]="other";assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));item["containerType"]="scene";
+  item["visibility"]="other";assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));item["visibility"]="enable";
+  item["sourceName"]="unused";assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));item.remove("sourceName");
+  assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
   for(unsigned i=0;i<7;++i) {
     assert(config.chains[0].actions[i].obsOperation==obs::Operation(i));
     assert(dispatch(config.chains[0].actions[i],0)==SendResult::Unavailable);
@@ -44,5 +57,5 @@ void obsActionTests() {
   assert(engine.trigger({0,0})); assert(engine.activeCount()==0);
   assert(engine.stats.accepted==accepted+2 && engine.stats.skipped==skipped+1 && engine.stats.lastAction==2);
   backendsPanic(); engine.stats={};
-  std::cout<<"PASS OBS: seven-operation codec/storage roundtrip, strict parameters, unsupported dispatch and HID/OBS/OSC continuation\n";
+  std::cout<<"PASS OBS: existing operations and item Enable/Disable/Toggle codec/storage roundtrip, strict safe IDs, unsupported dispatch and HID/OBS/OSC continuation\n";
 }

@@ -6,4 +6,6 @@ SendResult obsScenesRefresh();
 void obsScenesJson(JsonObject);
 SendResult obsInputsRefresh();
 void obsInputsJson(JsonObject);
+SendResult obsNamesRefresh(obs::Operation kind, const char* target = "");
+void obsNamesJson(JsonObject, obs::Operation kind, const char* target = "");
 }

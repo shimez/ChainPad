@@ -8,6 +8,43 @@
 using namespace chimera::obs;
 static Received receive(Protocol& p, const char* text) { return p.receive(text, strlen(text), "test-password", authentication); }
 int main() {
+  static_assert(sizeof(SceneList) == 4172, "Discovery stays within the existing two-slot pool");
+  {
+    Protocol p; p.state=State::Ready; SceneList list; p.scenes=&list;
+    Command c; c.operation=Operation::SetSceneItemVisibility; strcpy(c.target,"group"); c.itemId=ITEM_ID_LIMIT;
+    assert(p.request(c,1,0));JsonDocument sent;deserializeJson(sent,p.wire);
+    assert(sent["d"]["requestData"]["sceneItemId"].as<uint64_t>()==ITEM_ID_LIMIT);
+    assert(sent["d"]["requestData"]["sceneItemEnabled"]==true);
+    p.pending=0;c.visibility=Visibility::Toggle;assert(!p.request(c,2,0));
+    c.operation=Operation::GetSceneItemEnabled;assert(p.request(c,2,0));
+    assert(receive(p,R"({"op":7,"d":{"requestId":"chainpad-2","requestType":"GetSceneItemEnabled","requestStatus":{"result":true,"code":100},"responseData":{"sceneItemEnabled":false}}})")==Received::Result && p.success && !p.itemEnabled);
+    assert(receive(p,R"({"op":7,"d":{"requestId":"chainpad-2","requestType":"GetSceneItemEnabled","requestStatus":{"result":true,"code":100},"responseData":{"sceneItemEnabled":0}}})")==Received::Result && !p.success);
+    auto fetch=[&](Operation op,const char* field,const std::string& entries){
+      p.pending=0;c={};c.operation=op;if(itemList(op))strcpy(c.target,"group");assert(p.request(c,3,0));
+      std::string wire=std::string("{\"op\":7,\"d\":{\"requestId\":\"chainpad-3\",\"requestType\":\"")+requestType(op)+"\",\"requestStatus\":{\"result\":true,\"code\":100},\"responseData\":{\""+field+"\":"+entries+"}}}";
+      return p.receive(wire.c_str(),wire.size(),"",authentication);
+    };
+    assert(fetch(Operation::GetGroupList,"groups",R"(["g1","g2"])")==Received::Result&&p.success&&list.count==2);
+    for(auto op:{Operation::GetSceneItemList,Operation::GetGroupSceneItemList}){
+      assert(fetch(op,"sceneItems",R"([{"sourceName":"same","sceneItemId":0},{"sourceName":"same","sceneItemId":9007199254740991}])")==Received::Result&&p.success);
+      assert(list.count==2 && list.itemId(0)==0 && list.itemId(1)==ITEM_ID_LIMIT);
+      assert(fetch(op,"sceneItems",R"([{"sourceName":"a","sceneItemId":0},{"sourceName":"b","sceneItemId":0}])")==Received::Result&&!p.success&&list.count==0);
+      for(const auto& id:{"-1","0.5","true","null","\"12\"","9007199254740992"}){
+        assert(fetch(op,"sceneItems",std::string("[{\"sourceName\":\"x\",\"sceneItemId\":")+id+"}]")==Received::Result&&!p.success);
+      }
+      std::string dense="{";for(int i=0;i<1000;++i)dense+=(i?",":"")+std::string("\"x")+std::to_string(i)+"\":0";dense+="}";
+      assert(fetch(op,"sceneItems","[{\"sourceName\":\"x\",\"sceneItemId\":1,\"sceneItemTransform\":"+dense+"}]")==Received::Result&&p.success);
+      std::string many="[";for(int i=0;i<33;++i)many+=(i?",":"")+std::string("{\"sourceName\":\"x\",\"sceneItemId\":")+std::to_string(i)+"}";many+="]";
+      assert(fetch(op,"sceneItems",many)==Received::Result&&!p.success);
+      assert(fetch(op,"sceneItems","[]")==Received::Result&&p.success&&list.count==0);
+      p.pending=0;assert(p.request(c,4,0));
+      std::string boundary=std::string("{\"op\":7,\"d\":{\"requestId\":\"chainpad-4\",\"requestType\":\"")+requestType(op)+"\",\"requestStatus\":{\"result\":true,\"code\":100},\"responseData\":{\"sceneItems\":[{\"sourceName\":\"x\",\"sceneItemId\":1,\"unused\":\"";
+      const std::string suffix="\"}]}}}";boundary+=std::string(MESSAGE_LIMIT-boundary.size()-suffix.size(),'x');boundary+=suffix;
+      assert(boundary.size()==MESSAGE_LIMIT&&receive(p,boundary.c_str())==Received::Result&&p.success);
+      boundary+=' ';assert(receive(p,boundary.c_str())==Received::Invalid);
+    }
+    std::cout<<"PASS item protocol: safe IDs, strict boolean, groups, duplicate names/IDs, filtered dense transforms and bounded lists\n";
+  }
   {
     Protocol discovery;SceneList list;discovery.scenes=&list;discovery.state=State::Ready;
     Command command;command.operation=Operation::GetSceneList;

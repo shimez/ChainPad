@@ -1,5 +1,7 @@
 # OBS Action Chain — Phase 3 / Work 1
 
+> 開発版のシーンアイテム表示制御（Enable / Disable / Toggle）は[追加仕様](obs-scene-items.md)を参照。
+
 > OBS execution is now enabled on standard S3/C5/C6 builds; C3 preserves stored
 > Actions without executing OBS. See [final integration](obs-integration.md).
 

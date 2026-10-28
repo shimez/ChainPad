@@ -45,6 +45,9 @@ Epoch session;
 bool fatal = false, identify = false, closed = false;
 uint32_t started = 0, authenticatingAt = 0;
 uint32_t measuredRequest = 0; // Worker-only; never reset by the loop.
+Command toggleCommand;
+uint32_t toggleAction = 0, toggleWire = 0;
+bool toggleAdvance = false;
 void sampleSceneMemory(unsigned index) {
   if (!measuredRequest) return;
   ObsMemoryPoint point;
@@ -63,6 +66,10 @@ bool station() { return (WiFi.getMode() & WIFI_STA) && WiFi.status() == WL_CONNE
 bool current() { Lock lock; return lifecycle.current(session); }
 void result(uint32_t id, bool success, int code, Operation operation) {
   if (!id) return;
+  if (toggleAction && id == toggleWire) {
+    id = toggleAction; operation = Operation::SetSceneItemVisibility;
+    toggleAction = toggleWire = 0; toggleAdvance = false;
+  }
   ObsResult r{id, success, code, operation};
   if (xQueueSend(resultQueue, &r, 0) != pdTRUE) ++lostResults;
   if (success) ++completed; else ++failed;
@@ -70,6 +77,7 @@ void result(uint32_t id, bool success, int code, Operation operation) {
 }
 void discard() {
   { Lock lock; sceneReady = false; } // Never revoke the loop's published view.
+  if (toggleAction && !protocol.pending) result(toggleWire, false, -2, Operation::SetSceneItemVisibility);
   result(protocol.pending, false, -2, protocol.operation); protocol.pending = 0;
   Request r;
   while (xQueueReceive(requestQueue, &r, 0) == pdTRUE) result(r.id, false, -2, r.command.operation);
@@ -129,6 +137,10 @@ void message(const char* bytes, size_t size) {
     }
     case Received::Result:
       responseMs = millis() - protocol.sentAt;
+      if (toggleAction && protocol.operation == Operation::GetSceneItemEnabled && protocol.success) {
+        toggleCommand.visibility = protocol.itemEnabled ? Visibility::Disable : Visibility::Enable;
+        protocol.pending = 0; toggleAdvance = true; break;
+      }
       if (discovery(protocol.operation) && protocol.success) {
         protocol.scenes->id = protocol.pending; protocol.scenes->generation = session.session;
         { Lock lock; sceneReady = true; }
@@ -217,6 +229,25 @@ void worker(void*) {
           nextAttempt = now + backoff; backoff = backoff < 16000 ? backoff * 2 : 30000;
         } else if (protocol.state == State::Ready && !protocol.pending) {
           backoff = 1000;
+          if (toggleAdvance) {
+            // Keep the logical Action in flight across both requests. No queued
+            // Action or discovery may interleave with the read/modify/write pair.
+            uint32_t next;
+            { Lock lock; next = lifecycle.current(session) ? lifecycle.nextId() : 0; }
+            if (!next) result(toggleWire, false, -2, Operation::SetSceneItemVisibility);
+            else {
+              toggleWire = next; toggleAdvance = false;
+              if (!protocol.request(toggleCommand, next, now)) result(next, false, -6, toggleCommand.operation);
+              else {
+                bool claimed;
+                { Lock lock; claimed = lifecycle.claim(session); }
+                if (!claimed) { protocol.pending = 0; result(next, false, -2, toggleCommand.operation); }
+                else if (!socket.sendTXT(protocol.wire)) {
+                  protocol.pending = 0; result(next, false, -3, toggleCommand.operation); closed = true;
+                }
+              }
+            }
+          } else {
           Request r;
           if (xQueueReceive(requestQueue, &r, 0) == pdTRUE) {
             if (!(r.epoch == session) || !current()) result(r.id, false, -2, r.command.operation);
@@ -234,6 +265,10 @@ void worker(void*) {
                 }
               }
               if (measuredRequest == r.id) sampleSceneMemory(0);
+              if (r.command.operation == Operation::SetSceneItemVisibility && r.command.visibility == Visibility::Toggle) {
+                toggleCommand = r.command; toggleAction = toggleWire = r.id;
+                r.command.operation = Operation::GetSceneItemEnabled;
+              }
               if (!protocol.request(r.command, r.id, now)) result(r.id, false, -6, r.command.operation);
               else {
                 bool claimed;
@@ -244,6 +279,7 @@ void worker(void*) {
                 }
               }
             }
+          }
           }
         }
       }

@@ -50,6 +50,21 @@ async function main(){
   manager.select('inputs');reply={state:'error',complete:false,inputs:[],generation:4,error:'audioCapabilitiesUnavailable'};
   await manager.refresh();assert.equal(manager.snapshot().error,'audioCapabilitiesUnavailable');
   assert(!manager.snapshot().complete);
+  manager.select('groups');reply={state:'ready',complete:true,groups:['g'],generation:4,ageMs:0};await manager.refresh();
+  assert.equal(calls.at(-1).path,'/api/obs/groups/refresh');assert.equal(manager.snapshot().scenes[0],'g');
+  manager.select('group-items','日本語 & group');
+  reply={state:'ready',complete:true,items:[{sourceName:'same',sceneItemId:42}],sceneName:'日本語 & group',containerType:'group',generation:4,ageMs:0};
+  await manager.refresh();assert.equal(calls.at(-1).path,'/api/obs/group-items/refresh');
+  assert.equal(calls.at(-1).headers['Content-Type'],'application/json');
+  assert.deepEqual(JSON.parse(calls.at(-1).body),{sceneName:'日本語 & group'});assert(manager.snapshot().complete);
+  reply={...reply,state:'loading',complete:false};await manager.refresh();
+  reply={...reply,state:'ready',complete:true};manager.tick(ready(4));await flush();
+  assert.equal(calls.at(-1).method,'GET');assert.equal(calls.at(-1).path,'/api/obs/group-items?sceneName='+encodeURIComponent('日本語 & group'));
+  assert.equal(calls.at(-1).body,undefined);assert(manager.snapshot().complete);
+  hold=new Promise(resolve=>release=resolve);const oldItems=manager.refresh();manager.select('group-items','other');release();await oldItems;hold=null;
+  assert(!manager.snapshot().complete);assert.equal(manager.snapshot().scenes.length,0);
+  await manager.refresh();assert.equal(manager.snapshot().state,'error'); // Wrong target in server response.
+  manager.select('scene-items','other');reply={...reply,sceneName:'other',containerType:'scene'};await manager.refresh();assert(manager.snapshot().complete);
   console.log('PASS scene manager: manual-only discovery across startup/Ready/reconnect, bounded result polling, expiry, late response isolation, failures and hidden-page pause');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

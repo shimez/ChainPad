@@ -42,7 +42,7 @@ function hidFields(fields,a){
   }
 }
 function actionSummary(a) {
-  if(a.protocol==='obs'){const names={setCurrentProgramScene:'シーン切り替え',startStream:'配信開始',stopStream:'配信停止',startRecord:'録画開始',stopRecord:'録画停止',setInputMute:'ミュート設定',toggleInputMute:'ミュート切り替え'};return `${names[a.operation]||a.operation}${a.sceneName!==undefined?' · '+a.sceneName:a.inputName!==undefined?' · '+a.inputName:''}${a.operation==='setInputMute'?(a.inputMuted?' · ミュート':' · 解除'):''}`;}
+  if(a.protocol==='obs'){const names={setCurrentProgramScene:'シーン切り替え',startStream:'配信開始',stopStream:'配信停止',startRecord:'録画開始',stopRecord:'録画停止',setInputMute:'ミュート設定',toggleInputMute:'ミュート切り替え',setSceneItemVisibility:'シーンアイテム表示制御'};return `${names[a.operation]||a.operation}${a.sceneName!==undefined?' · '+a.sceneName:a.inputName!==undefined?' · '+a.inputName:''}${a.operation==='setInputMute'?(a.inputMuted?' · ミュート':' · 解除'):''}${a.operation==='setSceneItemVisibility'?' · ID: '+(a.sceneItemId??'未選択')+' · '+a.visibility:''}`;}
   const transport={wifi:'Wi-Fi',usb:'USB',ble:'BLE',both:'USB + BLE'}[a.transport]||'';
   if(a.protocol==='wait')return `${a.delayMs} ms`;
   if(a.protocol==='stopOtherChains')return '他のChainを中断 · このChainは継続';

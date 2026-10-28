@@ -19,7 +19,7 @@ const ctx=vm.createContext({TextEncoder,config,selected:0,saving:false,keyboardL
   document:{createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text,children:[]})},
   $:id=>nodes[id]??=(new Element('div')),waitWarning(){},changed(){},RotationEditor:{refresh(){}}});
 let sceneCache={state:'unavailable',complete:false,scenes:[]},sceneListener;
-ctx.obsScenes={clear(){sceneListener=null;},snapshot:()=>sceneCache,busy:()=>false,subscribe(fn){sceneListener=fn;},refresh(){}};
+ctx.obsScenes={select(){sceneCache={state:'unavailable',complete:false,scenes:[]};},clear(){sceneListener=null;},snapshot:()=>sceneCache,busy:()=>false,subscribe(fn){sceneListener=fn;},refresh(){}};
 const line=prefix=>html.split('\n').find(l=>l.startsWith(prefix));
 vm.runInContext(fs.readFileSync('web/presets.js','utf8')+'\n'+fs.readFileSync('web/action-ui.js','utf8')+'\n'+fs.readFileSync('web/obs-actions.js','utf8')+'\n'+
    ['function control(','function current(','function button(','function defaults('].map(line).join('\n')+'\n'+
@@ -114,6 +114,7 @@ for(const supported of [true,false]){
     if(operation==='setCurrentProgramScene'){assert(field('シーン名'));choose('シーン名','手入力');}
     if(operation.includes('InputMute')){assert(field('入力名'));choose('入力名','マイク');}
     if(operation==='setInputMute'){choose('ミュート','false');assert.equal(a.inputMuted,false);}
+    if(operation==='setSceneItemVisibility'){choose('シーン名','手入力');choose('アイテムID','0');choose('表示操作','toggle');}
     const saved=plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]);
     assert.deepEqual(saved,plain(a));assert.deepEqual(plain(P.read(P.key(config,0),'key',ctx.capabilities).chains[0].actions[0]),saved);
     show(saved);choose('OBS操作',operation);assert.deepEqual(plain(config.chains[0].actions[0]),saved);
@@ -162,3 +163,23 @@ for(const operation of ['setInputMute','toggleInputMute']){
   assert(all().some(n=>String(n.textContent).includes('音声候補の抽出に非対応')));
 }
 console.log('PASS OBS editor: seven operations, supported/unsupported Full/Key roundtrip, unfiltered picker/apply/cancel, stable input/caret/composition, advisory and byte limits');
+for(const containerType of ['scene','group'])for(const visibility of ['enable','disable','toggle']){
+  const a={protocol:'obs',delayMs:0,operation:'setSceneItemVisibility',containerType,sceneName:'所属先',sceneItemId:Number.MAX_SAFE_INTEGER,visibility};
+  show(a);assert.equal(a.sceneItemId,Number.MAX_SAFE_INTEGER);
+  show(a);assert.equal(a.sceneItemId,Number.MAX_SAFE_INTEGER); // close / reopen preserves ID
+  const nameLabel=containerType==='group'?'グループ名':'シーン名';
+  choose(nameLabel,'所属先');assert.equal(a.sceneItemId,Number.MAX_SAFE_INTEGER);
+  choose('シーン／グループ',containerType);assert.equal(a.sceneItemId,Number.MAX_SAFE_INTEGER);
+  click('アイテム一覧から選択');sceneCache={state:'ready',complete:true,scenes:[{sourceName:'same',sceneItemId:0},{sourceName:'same',sceneItemId:42}]};sceneListener();
+  const choices=all().find(n=>n.tag==='select'&&n.size===6);
+  assert.deepEqual(choices.children.map(n=>n.textContent),['same — ID: 0','same — ID: 42']);
+  choices.selectedIndex=1;choices.value='42';click('選択した候補を使用');assert.equal(a.sceneItemId,42);
+  sceneCache={state:'error',complete:false,scenes:[]};sceneListener();
+  assert.equal(field('アイテムID').validationMessage,'');assert.equal(a.sceneItemId,42);
+  assert.deepEqual(plain(P.read(P.key(config,0),'key',ctx.capabilities).chains[0].actions[0]),plain(a));
+  choose(nameLabel,'別の所属先');assert.equal(a.sceneItemId,null);assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
+  choose('アイテムID','0');assert.equal(a.sceneItemId,0);assert.equal(field('アイテムID').validationMessage,'');
+  choose('シーン／グループ',containerType==='scene'?'group':'scene');assert.equal(a.sceneItemId,null);
+  choose('アイテムID','');assert.equal(a.sceneItemId,null);
+}
+console.log('PASS item UI: reopen preserves ID, explicit container changes clear it, duplicate-name selection, manual fallback and Full/Key validation');

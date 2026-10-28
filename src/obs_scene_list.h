@@ -7,6 +7,10 @@ struct SceneList {
   uint32_t id = 0, generation = 0;
   uint16_t count = 0, used = 0;
   uint16_t offsets[SCENE_COUNT_LIMIT]{};
-  char names[SCENE_BYTES_LIMIT]{};
+  union {
+    char names[SCENE_BYTES_LIMIT]{};
+    struct { uint32_t low[SCENE_COUNT_LIMIT], high[SCENE_COUNT_LIMIT]; char names[SCENE_BYTES_LIMIT - 8 * SCENE_COUNT_LIMIT]; } items;
+  };
+  uint64_t itemId(unsigned i) const { return (uint64_t(items.high[i]) << 32) | items.low[i]; }
 };
 } }

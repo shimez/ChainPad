@@ -15,6 +15,7 @@ inline uint16_t closeCode=0;
 inline std::deque<std::pair<WStype_t,std::string>> rx;
 inline std::vector<std::string> sent, hosts;
 inline std::function<void()> beforeSend;
+inline std::function<void()> afterMessage;
 inline std::thread::id owner;
 inline void assertOwner(){assert(owner==std::this_thread::get_id());}
 inline void text(const std::string& s){rx.push_back({WStype_TEXT,s});}
@@ -55,6 +56,7 @@ public:
     }
     if(!wire::rx.empty()){
       auto e=wire::rx.front();wire::rx.pop_front();callback(e.first,reinterpret_cast<uint8_t*>(e.second.data()),e.second.size());
+      if(wire::afterMessage){auto fn=wire::afterMessage;wire::afterMessage={};fn();}
     }
   }
   bool sendTXT(char* text) {

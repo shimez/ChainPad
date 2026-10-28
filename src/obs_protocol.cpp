@@ -59,8 +59,16 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
     if (envelope["op"] == 7 && id && (!pending || strcmp(id, expected))) return Received::Ignored;
     return Received::Invalid;
   }
-  Budget budget(discovery ? 32768 : 8192); JsonDocument doc(&budget);
-  const auto parseError = deserializeJson(doc, data, size, DeserializationOption::NestingLimit(6));
+  Budget budget(discovery ? 32768 : 8192); JsonDocument doc(&budget), filter(&budget);
+  if (itemList(operation) && discovery) {
+    filter["op"] = true; filter["d"]["requestId"] = true; filter["d"]["requestType"] = true;
+    filter["d"]["requestStatus"]["result"] = true; filter["d"]["requestStatus"]["code"] = true;
+    filter["d"]["responseData"]["sceneItems"][0]["sourceName"] = true;
+    filter["d"]["responseData"]["sceneItems"][0]["sceneItemId"] = true;
+  }
+  const auto parseError = itemList(operation) && discovery ?
+    deserializeJson(doc, data, size, DeserializationOption::Filter(filter), DeserializationOption::NestingLimit(6)) :
+    deserializeJson(doc, data, size, DeserializationOption::NestingLimit(6));
   if (discovery && sceneMemoryProbe) sceneMemoryProbe();
   if (discovery && parseError == DeserializationError::NoMemory) {
     // Auxiliary discovery may exhaust its budget or the heap. Fail only this
@@ -96,10 +104,15 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
   if (d["requestType"] != requestType(operation) || !d["requestStatus"]["result"].is<bool>() || !d["requestStatus"]["code"].is<int>()) return Received::Invalid;
   success = d["requestStatus"]["result"]; code = d["requestStatus"]["code"];
   if (success && code != 100) return Received::Invalid;
+  if (success && operation == Operation::GetSceneItemEnabled) {
+    if (!d["responseData"]["sceneItemEnabled"].is<bool>()) { success = false; code = -10; return Received::Result; }
+    itemEnabled = d["responseData"]["sceneItemEnabled"];
+  }
   if (success && discovery) {
     // A bounded but incomplete list is a failure, never an authoritative cache.
     const bool inputs = operation == Operation::GetInputList;
-    auto list = d["responseData"][inputs ? "inputs" : "scenes"];
+    const bool items = itemList(operation), groups = operation == Operation::GetGroupList;
+    auto list = d["responseData"][items ? "sceneItems" : groups ? "groups" : inputs ? "inputs" : "scenes"];
     if (!scenes || !list.is<JsonArray>() || (!inputs && list.size() > SCENE_COUNT_LIMIT)) {
       success = false; code = -10; return Received::Result;
     }
@@ -111,13 +124,25 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
         }
         if (!(entry["inputKindCaps"].as<uint32_t>() & 2u)) continue;
       }
-      auto name = entry[inputs ? "inputName" : "sceneName"].as<JsonString>();
+      auto name = groups ? entry.as<JsonString>() : entry[items ? "sourceName" : inputs ? "inputName" : "sceneName"].as<JsonString>();
+      const size_t capacity = items ? sizeof(scenes->items.names) : sizeof(scenes->names);
+      char* names = items ? scenes->items.names : scenes->names;
       if (!name.c_str() || name.size() != strlen(name.c_str()) || !validText(name.c_str(), TARGET_LIMIT) ||
-          scenes->count >= SCENE_COUNT_LIMIT || name.size() + 1 > SCENE_BYTES_LIMIT - scenes->used) {
+          scenes->count >= SCENE_COUNT_LIMIT || name.size() + 1 > capacity - scenes->used) {
         scenes->count = scenes->used = 0; success = false; code = -10; return Received::Result;
       }
+      if (items) {
+        if (!entry["sceneItemId"].is<uint64_t>() || entry["sceneItemId"].as<uint64_t>() > ITEM_ID_LIMIT) {
+          scenes->count = scenes->used = 0; success = false; code = -10; return Received::Result;
+        }
+        const uint64_t id = entry["sceneItemId"];
+        for (unsigned i = 0; i < scenes->count; ++i) if (scenes->itemId(i) == id) {
+          scenes->count = scenes->used = 0; success = false; code = -10; return Received::Result;
+        }
+        scenes->items.low[scenes->count] = uint32_t(id); scenes->items.high[scenes->count] = uint32_t(id >> 32);
+      }
       scenes->offsets[scenes->count++] = scenes->used;
-      memcpy(scenes->names + scenes->used, name.c_str(), name.size() + 1);
+      memcpy(names + scenes->used, name.c_str(), name.size() + 1);
       scenes->used += name.size() + 1;
     }
   }
@@ -135,8 +160,14 @@ bool Protocol::request(const Command& command, uint32_t id, uint32_t now) {
   char name[32]; snprintf(name, sizeof(name), "chainpad-%lu", static_cast<unsigned long>(id));
   doc["op"] = 6; auto d = doc["d"].to<JsonObject>();
   d["requestType"] = requestType(command.operation); d["requestId"] = name;
-  if (named(command.operation)) d["requestData"][command.operation == Operation::SetCurrentProgramScene ? "sceneName" : "inputName"] = command.target;
+  if (named(command.operation)) d["requestData"][command.operation == Operation::SetInputMute || command.operation == Operation::ToggleInputMute ? "inputName" : "sceneName"] = command.target;
   if (command.operation == Operation::SetInputMute) d["requestData"]["inputMuted"] = command.muted;
+  if (command.operation == Operation::SetSceneItemVisibility || command.operation == Operation::GetSceneItemEnabled)
+    d["requestData"]["sceneItemId"] = command.itemId;
+  if (command.operation == Operation::SetSceneItemVisibility) {
+    if (command.visibility == Visibility::Toggle) return false; // Worker resolves Toggle, never guess from a cache.
+    d["requestData"]["sceneItemEnabled"] = command.visibility == Visibility::Enable;
+  }
   if (!encode(doc, wire, sizeof(wire))) return false;
   operation = command.operation; pending = id; sentAt = now; return true;
 }

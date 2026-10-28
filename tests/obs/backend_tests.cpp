@@ -304,6 +304,82 @@ int main(){
   assert(obsScenesRefresh()==SendResult::Accepted);id=sceneJson()["requestId"];rtos::step();sceneReply(id,"[{\"sceneName\":\"back-to-scene\"}]");
   assert(sceneJson()["complete"]==true && inputJson()["inputs"].size()==0);
   std::cout<<"PASS shared audio list: caps filtering, old-v5 fallback, ownership, queued/in-flight Action priority, late replies and bounded wait\n";
+  {
+    auto reply=[](const JsonDocument& sent,bool ok,const char* data="{}"){
+      JsonDocument d;d["op"]=7;d["d"]["requestId"]=sent["d"]["requestId"];d["d"]["requestType"]=sent["d"]["requestType"];
+      d["d"]["requestStatus"]["result"]=ok;d["d"]["requestStatus"]["code"]=ok?100:600;
+      JsonDocument payload;deserializeJson(payload,data);d["d"]["responseData"]=payload.as<JsonVariantConst>();
+      std::string text;serializeJson(d,text);wire::text(text);rtos::step();
+    };
+    auto packet=[](){JsonDocument d;assert(!deserializeJson(d,wire::sent.back()));return d;};
+    Action a;a.protocol=Protocol::Obs;a.obsOperation=obs::Operation::SetSceneItemVisibility;strcpy(a.obsTarget,"group");a.obsItem={};a.obsItem.id(obs::ITEM_ID_LIMIT);
+    // Both explicit states use one wire request; missing IDs fail, never resolve a name.
+    for(bool enabled:{false,true}){
+      a.obsItem.visibility=enabled?obs::Visibility::Enable:obs::Visibility::Disable;
+      assert(obsActionDispatch(a)==SendResult::Accepted);const auto logical=obsActionStatus().requestId;rtos::step();auto first=packet();
+      assert(first["d"]["requestType"]=="SetSceneItemEnabled" && first["d"]["requestData"]["sceneItemId"].as<uint64_t>()==obs::ITEM_ID_LIMIT);
+      assert(first["d"]["requestData"]["sceneItemEnabled"]==enabled);reply(first,enabled);backendsTick(0);
+      assert(obsActionStatus().last.id==logical&&obsActionStatus().last.success==enabled);
+    }
+    for(bool previous:{false,true}){
+      a.obsItem.visibility=obs::Visibility::Toggle;
+      config.chains[0].actions[1]=a;const auto oscCount=oscSent;const auto sentBefore=requests();
+      assert(engine.trigger({0,0})&&!engine.activeCount());const auto logical=obsActionStatus().requestId;
+      assert(oscSent==oscCount+1&&requests()==sentBefore); // Chain never waits for either OBS response.
+      normal=submit("after-toggle");rtos::step();auto first=packet();assert(first["d"]["requestType"]=="GetSceneItemEnabled");
+      const auto completed=obsActionStatus().completed;reply(first,true,previous?"{\"sceneItemEnabled\":true}":"{\"sceneItemEnabled\":false}");backendsTick(0);
+      assert(obsActionStatus().completed==completed);auto second=packet();
+      assert(second["d"]["requestType"]=="SetSceneItemEnabled" && second["d"]["requestId"]!=first["d"]["requestId"]);
+      assert(second["d"]["requestData"]["sceneItemEnabled"]==!previous);
+      // Duplicate late first-stage reply cannot finish or change the second stage.
+      const auto sent=requests();reply(first,true,"{\"sceneItemEnabled\":false}");assert(requests()==sent);
+      reply(second,true);backendsTick(0);assert(obsActionStatus().completed==completed+1&&obsActionStatus().last.id==logical);
+      assert(obsActionStatus().last.operation==obs::Operation::SetSceneItemVisibility);
+      response(normal);backendsTick(0);
+    }
+    // Read errors / missing boolean do not issue a write, and notify only once.
+    for(bool ok:{false,true}){
+      assert(obsActionDispatch(a)==SendResult::Accepted);const auto logical=obsActionStatus().requestId;rtos::step();auto first=packet();const auto sent=requests();
+      reply(first,ok);backendsTick(0);assert(requests()==sent&&obsActionStatus().last.id==logical&&!obsActionStatus().last.success);
+    }
+    // Timeout at either stage does not replay the logical Toggle after reconnect.
+    for(bool secondStage:{false,true}){
+      assert(obsActionDispatch(a)==SendResult::Accepted);const auto logical=obsActionStatus().requestId;rtos::step();
+      if(secondStage)reply(packet(),true,"{\"sceneItemEnabled\":true}");
+      const auto sent=requests();rtos::step(3001);ready();backendsTick(0);
+      assert(requests()==sent&&obsActionStatus().last.id==logical&&obsActionStatus().last.code==-4);
+    }
+    assert(obsActionDispatch(a)==SendResult::Accepted);const auto cancelled=obsActionStatus().requestId;rtos::step();
+    auto first=packet();const auto sent=requests();obsPanic();reply(first,true,"{\"sceneItemEnabled\":true}");ready();backendsTick(0);
+    assert(requests()==sent&&obsActionStatus().last.id==cancelled&&!obsActionStatus().last.success);
+    // Invalidate the session after the read callback, before the write's claim.
+    for(bool changeSettings:{false,true}){
+      assert(obsActionDispatch(a)==SendResult::Accepted);const auto logical=obsActionStatus().requestId;rtos::step();
+      const auto count=requests();wire::afterMessage=[changeSettings] {if(changeSettings)assert(obsApplySettings(settings()));else obsPanic();};
+      reply(packet(),true,"{\"sceneItemEnabled\":true}");ready();backendsTick(0);
+      assert(requests()==count&&obsActionStatus().last.id==logical&&!obsActionStatus().last.success);
+    }
+    // A failed write produces one logical failure, without replay or a name lookup.
+    assert(obsActionDispatch(a)==SendResult::Accepted);const auto failedWrite=obsActionStatus().requestId;rtos::step();
+    reply(packet(),true,"{\"sceneItemEnabled\":false}");reply(packet(),false);backendsTick(0);
+    assert(obsActionStatus().last.id==failedWrite&&obsActionStatus().last.code==600);
+    // Parameterized discoveries share slots but never leak another container's items.
+    auto names=[](obs::Operation op,const char* target){JsonDocument d;obsNamesJson(d.to<JsonObject>(),op,target);return d;};
+    for(auto op:{obs::Operation::GetGroupList,obs::Operation::GetSceneItemList,obs::Operation::GetGroupSceneItemList}){
+      const bool items=obs::itemList(op);const char* target=items?"group":"";
+      assert(obsNamesRefresh(op,target)==SendResult::Accepted);rtos::step();
+      if(items)assert(obsNamesRefresh(op,"other")==SendResult::Busy);
+      reply(packet(),true,items?"{\"sceneItems\":[{\"sourceName\":\"same\",\"sceneItemId\":0},{\"sourceName\":\"same\",\"sceneItemId\":42}]}":"{\"groups\":[\"group\"]}");backendsTick(0);
+      auto cache=names(op,target);assert(cache["complete"]==true);
+      if(items){assert(cache["items"][1]["sceneItemId"]==42);assert(names(op,"other")["items"].size()==0);}
+    }
+    const auto op=obs::Operation::GetGroupSceneItemList;
+    assert(obsNamesRefresh(op,"group")==SendResult::Accepted);rtos::step();first=packet();reply(first,false);backendsTick(0);
+    assert(names(op,"group")["state"]=="error");
+    // Cached discovery failure does not gate a manually specified Action.
+    a.obsItem.visibility=obs::Visibility::Enable;assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();reply(packet(),true);backendsTick(0);assert(obsActionStatus().last.success);
+    std::cout<<"PASS item Worker: explicit states, two-stage Toggle, FIFO, logical completion, stale replies, errors, no replay, Panic and independent parameterized discovery\n";
+  }
   cfg=settings();cfg.enabled=false;assert(obsApplySettings(cfg));rtos::step();assert(obsStatusSnapshot().state==obs::State::Disabled);
   oscBefore=oscSent;assert(engine.trigger({0,0}));
   assert(oscSent==oscBefore+1 && !strcmp(obsActionStatus().admission,"disabled"));
