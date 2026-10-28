@@ -87,3 +87,8 @@ XIAO ESP32C3は動作上の問題により対応を一時停止しています�
 | [Third-Party Notices](THIRD_PARTY_NOTICES.md)                 | 参考実装・依存ライブラリの情報                                                             |
 
 **Rotation Value（回転量モード）**では、Encoderの回転量に応じた値をOSC／MIDI CCで送信できます。Configuratorの専用UIで回転範囲・初期位置・境界動作・各Outputの出力範囲を設定でき、ブラウザ上のPreviewで出力値を確認できます。
+
+## ライセンス
+
+ChainPadは[MIT License](LICENSE)で公開しています。
+第三者のコード・依存ライブラリには、それぞれのライセンスが適用されます。詳細は[Third-Party Notices](THIRD_PARTY_NOTICES.md)を参照してください。
