@@ -20,17 +20,17 @@ ChainPadの状態とLEDの状態の対応表は以下の通りです
 
 ChainPadでは、使用する機能によって必要な接続が異なります。
 
-| 機能              | 接続      |
-| ----------------- | --------- |
-| OSC、設定画面表示 | Wi-Fi     |
-| MIDI              | Bluetooth |
-| HID（キーボード） | Bluetooth |
+| 機能                             | 接続      |
+| -------------------------------- | --------- |
+| OSC、OBS WebSocket、設定画面表示 | Wi-Fi     |
+| MIDI                             | Bluetooth |
+| HID（キーボード）                | Bluetooth |
 
 ※XIAO ESP32S3の場合はMIDI/HIDをUSB接続で利用することも可能です
 
 ## 2. Wi-Fiへの接続
 
-OSC送信機能を利用するには、VRChatを利用しているPCと同じLANにChainPadを接続する必要があります。<br>
+OSC送信機能、OBS WebSocket機能を利用するには、VRChat/OBSを利用しているPCと同じLANにChainPadを接続する必要があります。<br>
 また、ChainPadの設定画面を表示するためにもChainPadをWi-Fi接続する必要があります。
 
 > ChainPadは2.4 GHz帯のWi-Fiアクセスポイントに接続できます。<br>
@@ -65,7 +65,7 @@ WindowsでChainPadのBLE-MIDI機能を利用する場合、BLE-MIDI対応ドラ�
 
 ドライバーのインストール方法や対応OSについては、KORGの公式サイトを参照してください。
 
-※Bluetooth HID（キーボード）機能のみを利用する場合、BLE-MIDI Driverのインストールは不要です。
+※Bluetooth HID（キーボード）機能のみを利用する場合、BLE-MIDI Driverのインストールは不要です。ただし、後からBLE-MIDI Driverをインストールした場合はペアリング情報をPCから削除し、再ペアリングを行ってください。
 
 ### 3-2. ChainPadとのBluetooth接続
 
@@ -128,19 +128,43 @@ OSCを用いてVRChatを操作する場合は、OSC送信先にVRChatを実行�
 
 VRChatで使用する場合、OSC Portは通常変更する必要はありません
 
-### 6-2. Keyへのアクションの登録
+### 6-2. OBS WebSocket設定
 
-設定したいKEYを選択し、「+ Add Action」ボタンを押すことでアクションを追加可能です。
+OBS WebSocketを利用してOBSを操作する場合は、OBS Studio/ChainPad双方でOBS WebSocketの設定が必要です。
 
-キーの並びはエンコーダーが右上にある状態で、左上のキーから左に1→2→3の順に並んでいます
+#### (1) OBS Studio側の設定作業
 
-#### (1)OSC
+1. OBSの「ツール(T)」→「WebSocket サーバー設定」を選択する
+2. 表示された「WebSocket サーバー設定」画面にある「WebSocketサーバーを有効にする」にチェックを入れる☑
+3. 「サーバー設定」欄の「接続情報を表示」ボタンをクリックし、接続に必要な情報（IPアドレス、サーバーポート、サーバーパスワード）を確認する
+
+#### (2) ChainPad側の設定作業
+
+1. 「Enable OBS WebSocket」にチェックを入れる☑
+2. IP Address／Port／Password欄にOBS Studio側で確認したIPアドレス、サーバーポート、サーバーパスワードを入力する
+3. 「Save OBS」ボタンをクリックする
+4. 右上の接続状況表示が「●Connection: Connected」となる事を確認する
+
+### 6-3. Keyへのアクションの登録
+
+設定したいKEYを選択し、「Press（押した時）」もしくは「Release（離した時）」の「+ Add Action」ボタンを押すことでアクションを追加可能です。
+
+キーの並びはエンコーダーが右上にある状態で、左上のキーから右に1→2→3の順に並んでいます
+
+<table>
+    <tr><td>1</td><td>2</td><td>3</td><td>〇</td></tr>
+    <tr><td>4</td><td>5</td><td>6</td></tr>
+    <tr><td>7</td><td>8</td><td>9</td></tr>
+    <tr><td>10</td><td>11</td><td>12</td></tr>
+</table>
+
+#### (1) OSC
 
 Actionで「OSC」を選ぶと、OSCメッセージを送信する設定が可能です。
 
 OSC Address、送信する値のType、Valueを入力してください
 
-#### (2)MIDI
+#### (2) MIDI
 
 Actionで「MIDI」を選ぶと、MIDIメッセージを送信する設定が可能です。
 
@@ -149,7 +173,7 @@ Actionで「MIDI」を選ぶと、MIDIメッセージを送信する設定が可
 「All Notes → Note On」と「All Notes → Note Off」では、ChainPadの設定内の有効なMIDI NoteをまとめてOn/Offできます。<br>
 Noteが意図せずOnのままになった場合の緊急回避ボタンなどに利用できます。
 
-#### (3)HID
+#### (3) HID
 
 Actionで「HID」を選ぶと、キーボードの操作を行う設定が可能です。
 
@@ -159,11 +183,18 @@ Actionで「HID」を選ぶと、キーボードの操作を行う設定が可�
 
 > OBSなど一部ソフトではKeyDown単体では入力したとみなさず、同じキーのKeyUpイベントが発生して初めてホットキーが動作します。その場合はKeyDownとKeyUpをセットで設定してください。
 
-### 6-3. Encoder Push
+#### (4) OBS
+
+Actionで「OBS」を選ぶと、OBS WebSocketを用いてOBSの操作が可能となります。
+種類で行いたい操作を選択し、対象シーンやアイテムなどを設定してください。
+
+シーンやアイテムなどの設定時、「一覧から選択」ボタンを利用することでOBSに設定されているシーンやアイテムの情報を取得し、設定することも可能です。
+
+### 6-4. Encoder Push
 
 Encoder Push（エンコーダーの軸を押し込む操作）は、KEYと同様の設定が可能です
 
-### 6-4. Encoder
+### 6-5. Encoder
 
 Encoder（エンコーダーを回転させる操作）は2種類の設定が可能です
 
@@ -179,7 +210,7 @@ Encoder（エンコーダーを回転させる操作）は2種類の設定が可
 回転量モードは回転量に応じてOSCメッセージ/MIDI CCの値を増減させるモードです。<br>
 1つのエンコーダーを回転させるだけで複数のOSCパラメータ/MIDI CCの値を同時に変化させることが可能です。
 
-### 6-5. 設定の保存
+### 6-6. 設定の保存
 
 Web設定画面を下にスクロールすると表示される「保存・適用」ボタンを押すことで設定が保存され、設定が有効となります。
 
@@ -206,7 +237,7 @@ PCに複数のMIDIデバイスを接続している場合は、VRChatの起動�
 
 ### 7-3. HID設定
 
-HIDを利用して操作する例として、OBSがあります。
+OBSはOBS WebSocketによる操作のほかに、ホットキーを利用した操作も可能です。
 
 OBSのホットキーはメニューの「ファイル」→「設定」を選択して表示される設定画面の「ホットキー」の項目を選択することで設定可能です。
 
