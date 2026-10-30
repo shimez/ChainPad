@@ -221,6 +221,19 @@ Preview Positionにエンコーダーのポジション（何クリック分回�
 - Typeでは、値の型を指定します。
 - Value欄には送信する値を入力します。
 
+> 設定例①：カメラをストリームモードに変更する<br>
+> 　Address：/usercamera/Mode<br>
+> 　Type：Int<br>
+> 　Value：2<br>
+> 設定例②：カメラのSpoutを有効にする<br>
+> 　Address：/usercamera/Streaming<br>
+> 　Type：Bool<br>
+> 　Value：true<br>
+> 設定例③：カメラのSmoothを有効にする<br>
+> 　Address：/usercamera/SmoothMovement<br>
+> 　Type：Bool<br>
+> 　Value：true<br>
+
 ### 4-2. MIDI
 
 ![ChainPad WebUI MIDIアクション](./images/chainpad-webui-action-midi.png)
@@ -240,9 +253,7 @@ Preview Positionにエンコーダーのポジション（何クリック分回�
 ![ChainPad WebUI OBSアクション](./images/chainpad-webui-action-obs.png)
 
 - OBS操作欄で実行する操作を選択します
-- 「シーン切り替え」操作のシーン名欄は自由入力に加えて「シーン一覧から選択」ボタンを利用しOBS上にあるシーンの一覧を取得して選択することも可能です
-- 「ミュート設定」「ミュート切り替え」操作の入力名欄は自由入力に加えて「ミュート対象一覧から選択」ボタンを利用しOBS上にある音声入力の一覧を取得して選択することも可能です
-- 「シーンアイテム表示設定」の「シーン名」「アイテムID」や「グループ内アイテム表示設定」の「グループ名」「アイテムID」も同様に一覧を取得して選択可能です。
+- 「シーン名」欄、「入力名」欄、「グループ名」欄、「アイテムID」欄の設定は自由入力に加えて「一覧から選択」ボタンを利用し、OBSの設定情報を読み込んで選択する機能があります。
 
 > ミュート対象の一覧取得はOBS WebSocket 5.6.0以降に対応しています。非対応の場合も、入力名を手入力して操作できます。<br>
 > 一覧取得時、受信サイズの上限により取得失敗する場合があります。その場合は自由入力にて設定してください。
