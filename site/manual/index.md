@@ -133,6 +133,7 @@ OBS WebSocket機能を利用するためには、OBS Studio側／ChainPad側双�
 ### 3-6. 入力選択エリア
 
 入力選択エリアでは設定を行うキー・エンコーダーを選択します。
+
 ![ChainPad WebUI 入力選択エリア](./images/chainpad-webui-area04.png)
 
 ### 3-7. 入力設定エリア
