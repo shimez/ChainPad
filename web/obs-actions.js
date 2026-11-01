@@ -2,9 +2,11 @@
 const ObsActionsUI = (() => {
   const operations = [['setCurrentProgramScene','シーン切り替え'],['setInputMute','ミュート設定'],['startStream','配信開始','配信・録画制御'],['stopStream','配信停止','配信・録画制御'],['startRecord','録画開始','配信・録画制御'],['stopRecord','録画停止','配信・録画制御'],['groupItemVisibility','グループ内アイテム表示制御','アイテム表示制御'],['setSceneItemVisibility','シーン内アイテム表示制御','アイテム表示制御'],['triggerMediaInputAction','メディア制御']];
   const mediaActions=[['restart','先頭から再生'],['stop','停止'],['pause','一時停止'],['play','再生再開'],['next','次へ'],['previous','前へ']];
+  operations.push(['setInputVolume','音量調整']);
   function defaults(operation='setCurrentProgramScene') {
     if(operation==='groupItemVisibility')return {...defaults('setSceneItemVisibility'),containerType:'group'};
     if(operation==='triggerMediaInputAction')return {protocol:'obs',delayMs:0,operation,inputName:'',mediaAction:'restart'};
+    if(operation==='setInputVolume')return {protocol:'obs',delayMs:0,operation,inputName:'',volumeMode:'absolute',volumePercent:100};
     return {protocol:'obs',delayMs:0,operation,...(operation==='setCurrentProgramScene'?{sceneName:''}:operation==='setInputMute'?{inputName:'',inputMuted:true}:operation==='toggleInputMute'?{inputName:''}:operation==='setSceneItemVisibility'?{containerType:'scene',sceneName:'',sceneItemId:null,visibility:'enable'}:{})};
   }
   function validName(name) {
@@ -67,6 +69,7 @@ const ObsActionsUI = (() => {
     const supported=capabilities.obsActions===true;
     let picker;
     const media=a.operation==='triggerMediaInputAction';
+    const volume=a.operation==='setInputVolume';
     if(media)fields.className+=' obs-media';
     if(['setInputMute','toggleInputMute'].includes(a.operation))fields.className+=' obs-mute';
     const note=document.createElement('p');note.className='hint';note.style.gridColumn='1 / -1';
@@ -100,11 +103,11 @@ const ObsActionsUI = (() => {
       renderItem(a,fields,control,changed,supported,scenes);
       fields.append(note);return;
     }
-    const key=a.operation==='setCurrentProgramScene'?'sceneName':media||['setInputMute','toggleInputMute'].includes(a.operation)?'inputName':null;
+    const key=a.operation==='setCurrentProgramScene'?'sceneName':media||volume||['setInputMute','toggleInputMute'].includes(a.operation)?'inputName':null;
     if(key){
-      const label=key==='sceneName'?'シーン':media?'メディア':'ミュート対象';
+      const label=key==='sceneName'?'シーン':media?'メディア':volume?'音声ソース':'ミュート対象';
       scenes.select?.(key==='sceneName'?'scenes':media?'media-inputs':'inputs');
-      const field=control(key==='sceneName'?'シーン名':media?'対象のメディア/VLCビデオ':'入力名',a[key],null,value=>{a[key]=value;update();});
+      const field=control(key==='sceneName'?'シーン名':media?'対象のメディア/VLCビデオ':volume?'対象の音声ソース':'入力名',a[key],null,value=>{a[key]=value;update();});
       const input=field.lastChild, warning=document.createElement('small');
       input.oninput=()=>{a[key]=input.value;changed();update();};
       let list,refresh,refreshField,panel,choicesKey='';
@@ -162,6 +165,16 @@ const ObsActionsUI = (() => {
     if(media){
       fields.append(control('メディア操作',a.mediaAction,mediaActions,value=>a.mediaAction=value));
       note.textContent+=' 再生再開は一時停止からの再開です。停止・終了後は「先頭から再生」を使用してください。「次へ」「前へ」は対応するプレイリストで動作します。';
+    }
+    if(volume){
+      fields.append(control('調整方法',a.volumeMode,[['absolute','指定値に設定'],['relative','相対的に増減']],value=>{a.volumeMode=value;a.volumePercent=value==='relative'?0:100;rerender();}));
+      const relative=a.volumeMode==='relative',min=relative?-100:0;
+      const field=control(relative?'増減量（パーセントポイント）':'音量（%）',a.volumePercent,null,value=>{a.volumePercent=value===''?NaN:Number(value);validate();});
+      const input=field.lastChild;input.type='number';input.min=min;input.max=100;input.step='any';
+      function validate(){input.setCustomValidity(Number.isFinite(a.volumePercent)&&a.volumePercent>=min&&a.volumePercent<=100?'':`${min}〜100の数値を指定してください。`);}
+      input.oninput=()=>{a.volumePercent=input.value===''?NaN:Number(input.value);validate();changed();};
+      validate();fields.append(field);
+      note.textContent+=' 100% = 線形振幅倍率1.0（0 dB）。相対調整は現在値を取得して加算し、結果を0〜100%に収めます。ミュート状態は変更しません。';
     }
     if(picker)fields.append(picker);
     fields.append(note);

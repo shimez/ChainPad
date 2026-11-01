@@ -8,7 +8,7 @@ from unittest.mock import patch
 import websocket
 
 from obs_client import Cancelled, Protocol, Worker, authentication
-from media_tester import App, milliseconds
+from media_tester import App, milliseconds, volume_percent
 
 
 class Socket:
@@ -161,6 +161,80 @@ class GuiTests(unittest.TestCase):
         app.absolute.set("30")
         app.seek(False)
         self.assertEqual(app.worker.commands.get_nowait(), ("SetMediaInputCursor", {"inputName": "movie", "mediaCursor": 30000}))
+
+    def volume_reply(self, kind, data, value=0.5, success=True):
+        self.app.result((kind, data, {"requestStatus": {"result": success, "code": 100 if success else 600},
+                                    "responseData": {"inputVolumeMul": value, "inputVolumeDb": -6.02}}, 1))
+
+    def test_absolute_volume_and_readback(self):
+        app = self.app
+        app.target.set("Mic")
+        for value in ("0", "37.5", "100"):
+            app.volume_value.set(value)
+            app.set_volume()
+            kind, data = app.worker.commands.get_nowait()
+            self.assertEqual((kind, data), ("SetInputVolume", {"inputName": "Mic", "inputVolumeMul": float(value) / 100}))
+            self.volume_reply(kind, data)
+            kind, data = app.worker.commands.get_nowait()
+            self.assertEqual(kind, "GetInputVolume")
+            self.volume_reply(kind, data, float(value) / 100)
+            self.assertAlmostEqual(app.volume.get(), float(value))
+        for invalid in ("nan", "inf", "-1", "101", "abc"):
+            with self.assertRaises(ValueError):
+                volume_percent(invalid)
+
+    def test_relative_volume_reads_current_and_clamps(self):
+        app = self.app
+        app.target.set("Mic")
+        app.volume_step.set("10")
+        for direction, current, expected in ((1, .25, .35), (-1, .7, .6), (1, .99, 1), (-1, .01, 0)):
+            app.adjust_volume(direction)
+            kind, data = app.worker.commands.get_nowait()
+            self.assertEqual(kind, "GetInputVolume")
+            self.volume_reply(kind, data, current)
+            kind, data = app.worker.commands.get_nowait()
+            self.assertEqual(kind, "SetInputVolume")
+            self.assertAlmostEqual(data["inputVolumeMul"], expected)
+            self.volume_reply(kind, data)
+            self.volume_reply(*app.worker.commands.get_nowait(), expected)
+
+    def test_relative_failure_and_target_change_do_not_write(self):
+        app = self.app
+        for mode in ("failure", "target", "disconnect", "invalid"):
+            app.ready = True
+            app.target.set("Mic")
+            app.adjust_volume(1)
+            kind, data = app.worker.commands.get_nowait()
+            if mode == "target":
+                app.target.set("Other")
+            if mode == "disconnect":
+                app.disconnect()
+            self.volume_reply(kind, data, None if mode == "invalid" else .5, mode != "failure")
+            self.assertTrue(app.worker.commands.empty())
+
+    def test_slider_coalesces_busy_changes_and_cancels_on_target_change(self):
+        app = self.app
+        app.target.set("Mic")
+        app.slider_changed("10")
+        app.flush_volume()
+        kind, data = app.worker.commands.get_nowait()
+        self.assertEqual(data["inputVolumeMul"], .1)
+        for value in ("20", "30", "80"):
+            app.slider_changed(value)
+            app.flush_volume()
+        self.assertTrue(app.worker.commands.empty())
+        self.volume_reply(kind, data)
+        self.volume_reply(*app.worker.commands.get_nowait(), .1)
+        app.volume_sent_at = 0
+        app.flush_volume()
+        kind, data = app.worker.commands.get_nowait()
+        self.assertEqual(data["inputVolumeMul"], .8)
+        app.slider_changed("90")
+        app.target.set("Other")
+        self.volume_reply(kind, data)
+        app.flush_volume()
+        self.assertTrue(app.worker.commands.empty())
+        self.assertIsNone(app.pending_volume)
 
 
 if __name__ == "__main__":

@@ -45,6 +45,7 @@ Epoch session;
 bool fatal = false, identify = false, closed = false;
 uint32_t started = 0, authenticatingAt = 0;
 uint32_t measuredRequest = 0; // Worker-only; never reset by the loop.
+// Shared two-stage slot: item Toggle or relative volume. No extra queue/buffer.
 Command toggleCommand;
 uint32_t toggleAction = 0, toggleWire = 0;
 bool toggleAdvance = false;
@@ -67,7 +68,7 @@ bool current() { Lock lock; return lifecycle.current(session); }
 void result(uint32_t id, bool success, int code, Operation operation) {
   if (!id) return;
   if (toggleAction && id == toggleWire) {
-    id = toggleAction; operation = Operation::SetSceneItemVisibility;
+    id = toggleAction; operation = toggleCommand.operation;
     toggleAction = toggleWire = 0; toggleAdvance = false;
   }
   ObsResult r{id, success, code, operation};
@@ -137,6 +138,11 @@ void message(const char* bytes, size_t size) {
     }
     case Received::Result:
       responseMs = millis() - protocol.sentAt;
+      if (toggleAction && protocol.operation == Operation::GetInputVolume && protocol.success) {
+        const float percent = protocol.inputVolume * 100.0f + toggleCommand.volume.percent();
+        toggleCommand.volume = {percent < 0 ? 0 : percent > 100 ? 100 : percent, false};
+        protocol.pending = 0; toggleAdvance = true; break;
+      }
       if (toggleAction && protocol.operation == Operation::GetSceneItemEnabled && protocol.success) {
         toggleCommand.visibility = protocol.itemEnabled ? Visibility::Disable : Visibility::Enable;
         protocol.pending = 0; toggleAdvance = true; break;
@@ -268,6 +274,10 @@ void worker(void*) {
               if (r.command.operation == Operation::SetSceneItemVisibility && r.command.visibility == Visibility::Toggle) {
                 toggleCommand = r.command; toggleAction = toggleWire = r.id;
                 r.command.operation = Operation::GetSceneItemEnabled;
+              }
+              if (r.command.operation == Operation::SetInputVolume && r.command.volume.relative) {
+                toggleCommand = r.command; toggleAction = toggleWire = r.id;
+                r.command.operation = Operation::GetInputVolume;
               }
               if (!protocol.request(r.command, r.id, now)) result(r.id, false, -6, r.command.operation);
               else {

@@ -8,6 +8,22 @@
 using namespace chimera::obs;
 static Received receive(Protocol& p, const char* text) { return p.receive(text, strlen(text), "test-password", authentication); }
 int main() {
+  static_assert(sizeof(Command)==216,"Volume reuses Command storage");
+  {
+    for(float percent:{0.0f,37.5f,100.0f}){
+      Protocol p;p.state=State::Ready;Command c;c.operation=Operation::SetInputVolume;c.volume={percent,false};strcpy(c.target,"Mic");
+      assert(p.request(c,1,0));JsonDocument wire;deserializeJson(wire,p.wire);
+      assert(wire["d"]["requestType"]=="SetInputVolume");assert(wire["d"]["requestData"]["inputName"]=="Mic");
+      assert(wire["d"]["requestData"]["inputVolumeMul"].as<float>()==percent/100);
+      p.pending=0;c.volume.relative=true;assert(!p.request(c,2,0));
+    }
+    for(const char* value:{"0","0.5","1","2","null","true","\"0.5\"","-1","21"}){
+      Protocol p;p.state=State::Ready;Command c;c.operation=Operation::GetInputVolume;c.volume={};strcpy(c.target,"Mic");assert(p.request(c,1,0));
+      std::string text=R"({"op":7,"d":{"requestId":"chainpad-1","requestType":"GetInputVolume","requestStatus":{"result":true,"code":100},"responseData":{"inputVolumeMul":)"+std::string(value)+"}}}";
+      assert(receive(p,text.c_str())==Received::Result);
+      assert(p.success==(value[0]=='0'||value[0]=='1'||!strcmp(value,"2")));
+    }
+  }
   static_assert(sizeof(SceneList) == 4172, "Discovery stays within the existing two-slot pool");
   {
     const char* actions[]={"RESTART","STOP","PAUSE","PLAY","NEXT","PREVIOUS"};

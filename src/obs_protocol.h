@@ -16,6 +16,7 @@ struct Protocol {
   uint32_t pending = 0, sentAt = 0;
   bool success = false;
   bool itemEnabled = false;
+  float inputVolume = 0;
   int code = 0;
   Operation operation = Operation::SetCurrentProgramScene;
   char wire[1536]{};

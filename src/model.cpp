@@ -64,7 +64,15 @@ bool parseAction(JsonVariantConst j, Action& a) {
     const bool named = obs::named(a.obsOperation), mute = a.obsOperation == obs::Operation::SetInputMute;
     const bool item = a.obsOperation == obs::Operation::SetSceneItemVisibility;
     const bool media = a.obsOperation == obs::Operation::TriggerMediaInputAction;
-    if (j.as<JsonObjectConst>().size() != size_t(3 + named + mute + media + (item ? 3 : 0))) return false;
+    const bool volume = a.obsOperation == obs::Operation::SetInputVolume;
+    if (j.as<JsonObjectConst>().size() != size_t(3 + named + mute + media + (volume ? 2 : 0) + (item ? 3 : 0))) return false;
+    if (volume) {
+      if (!(j["volumeMode"] == "absolute" || j["volumeMode"] == "relative") || !j["volumePercent"].is<double>()) return false;
+      const double value = j["volumePercent"].as<double>();
+      const bool relative = j["volumeMode"] == "relative";
+      if (!(value >= (relative ? -100.0 : 0.0) && value <= 100.0)) return false;
+      a.obsVolume = {float(value), relative};
+    }
     a.obsTarget[0] = 0; a.boolValue = false;
     if (named && (!text(j[a.obsOperation == obs::Operation::SetCurrentProgramScene || item ? "sceneName" : "inputName"], a.obsTarget, sizeof(a.obsTarget)) ||
                   !obs::validText(a.obsTarget, obs::TARGET_LIMIT))) return false;
@@ -286,6 +294,11 @@ template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocum
           j["sceneItemId"] = a.obsItem.id(); j["visibility"] = obs::visibilityName(a.obsItem.visibility);
         }
         if (a.obsOperation == obs::Operation::SetInputMute) j["inputMuted"] = a.boolValue;
+        if (a.obsOperation == obs::Operation::SetInputVolume) {
+          if (!obs::validVolume(a.obsVolume)) return false;
+          j["volumeMode"] = a.obsVolume.relative ? "relative" : "absolute";
+          j["volumePercent"] = a.obsVolume.percent();
+        }
         if (a.obsOperation == obs::Operation::TriggerMediaInputAction) {
           const char* mediaAction = obs::mediaActionName(a.obsMediaAction);
           if (!mediaAction) return false;

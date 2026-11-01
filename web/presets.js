@@ -13,10 +13,12 @@ const Presets = (() => {
     if (a.protocol === 'obs') {
       const item=a.operation==='setSceneItemVisibility';
       const media=a.operation==='triggerMediaInputAction';
-      const named=item||media||['setCurrentProgramScene','setInputMute','toggleInputMute'].includes(a.operation);
+      const volume=a.operation==='setInputVolume';
+      const named=item||media||volume||['setCurrentProgramScene','setInputMute','toggleInputMute'].includes(a.operation);
       const mute=a.operation==='setInputMute';
-      if (!['setCurrentProgramScene','startStream','stopStream','startRecord','stopRecord','setInputMute','toggleInputMute','setSceneItemVisibility','triggerMediaInputAction'].includes(a.operation) || a.delayMs!==0 ||
-          Object.keys(a).length!==3+Number(named)+Number(mute)+Number(media)+(item?3:0)) fail('OBS Actionが不正です。');
+      if (!['setCurrentProgramScene','startStream','stopStream','startRecord','stopRecord','setInputMute','toggleInputMute','setSceneItemVisibility','triggerMediaInputAction','setInputVolume'].includes(a.operation) || a.delayMs!==0 ||
+          Object.keys(a).length!==3+Number(named)+Number(mute)+Number(media)+(volume?2:0)+(item?3:0)) fail('OBS Actionが不正です。');
+      if(volume&&(!['absolute','relative'].includes(a.volumeMode)||!Number.isFinite(a.volumePercent)||a.volumePercent<(a.volumeMode==='relative'?-100:0)||a.volumePercent>100))fail('OBS音量の調整方法・値が不正です。');
       if(named){
         const name=a[a.operation==='setCurrentProgramScene'||item?'sceneName':'inputName'];
         if(!text(name,192)||!name.length||/[\x00-\x1f\x7f]/.test(name)||[...name].some(c=>{const cp=c.codePointAt(0);return cp>=0xd800&&cp<=0xdfff;})) fail('OBS対象名はUTF-8で1〜192 bytes（制御文字不可）にしてください。');
@@ -79,9 +81,9 @@ const Presets = (() => {
   function rotation(raw, capabilities, changes) {
     if (!object(raw) || !['actionChain','rotationValue'].includes(raw.mode)) fail('Encoder Rotation Modeが不正です。');
     const r=raw.rotationValue;
-    if (!object(r) || !int(r.rangeSteps,1,65535) || !int(r.initialPosition,0,r.rangeSteps) || !['stop','wrap'].includes(r.boundary) || !Array.isArray(r.outputs) || r.outputs.length>16) fail('Rotation Axis / Outputsが不正です（暫定最大16 Outputs）。');
+    if (!object(r) || !int(r.rangeSteps,1,65535) || !int(r.initialPosition,0,r.rangeSteps) || !['stop','wrap'].includes(r.boundary) || !Array.isArray(r.outputs) || r.outputs.length>16) fail('Rotation Axis / Actionsが不正です（暫定最大16 Actions）。');
     const outputs=r.outputs.map(o=>{
-      if (!object(o)) fail('Rotation Outputが不正です。');
+      if (!object(o)) fail('Rotation Actionが不正です。');
       if (o.protocol==='osc') {
         if (o.transport!=='wifi' || !text(o.address,192) || !o.address.startsWith('/') || /[\x00-\x20]/.test(o.address) || !['int','float'].includes(o.type)) fail('Rotation OSCが不正です。');
         const valid=v=>o.type==='int'?int(v,-2147483648,2147483647):typeof v==='number'&&Number.isFinite(v)&&Math.abs(v)<=3.4028234663852886e38;

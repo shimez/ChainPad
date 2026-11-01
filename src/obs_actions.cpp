@@ -99,6 +99,7 @@ SendResult obsActionDispatch(const Action& a) {
   (void)a; status.admission = "testConsoleOwned"; return SendResult::Unavailable;
 #else
   obs::Command command; command.operation = a.obsOperation; command.muted = a.boolValue;
+  if (a.obsOperation == obs::Operation::SetInputVolume) command.volume = a.obsVolume;
   if (a.obsOperation == obs::Operation::TriggerMediaInputAction) command.mediaAction = a.obsMediaAction;
   if (a.obsOperation == obs::Operation::SetSceneItemVisibility) {
     command.itemId = a.obsItem.id(); command.visibility = a.obsItem.visibility;

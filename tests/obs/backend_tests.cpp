@@ -398,6 +398,38 @@ int main(){
     assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();const auto mediaSent=requests();
     rtos::step(3001);ready();backendsTick(0);assert(requests()==mediaSent&&obsActionStatus().last.code==-4);
     std::cout<<"PASS media Worker: filtered isolated cache, manual fallback, six actions, nonblocking chains, FIFO, failure and no replay\n";
+    a.obsOperation=obs::Operation::SetInputVolume;strcpy(a.obsTarget,"manual audio");
+    for(float percent:{0.0f,37.5f,100.0f}){
+      a.obsVolume={percent,false};assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();
+      auto sent=packet();assert(sent["d"]["requestType"]=="SetInputVolume");
+      assert(sent["d"]["requestData"]["inputVolumeMul"].as<float>()==percent/100);reply(sent,true);backendsTick(0);
+    }
+    for(float delta:{-100.0f,-5.0f,0.0f,5.0f,100.0f}){
+      a.obsVolume={delta,true};config.chains[0].actions[1]=a;const auto oscCount=oscSent;
+      assert(engine.trigger({0,0})&&!engine.activeCount()&&oscSent==oscCount+1);const auto logical=obsActionStatus().requestId;
+      normal=submit("after-volume");rtos::step();auto get=packet();assert(get["d"]["requestType"]=="GetInputVolume");
+      const auto completed=obsActionStatus().completed;reply(get,true,R"({"inputVolumeMul":0.5})");backendsTick(0);
+      auto set=packet();assert(set["d"]["requestType"]=="SetInputVolume"&&set["d"]["requestId"]!=get["d"]["requestId"]);
+      const float expected=delta==-100?0:delta==100?1:(50+delta)/100;
+      assert(set["d"]["requestData"]["inputVolumeMul"].as<float>()==expected&&obsActionStatus().completed==completed);
+      const auto count=requests();reply(get,true,R"({"inputVolumeMul":0.1})");assert(requests()==count);
+      reply(set,true);backendsTick(0);assert(obsActionStatus().last.id==logical&&obsActionStatus().last.operation==obs::Operation::SetInputVolume);
+      response(normal);backendsTick(0);
+    }
+    for(const char* invalid:{"{}",R"({"inputVolumeMul":null})",R"({"inputVolumeMul":true})",R"({"inputVolumeMul":-1})"}){
+      assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();const auto count=requests();reply(packet(),true,invalid);backendsTick(0);
+      assert(requests()==count&&!obsActionStatus().last.success);
+    }
+    for(bool second:{false,true}){
+      assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();if(second)reply(packet(),true,R"({"inputVolumeMul":1.5})");
+      const auto count=requests();reply(packet(),false);backendsTick(0);assert(requests()==count&&!obsActionStatus().last.success);
+      assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();if(second)reply(packet(),true,R"({"inputVolumeMul":0.5})");
+      const auto timeoutCount=requests();rtos::step(3001);ready();backendsTick(0);assert(requests()==timeoutCount&&obsActionStatus().last.code==-4);
+    }
+    assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();auto getVolume=packet();const auto panicCount=requests();
+    wire::afterMessage=[] {obsPanic();};reply(getVolume,true,R"({"inputVolumeMul":0.5})");ready();backendsTick(0);
+    assert(requests()==panicCount&&!obsActionStatus().last.success);
+    std::cout<<"PASS volume Worker: absolute endpoints, relative read/write, clamping, FIFO, nonblocking chain, invalid reads, failures, timeouts, stale replies and Panic\n";
   }
   cfg=settings();cfg.enabled=false;assert(obsApplySettings(cfg));rtos::step();assert(obsStatusSnapshot().state==obs::State::Disabled);
   oscBefore=oscSent;assert(engine.trigger({0,0}));

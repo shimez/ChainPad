@@ -2,6 +2,7 @@
 #include "obs_actions.h"
 // Shared by full host and each BLE-only target: real codec and LittleFS path.
 void obsActionTests() {
+  static_assert(sizeof(Action)==352,"Volume must not enlarge the Action pool");
   Config source, decoded; String error;
   source.chains[0].count = 16;
   for (unsigned i=0;i<7;++i) {
@@ -17,6 +18,13 @@ void obsActionTests() {
     auto& a=source.chains[0].actions[i];a.protocol=Protocol::Obs;a.obsOperation=obs::Operation::TriggerMediaInputAction;
     strcpy(a.obsTarget,"動画 日本語");a.obsMediaAction=obs::MediaAction(i-10);
   }
+  for(unsigned chain:{2u,24u,26u,27u}) {
+    source.chains[chain].count=2;
+    for(unsigned i=0;i<2;++i){
+      auto& a=source.chains[chain].actions[i];a.protocol=Protocol::Obs;a.obsOperation=obs::Operation::SetInputVolume;
+      strcpy(a.obsTarget,"音声 日本語");a.obsVolume={i?-5.25f:37.5f,i!=0};
+    }
+  }
   JsonDocument doc; assert(encodeConfig(source,doc));
   assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
   assert(saveSource(decoded,error));
@@ -24,6 +32,15 @@ void obsActionTests() {
   JsonDocument restored; assert(encodeConfig(config,restored));
   String before,after; serializeJson(doc,before); serializeJson(restored,after);
   assert(before==after);
+  auto volume=doc["chains"][2]["actions"][0];
+  for(const char* invalid:{"null","true","\"50\"","-0.01","100.01","1e100"}){
+    JsonDocument v;deserializeJson(v,invalid);volume["volumePercent"]=v.as<JsonVariantConst>();assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  }
+  volume["volumePercent"]=100;volume["volumeMode"]="bad";assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  volume["volumeMode"]="relative";volume["volumePercent"]=-100;assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  volume["volumePercent"]=-100.01;assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  volume["volumePercent"]=0;volume["inputMuted"]=false;assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));volume.remove("inputMuted");
+  volume["volumeMode"]="absolute";volume["volumePercent"]=37.5;assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
   for(unsigned i=10;i<16;++i){
     assert(config.chains[0].actions[i].obsOperation==obs::Operation::TriggerMediaInputAction);
     assert(config.chains[0].actions[i].obsMediaAction==obs::MediaAction(i-10));

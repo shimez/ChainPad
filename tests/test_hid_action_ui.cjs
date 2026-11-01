@@ -114,6 +114,7 @@ for(const supported of [true,false]){
     if(operation==='setCurrentProgramScene'){assert(field('シーン名'));choose('シーン名','手入力');}
     if(operation.includes('InputMute')){assert(field('入力名'));choose('入力名','マイク');}
     if(operation==='triggerMediaInputAction')choose('対象のメディア/VLCビデオ','動画');
+    if(operation==='setInputVolume')choose('対象の音声ソース','マイク');
     if(operation==='setInputMute'){choose('ミュート','false');assert.equal(a.inputMuted,false);}
     if(a.operation==='setSceneItemVisibility'){choose(operation==='groupItemVisibility'?'グループ名':'シーン名','手入力');choose('アイテムID','0');choose('表示操作','toggle');}
     const saved=plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]);
@@ -183,6 +184,27 @@ for(const operation of ['setInputMute','toggleInputMute']){
   assert(all().some(n=>String(n.textContent).includes('音声候補の抽出に非対応')));
 }
 console.log('PASS OBS editor: seven operations, supported/unsupported Full/Key roundtrip, unfiltered picker/apply/cancel, stable input/caret/composition, advisory and byte limits');
+for(const supported of [true,false])for(let input=0;input<28;input++)for(const volumeMode of ['absolute','relative']){
+  ctx.capabilities.obsActions=supported;
+  const a={protocol:'obs',delayMs:0,operation:'setInputVolume',inputName:'Mic',volumeMode,volumePercent:volumeMode==='relative'?-5.25:37.5};
+  show(a,input);assert.equal(field('OBS操作').value,'setInputVolume');assert.equal(field('調整方法').value,volumeMode);
+  assert.deepEqual(plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[input].actions[0]),plain(a));
+  if(input<26)assert.deepEqual(plain(P.read(P.key(config,Math.floor(input/2)),'key',ctx.capabilities).chains[input%2].actions[0]),plain(a));
+  const caption=volumeMode==='relative'?'増減量（パーセントポイント）':'音量（%）';
+  choose(caption,volumeMode==='relative'?-100:0);assert.equal(field(caption).validationMessage,'');
+  choose(caption,101);assert(field(caption).validationMessage);assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
+  choose(caption,50);assert(ctx.actionSummary(a).includes('音量調整'));
+  choose('調整方法',volumeMode==='relative'?'absolute':'relative');assert.equal(a.volumePercent,volumeMode==='relative'?100:0);
+  assert.equal(a.inputName,'Mic');
+}
+ctx.capabilities.obsActions=true;
+show({protocol:'obs',delayMs:0,operation:'setInputVolume',inputName:'manual',volumeMode:'relative',volumePercent:5});
+sceneCache={state:'ready',complete:true,scenes:['Mic','Desktop']};sceneListener();click('音声ソース一覧から選択');
+const volumeChoices=all().find(n=>n.tag==='select'&&n.size===6);volumeChoices.selectedIndex=1;volumeChoices.value='Desktop';volumeChoices.ondblclick();
+assert.equal(config.chains[0].actions[0].inputName,'Desktop');
+sceneCache={state:'error',complete:false,scenes:[]};sceneListener();choose('対象の音声ソース','manual');
+assert(P.read(P.full(config),'full',ctx.capabilities));
+console.log('PASS volume UI: all events, two modes, Full/Key, unsupported preservation, bounds, manual fallback and source picker');
 for(const supported of [true,false])for(const mediaAction of ['restart','stop','pause','play','next','previous']){
   ctx.capabilities.obsActions=supported;
   const a={protocol:'obs',delayMs:0,operation:'triggerMediaInputAction',inputName:'手入力',mediaAction};show(a);

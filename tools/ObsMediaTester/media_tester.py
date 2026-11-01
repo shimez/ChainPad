@@ -3,6 +3,7 @@ from collections import deque
 from datetime import datetime
 from decimal import Decimal, DecimalException
 import json
+import math
 import queue
 import time
 import tkinter as tk
@@ -14,6 +15,16 @@ from obs_client import Worker
 MEDIA_KINDS = {"ffmpeg_source", "vlc_source"}
 ACTIONS = [("再生 / 再開", "PLAY"), ("一時停止", "PAUSE"), ("停止", "STOP"),
            ("先頭から再生", "RESTART"), ("次へ", "NEXT"), ("前へ", "PREVIOUS")]
+
+
+def volume_percent(text):
+    try:
+        value = float(text)
+        if not math.isfinite(value) or not 0 <= value <= 100:
+            raise ValueError()
+        return value
+    except (ValueError, TypeError):
+        raise ValueError("音量・増減幅は0〜100の数値（%）で指定してください。") from None
 
 
 def milliseconds(text, relative=False):
@@ -33,8 +44,8 @@ class App:
     def __init__(self, root):
         self.root = root
         root.title("ChainPad — OBS Media Tester")
-        root.geometry("1060x800")
-        root.minsize(820, 680)
+        root.geometry("1060x950")
+        root.minsize(820, 850)
         self.worker = None
         self.ready = self.busy = False
         self.closing = False
@@ -53,6 +64,14 @@ class App:
         self.connection = tk.StringVar(value="未接続")
         self.state = tk.StringVar(value="状態：未取得")
         self.outcome = tk.StringVar(value="操作結果：未実行")
+        self.volume = tk.DoubleVar(value=100)
+        self.volume_value = tk.StringVar(value="100")
+        self.volume_step = tk.StringVar(value="5")
+        self.volume_state = tk.StringVar(value="音量：未取得")
+        self.slider_label = tk.StringVar(value="100.0 %")
+        self.pending_volume = None
+        self.relative_volume = None
+        self.volume_sent_at = 0
         outer = ttk.Frame(root, padding=10)
         outer.pack(fill="both", expand=True)
 
@@ -98,6 +117,23 @@ class App:
         ttk.Label(position, text="末尾を超える指定もそのままOBSへ送ります。シークの可否・精度はソースによります。"
                   ).grid(row=2, column=0, columnspan=5, sticky="w")
 
+        volume = ttk.LabelFrame(outer, text="音量（共通の対象入力ソース / 線形 0〜100%）", padding=8)
+        volume.pack(fill="x", pady=(0, 8))
+        self.volume_slider = ttk.Scale(volume, from_=0, to=100, variable=self.volume, command=self.slider_changed)
+        self.volume_slider.grid(row=0, column=0, columnspan=4, sticky="ew")
+        volume.columnconfigure(0, weight=1)
+        ttk.Label(volume, textvariable=self.slider_label).grid(row=0, column=4, padx=6)
+        self.button(volume, "音量取得", lambda: self.send_target("GetInputVolume")).grid(row=0, column=5)
+        ttk.Label(volume, text="増減幅（%ポイント）").grid(row=1, column=0, sticky="w")
+        ttk.Entry(volume, textvariable=self.volume_step, width=8).grid(row=1, column=1)
+        self.button(volume, "− 減少", lambda: self.adjust_volume(-1)).grid(row=1, column=2, padx=6)
+        self.button(volume, "＋ 増加", lambda: self.adjust_volume(1)).grid(row=1, column=3)
+        ttk.Entry(volume, textvariable=self.volume_value, width=8).grid(row=2, column=1)
+        ttk.Label(volume, text="指定音量（%）").grid(row=2, column=0, sticky="w")
+        self.button(volume, "指定音量に設定", self.set_volume).grid(row=2, column=2, columnspan=2, pady=4)
+        ttk.Label(volume, textvariable=self.volume_state).grid(row=3, column=0, columnspan=6, sticky="w")
+        ttk.Label(volume, text="マイク等は「メディア / VLCのみ」を解除して選択。0%は無音（ミュート設定は変更しません）。").grid(row=4, column=0, columnspan=6, sticky="w")
+
         status = ttk.LabelFrame(outer, text="GetMediaInputStatus", padding=8)
         status.pack(fill="x")
         self.button(status, "状態取得", self.get_status).pack(side="left")
@@ -138,6 +174,7 @@ class App:
         self.log_widget.configure(state="disabled")
 
     def update_controls(self):
+        self.volume_slider.configure(state="normal" if self.ready else "disabled")
         for widget in self.controls:
             widget.configure(state="normal" if self.ready and not self.busy else "disabled")
         self.connect_button.configure(state="disabled" if self.worker else "normal")
@@ -162,6 +199,7 @@ class App:
 
     def disconnect(self):
         self.ready = False
+        self.clear_volume()
         if self.worker:
             self.worker.stop_event.set()
             self.connection.set("切断中…")
@@ -195,6 +233,46 @@ class App:
 
     def target_changed(self):
         self.state.set("状態：未取得（対象変更）")
+        self.clear_volume()
+
+    def clear_volume(self):
+        self.pending_volume = self.relative_volume = None
+        self.volume_state.set("音量：未取得")
+
+    def slider_changed(self, value):
+        percent = volume_percent(value)
+        self.slider_label.set(f"{percent:.1f} %")
+        if self.ready and self.target.get():
+            self.pending_volume = (self.target.get(), percent)
+
+    def flush_volume(self):
+        if self.pending_volume and self.ready and not self.busy and time.monotonic() - self.volume_sent_at >= 0.1:
+            name, percent = self.pending_volume
+            self.pending_volume = None
+            if name == self.target.get():
+                self.send("SetInputVolume", {"inputName": name, "inputVolumeMul": percent / 100})
+                self.volume_sent_at = time.monotonic()
+
+    def set_volume(self):
+        try:
+            percent = volume_percent(self.volume_value.get())
+        except ValueError as error:
+            messagebox.showerror("音量", str(error))
+            return
+        if self.ready and not self.busy:
+            self.pending_volume = None
+            self.send_target("SetInputVolume", {"inputVolumeMul": percent / 100})
+
+    def adjust_volume(self, direction):
+        try:
+            delta = direction * volume_percent(self.volume_step.get()) / 100
+        except ValueError as error:
+            messagebox.showerror("音量", str(error))
+            return
+        if self.ready and not self.busy and self.target.get():
+            self.pending_volume = None
+            self.relative_volume = (self.target.get(), delta)
+            self.send_target("GetInputVolume")
 
     def media_action(self, action):
         self.send_target("TriggerMediaInputAction", {"mediaAction": "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_" + action})
@@ -221,6 +299,9 @@ class App:
             self.outcome.set(f"{kind}: {'成功' if success else '失敗'} / code={status.get('code')} / {elapsed} ms "
                              + status.get("comment", ""))
         same_target = data.get("inputName") == self.target.get()
+        relative = self.relative_volume if kind == "GetInputVolume" else None
+        if kind == "GetInputVolume":
+            self.relative_volume = None
         if success:
             body = response.get("responseData", {})
             if kind == "GetInputList":
@@ -231,11 +312,27 @@ class App:
                     return "不明" if value is None else f"{value / 1000:.3f}秒"
                 self.state.set(f"{body.get('mediaState', '不明').removeprefix('OBS_MEDIA_STATE_')}  "
                                f"位置: {seconds(body.get('mediaCursor'))} / 長さ: {seconds(body.get('mediaDuration'))}")
+            elif kind == "GetInputVolume" and same_target and self.ready:
+                value = body.get("inputVolumeMul")
+                if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value >= 0:
+                    self.volume_state.set(f"現在音量: {value * 100:.1f}% / {body.get('inputVolumeDb', '不明')} dB")
+                    if self.pending_volume is None:
+                        self.volume.set(min(100, value * 100))
+                        self.slider_label.set(f"{min(100, value * 100):.1f} %")
+                    if relative and relative[0] == self.target.get() and self.pending_volume is None:
+                        self.send_target("SetInputVolume", {"inputVolumeMul": max(0, min(1, value + relative[1]))})
+                else:
+                    self.volume_state.set("音量：不正な応答（設定中止）")
         elif kind == "GetMediaInputStatus" and same_target:
             self.state.set("状態：取得失敗")
+        elif kind in {"GetInputVolume", "SetInputVolume"} and same_target:
+            self.volume_state.set("音量：操作失敗")
+            self.pending_volume = None
         self.update_controls()
         if kind in {"TriggerMediaInputAction", "SetMediaInputCursor", "OffsetMediaInputCursor"} and same_target and self.ready:
             self.get_status()
+        if kind == "SetInputVolume" and success and same_target and self.ready:
+            self.send_target("GetInputVolume")
 
     def tick(self):
         if self.worker:
@@ -254,6 +351,7 @@ class App:
                     self.result(data)
                 elif kind == "closed":
                     self.ready = self.busy = False
+                    self.clear_volume()
                     self.worker = None
                     self.connection.set("未接続")
                     self.state.set("状態：未取得（切断）")
@@ -268,6 +366,7 @@ class App:
         if self.closing and self.worker is None:
             self.root.destroy()
             return
+        self.flush_volume()
         if self.poll.get() and self.ready and not self.busy and self.target.get() and time.monotonic() - self.last_poll >= 0.5:
             self.get_status()
         self.root.after(50, self.tick)

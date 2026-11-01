@@ -44,13 +44,20 @@ const RotationEditor = (() => {
   function refresh(){
     if(!config)return;
     const r=config.encoderRotation.rotationValue;
-    $('rotationPreviewPosition').max=r.rangeSteps;
+    const slider=$('rotationPreviewPosition');
+    const validRange=Number.isInteger(r.rangeSteps)&&r.rangeSteps>=1&&r.rangeSteps<=65535;
+    slider.disabled=!validRange;
+    slider.max=validRange?r.rangeSteps:1;
+    previewPosition=Math.max(0,Math.min(Number.isFinite(previewPosition)?previewPosition:0,Number(slider.max)));
+    slider.value=previewPosition;
+    slider.style.setProperty('--preview-fill',`${previewPosition/Number(slider.max)*100}%`);
+    $('rotationPreviewPositionValue').textContent=`${previewPosition} / ${slider.max}`;
     const encoder=selected>=26,valueMode=config.encoderRotation.mode==='rotationValue';
     $('encoderSettings').hidden=!encoder;
     $('rotationValueEditor').hidden=!encoder||!valueMode;
     $('actionChainEditor').hidden=encoder&&valueMode;
     $('title').textContent=encoder?'Rotation Direction':names[Math.floor(selected/2)];
-    $('rotationSummary').textContent=`Rotation Value · ${r.outputs.length} / 16 Outputs（検証用暫定容量）`;
+    $('rotationSummary').textContent=`Rotation Value · ${r.outputs.length} / 16 Actions（検証用暫定容量）`;
     $('rotationAdd').disabled=saving||r.outputs.length>=16;
     $('rotationInactive').hidden=true;
     const values=$('rotationPreviewValues');values.replaceChildren();
@@ -58,10 +65,10 @@ const RotationEditor = (() => {
       const rotation=normalized(), axis=rotation.rotationValue;
       $('rotationValidation').textContent='';
       const duplicates=Presets.duplicateDestinations(rotation);
-      $('rotationDuplicates').textContent=duplicates.length?`重複Output: ${duplicates.join(', ')}。OSC送信先は共通です。重複は保存できますが、送信順・到着順・最終値は保証されません。`:'';
+      $('rotationDuplicates').textContent=duplicates.length?`重複Action: ${duplicates.join(', ')}。OSC送信先は共通です。重複は保存できますが、送信順・到着順・最終値は保証されません。`:'';
       RotationPreview.map({protocol:'midi',start:0,end:0},previewPosition,axis.rangeSteps);
-      axis.outputs.forEach((o,i)=>values.append(node('li',`Output ${i+1}: ${RotationPreview.format(RotationPreview.map(o,previewPosition,axis.rangeSteps))}`)));
-      if(!axis.outputs.length)values.append(node('li','Outputsは0件です。Rotation ValueモードではPositionのみ更新されます。'));
+      axis.outputs.forEach((o,i)=>values.append(node('li',`Action ${i+1}: ${RotationPreview.format(RotationPreview.map(o,previewPosition,axis.rangeSteps))}`)));
+      if(!axis.outputs.length)values.append(node('li','Actionsは0件です。Rotation ValueモードではPositionのみ更新されます。'));
     }catch(e){$('rotationValidation').textContent=e.message;$('rotationDuplicates').textContent='';}
   }
   function render(){
@@ -77,10 +84,10 @@ const RotationEditor = (() => {
     r.outputs.forEach((o,i)=>{
       const card=node('article');card.className='panel';
       const heading=node('div');heading.className='output-heading';
-      heading.append(node('h3',`Output ${i+1}`),button('削除',()=>{r.outputs.splice(i,1);changed();render();}));card.append(heading);
+      heading.append(node('h3',`Action ${i+1}`),button('削除',()=>{r.outputs.splice(i,1);changed();render();}));card.append(heading);
       const fields=node('div');fields.className='fields';
       const kind=o.protocol==='midi'?'midi':o.type;
-      fields.append(field('Output Type',kind,v=>{r.outputs[i]=v==='midi'?{protocol:'midi',message:'cc',transport:capabilities.defaultMidiTransport,channel:1,number:7,start:0,end:127}:{protocol:'osc',transport:'wifi',type:v,address:o.address||'/avatar/parameters/Value',start:0,end:v==='float'?1:127};render();},{options:[['int','🛜OSC Int'],['float','🛜OSC Float'],['midi','🎹MIDI CC']]}));
+      fields.append(field('Action Type',kind,v=>{r.outputs[i]=v==='midi'?{protocol:'midi',message:'cc',transport:capabilities.defaultMidiTransport,channel:1,number:7,start:0,end:127}:{protocol:'osc',transport:'wifi',type:v,address:o.address||'/avatar/parameters/Value',start:0,end:v==='float'?1:127};render();},{options:[['int','🛜OSC Int'],['float','🛜OSC Float'],['midi','🎹MIDI CC']]}));
       if(o.protocol==='osc') {
         const address=field('OSC Address（最大192 UTF-8 bytes）',o.address,v=>{o.address=v;render();});
         address.append(node('small',`${new TextEncoder().encode(o.address).length} / 192 bytes`));fields.append(address);
@@ -119,6 +126,10 @@ const RotationEditor = (() => {
     $('rotationSummary').before(parameterHelp);
     editor.prepend(settings,value);
     $('rotationAdd').disabled=true;
+    const slider=$('rotationPreviewPosition');
+    slider.type='range';
+    const positionValue=node('output');positionValue.id='rotationPreviewPositionValue';
+    positionValue.htmlFor=slider.id;slider.after(positionValue);
     $('rotationAdd').onclick=()=>{if(saving||config.encoderRotation.rotationValue.outputs.length>=16)return;config.encoderRotation.rotationValue.outputs.push({protocol:'osc',transport:'wifi',address:'/avatar/parameters/Value',type:'int',start:0,end:127});changed();render();};
     $('rotationPreviewPosition').oninput=()=>{previewPosition=$('rotationPreviewPosition').value===''?NaN:Number($('rotationPreviewPosition').value);refresh();};
   }

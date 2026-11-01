@@ -42,6 +42,7 @@ function hidFields(fields,a){
   }
 }
 function actionSummary(a) {
+  if(a.protocol==='obs'&&a.operation==='setInputVolume')return `音量調整 · ${a.inputName} · ${a.volumeMode==='relative'?`${a.volumePercent>=0?'+':''}${a.volumePercent}ポイント`:`${a.volumePercent}%に設定`}`;
   if(a.protocol==='obs'&&a.operation==='triggerMediaInputAction'){const names={restart:'先頭から再生',stop:'停止',pause:'一時停止',play:'再生再開',next:'次へ',previous:'前へ'};return `メディア制御 · ${a.inputName} · ${names[a.mediaAction]||a.mediaAction}`;}
   if(a.protocol==='obs'){const names={setCurrentProgramScene:'シーン切り替え',startStream:'配信開始',stopStream:'配信停止',startRecord:'録画開始',stopRecord:'録画停止',setInputMute:'ミュート設定',toggleInputMute:'ミュート設定',setSceneItemVisibility:a.containerType==='group'?'グループ内アイテム表示制御':'シーン内アイテム表示制御'};return `${names[a.operation]||a.operation}${a.sceneName!==undefined?' · '+a.sceneName:a.inputName!==undefined?' · '+a.inputName:''}${a.operation==='setInputMute'?(a.inputMuted?' · Enable（ミュート）':' · Disable（ミュート解除）'):a.operation==='toggleInputMute'?' · Toggle（切り替え）':''}${a.operation==='setSceneItemVisibility'?' · ID: '+(a.sceneItemId??'未選択')+' · '+a.visibility:''}`;}
   const transport={wifi:'Wi-Fi',usb:'USB',ble:'BLE',both:'USB + BLE'}[a.transport]||'';

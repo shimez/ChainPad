@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 namespace chimera { namespace obs {
 namespace {
@@ -112,6 +113,12 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
   if (d["requestType"] != requestType(operation) || !d["requestStatus"]["result"].is<bool>() || !d["requestStatus"]["code"].is<int>()) return Received::Invalid;
   success = d["requestStatus"]["result"]; code = d["requestStatus"]["code"];
   if (success && code != 100) return Received::Invalid;
+  if (success && operation == Operation::GetInputVolume) {
+    const auto value = d["responseData"]["inputVolumeMul"];
+    const double volume = value.as<double>();
+    if (!value.is<double>() || !isfinite(volume) || volume < 0 || volume > 20) { success = false; code = -10; }
+    else inputVolume = float(volume);
+  }
   if (success && operation == Operation::GetSceneItemEnabled) {
     if (!d["responseData"]["sceneItemEnabled"].is<bool>()) { success = false; code = -10; return Received::Result; }
     itemEnabled = d["responseData"]["sceneItemEnabled"];
@@ -174,7 +181,11 @@ bool Protocol::request(const Command& command, uint32_t id, uint32_t now) {
   char name[32]; snprintf(name, sizeof(name), "chainpad-%lu", static_cast<unsigned long>(id));
   doc["op"] = 6; auto d = doc["d"].to<JsonObject>();
   d["requestType"] = requestType(command.operation); d["requestId"] = name;
-  if (named(command.operation)) d["requestData"][command.operation == Operation::SetInputMute || command.operation == Operation::ToggleInputMute || command.operation == Operation::TriggerMediaInputAction ? "inputName" : "sceneName"] = command.target;
+  if (named(command.operation)) d["requestData"][command.operation == Operation::SetInputVolume || command.operation == Operation::GetInputVolume || command.operation == Operation::SetInputMute || command.operation == Operation::ToggleInputMute || command.operation == Operation::TriggerMediaInputAction ? "inputName" : "sceneName"] = command.target;
+  if (command.operation == Operation::SetInputVolume) {
+    if (command.volume.relative) return false;
+    d["requestData"]["inputVolumeMul"] = command.volume.percent() / 100.0f;
+  }
   if (command.operation == Operation::TriggerMediaInputAction) d["requestData"]["mediaAction"] = mediaActionWire(command.mediaAction);
   if (command.operation == Operation::SetInputMute) d["requestData"]["inputMuted"] = command.muted;
   if (command.operation == Operation::SetSceneItemVisibility || command.operation == Operation::GetSceneItemEnabled)

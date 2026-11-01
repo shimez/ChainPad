@@ -6,7 +6,15 @@
 // Shared schema, including builds without an OBS Worker. No networking dependency.
 namespace chimera { namespace obs {
 constexpr size_t TARGET_LIMIT = 192;
-enum class Operation : uint8_t { SetCurrentProgramScene, StartStream, StopStream, StartRecord, StopRecord, SetInputMute, ToggleInputMute, SetSceneItemVisibility, TriggerMediaInputAction, GetSceneList, GetInputList, GetGroupList, GetSceneItemList, GetGroupSceneItemList, GetSceneItemEnabled, GetMediaInputList };
+enum class Operation : uint8_t { SetCurrentProgramScene, StartStream, StopStream, StartRecord, StopRecord, SetInputMute, ToggleInputMute, SetSceneItemVisibility, TriggerMediaInputAction, SetInputVolume, GetSceneList, GetInputList, GetGroupList, GetSceneItemList, GetGroupSceneItemList, GetSceneItemEnabled, GetMediaInputList, GetInputVolume };
+// Byte storage keeps the OSC-string union's byte alignment and Action size.
+struct VolumeSettings {
+  uint8_t percentBytes[sizeof(float)];
+  bool relative;
+  VolumeSettings(float value = 0, bool relativeValue = false) : relative(relativeValue) { memcpy(percentBytes, &value, sizeof(value)); }
+  float percent() const { float value; memcpy(&value, percentBytes, sizeof(value)); return value; }
+};
+inline bool validVolume(const VolumeSettings& v) { return v.percent() >= (v.relative ? -100.0f : 0.0f) && v.percent() <= 100.0f; }
 enum class Visibility : uint8_t { Enable, Disable, Toggle };
 enum class MediaAction : uint8_t { Restart, Stop, Pause, Play, Next, Previous };
 inline const char* mediaActionName(MediaAction action) {
@@ -54,6 +62,8 @@ struct ItemSettings {
 inline const char* operationName(Operation op) {
   switch (op) {
     case Operation::GetSceneList: return "getSceneList"; // Internal discovery, never an Action.
+    case Operation::SetInputVolume: return "setInputVolume";
+    case Operation::GetInputVolume: return "getInputVolume";
     case Operation::GetInputList: return "getInputList";
     case Operation::GetMediaInputList: return "getMediaInputList";
     case Operation::TriggerMediaInputAction: return "triggerMediaInputAction";
@@ -75,6 +85,8 @@ inline const char* operationName(Operation op) {
 inline const char* requestType(Operation op) {
   switch (op) {
     case Operation::GetSceneList: return "GetSceneList";
+    case Operation::SetInputVolume: return "SetInputVolume";
+    case Operation::GetInputVolume: return "GetInputVolume";
     case Operation::GetInputList: return "GetInputList";
     case Operation::GetMediaInputList: return "GetInputList";
     case Operation::TriggerMediaInputAction: return "TriggerMediaInputAction";
@@ -93,10 +105,10 @@ inline const char* requestType(Operation op) {
   }
   return nullptr;
 }
-inline bool named(Operation op) { return op == Operation::SetCurrentProgramScene || op == Operation::SetInputMute || op == Operation::ToggleInputMute || op == Operation::TriggerMediaInputAction || op == Operation::SetSceneItemVisibility || op == Operation::GetSceneItemEnabled || itemList(op); }
+inline bool named(Operation op) { return op == Operation::SetInputVolume || op == Operation::GetInputVolume || op == Operation::SetCurrentProgramScene || op == Operation::SetInputMute || op == Operation::ToggleInputMute || op == Operation::TriggerMediaInputAction || op == Operation::SetSceneItemVisibility || op == Operation::GetSceneItemEnabled || itemList(op); }
 inline bool parseOperation(const char* name, Operation& out) {
   if (!name) return false;
-  for (unsigned i = 0; i <= unsigned(Operation::TriggerMediaInputAction); ++i) {
+  for (unsigned i = 0; i <= unsigned(Operation::SetInputVolume); ++i) {
     const auto op = Operation(i);
     if (!strcmp(name, operationName(op))) { out = op; return true; }
   }
@@ -125,12 +137,13 @@ struct Command {
   Operation operation = Operation::SetCurrentProgramScene;
   char target[TARGET_LIMIT + 1]{};
   bool muted = false;
-  uint64_t itemId = 0;
+  union { uint64_t itemId = 0; VolumeSettings volume; };
   Visibility visibility = Visibility::Enable;
   MediaAction mediaAction = MediaAction::Restart;
 };
 inline bool validCommand(const Command& c) {
   return operationName(c.operation) && (named(c.operation) ? validText(c.target, TARGET_LIMIT) : c.target[0] == 0) &&
-    (c.operation == Operation::SetInputMute || !c.muted) && c.itemId <= ITEM_ID_LIMIT && visibilityName(c.visibility) && mediaActionName(c.mediaAction);
+    (c.operation == Operation::SetInputMute || !c.muted) &&
+    ((c.operation == Operation::SetInputVolume || c.operation == Operation::GetInputVolume) ? validVolume(c.volume) : c.itemId <= ITEM_ID_LIMIT) && visibilityName(c.visibility) && mediaActionName(c.mediaAction);
 }
 } }
