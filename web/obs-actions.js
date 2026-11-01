@@ -1,6 +1,6 @@
 // Shared scene/audio-input discovery is input assistance only.
 const ObsActionsUI = (() => {
-  const operations = [['setCurrentProgramScene','シーン切り替え'],['startStream','配信開始'],['stopStream','配信停止'],['startRecord','録画開始'],['stopRecord','録画停止'],['setInputMute','ミュート設定'],['toggleInputMute','ミュート切り替え'],['setSceneItemVisibility','シーンアイテム表示制御'],['groupItemVisibility','グループ内アイテム表示制御']];
+  const operations = [['setCurrentProgramScene','シーン切り替え'],['setInputMute','ミュート設定'],['startStream','配信開始','配信・録画制御'],['stopStream','配信停止','配信・録画制御'],['startRecord','録画開始','配信・録画制御'],['stopRecord','録画停止','配信・録画制御'],['groupItemVisibility','グループ内アイテム表示制御','アイテム表示制御'],['setSceneItemVisibility','シーン内アイテム表示制御','アイテム表示制御']];
   function defaults(operation='setCurrentProgramScene') {
     if(operation==='groupItemVisibility')return {...defaults('setSceneItemVisibility'),containerType:'group'};
     return {protocol:'obs',delayMs:0,operation,...(operation==='setCurrentProgramScene'?{sceneName:''}:operation==='setInputMute'?{inputName:'',inputMuted:true}:operation==='toggleInputMute'?{inputName:''}:operation==='setSceneItemVisibility'?{containerType:'scene',sceneName:'',sceneItemId:null,visibility:'enable'}:{})};
@@ -64,12 +64,12 @@ const ObsActionsUI = (() => {
     fields.className+=' obs-fields';
     const supported=capabilities.obsActions===true;
     let picker;
-    if(['setInputMute','toggleInputMute'].includes(a.operation))fields.className+=' obs-mute'+(a.operation==='toggleInputMute'?' obs-mute-toggle':'');
+    if(['setInputMute','toggleInputMute'].includes(a.operation))fields.className+=' obs-mute';
     const note=document.createElement('p');note.className='hint';note.style.gridColumn='1 / -1';
     note.textContent=supported?'OBS接続設定を共通利用します。':'この機種ではOBS Action非対応です。設定は保持・編集できますが、実行時はスキップします。';
     // The group operation is an editor-only choice; the persisted operation stays unchanged.
-    const selectedOperation=a.operation==='setSceneItemVisibility'&&a.containerType==='group'?'groupItemVisibility':a.operation;
-    fields.append(control('OBS操作',selectedOperation,operations,op=>{
+    const selectedOperation=a.operation==='toggleInputMute'?'setInputMute':a.operation==='setSceneItemVisibility'&&a.containerType==='group'?'groupItemVisibility':a.operation;
+    const operationField=control('OBS操作',selectedOperation,operations,op=>{
       if(op===selectedOperation)return;
       const next=defaults(op);
       if(a.operation==='setSceneItemVisibility'&&next.operation===a.operation){
@@ -77,7 +77,21 @@ const ObsActionsUI = (() => {
       }
       if('inputName' in next && 'inputName' in a)next.inputName=a.inputName;
       for(const key of Object.keys(a))delete a[key];Object.assign(a,next);rerender();
-    }));
+    });
+    const operationSelect=operationField.lastChild;
+    const options=Array.from(operationSelect.children);
+    operationSelect.replaceChildren();
+    const groups=new Map();
+    operations.forEach(([, , group],index)=>{
+      if(!group){operationSelect.append(options[index]);return;}
+      if(!groups.has(group)){
+        const optgroup=document.createElement('optgroup');optgroup.label=group;
+        groups.set(group,optgroup);operationSelect.append(optgroup);
+      }
+      groups.get(group).append(options[index]);
+    });
+    operationSelect.value=selectedOperation;
+    fields.append(operationField);
     if(a.operation==='setSceneItemVisibility'){
       renderItem(a,fields,control,changed,supported,scenes);
       fields.append(note);return;
@@ -136,7 +150,11 @@ const ObsActionsUI = (() => {
       }
       field.append(warning);fields.append(field);if(refresh)fields.append(refreshField);update();
     }
-    if(a.operation==='setInputMute')fields.append(control('ミュート',String(a.inputMuted),[['true','ミュート'],['false','解除']],value=>a.inputMuted=value==='true'));
+    if(['setInputMute','toggleInputMute'].includes(a.operation))fields.append(control('ミュート',a.operation==='toggleInputMute'?'toggle':String(a.inputMuted),[['true','Enable（ミュート）'],['false','Disable（ミュート解除）'],['toggle','Toggle（切り替え）']],value=>{
+      a.operation=value==='toggle'?'toggleInputMute':'setInputMute';
+      if(value==='toggle')delete a.inputMuted;else a.inputMuted=value==='true';
+      rerender();
+    }));
     if(picker)fields.append(picker);
     fields.append(note);
   }

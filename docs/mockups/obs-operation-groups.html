@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChainPad — OBS操作の分類モックアップ</title>
+<style>
+:root{color-scheme:dark;--bg:#10151d;--panel:#1b2330;--line:#374557;--accent:#66dbc1;--muted:#a9b8cc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#eef5ff;font:15px system-ui,sans-serif}main{max-width:1050px;margin:auto;padding:28px 20px}h1{font-size:24px;margin:8px 0}h2{font-size:18px;margin:0 0 18px}.hint,small{color:var(--muted)}.badge{color:var(--accent);font-size:12px;letter-spacing:.12em}.card{padding:20px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:24px}.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.tag{background:var(--bg);border-radius:6px;padding:4px 8px;color:var(--muted)}label{display:grid;gap:5px;font-size:13px;min-width:0}button,input,select{font:inherit;border:1px solid var(--line);border-radius:7px;padding:9px;background:#111923;color:inherit;min-width:0}input,select{width:100%}input,select:not([size]),button{height:42px}button{cursor:pointer}button:hover{border-color:var(--accent)}.fields{display:grid;grid-template-columns:160px 270px minmax(0,1fr);gap:12px;align-items:start}.details{grid-column:1/-1;display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr))}.details>label:last-child:nth-child(5){grid-column:1/3}#message{margin:12px 0 0;color:var(--muted);font-size:13px}.comparison{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}.list{height:310px;padding:8px}option{padding:7px 10px}optgroup{font-weight:700;color:var(--muted)}optgroup option{font-weight:400;color:#eef5ff}.note{line-height:1.8}.note strong{color:var(--accent)}@media(max-width:700px){main{padding:20px 12px}.card{padding:16px}.fields{grid-template-columns:repeat(2,minmax(0,1fr))}.details{grid-template-columns:repeat(2,minmax(0,1fr))}.comparison{grid-template-columns:minmax(0,1fr)}button{height:auto;min-height:42px}.details>label:last-child:nth-child(5){grid-column:auto}h1{font-size:21px}}
+</style>
+</head>
+<body>
+<main>
+  <span class="badge">CHAINPAD / UI MOCKUP</span>
+  <h1>OBS操作の分類</h1>
+  <p class="hint">プルダウンを開いて分類を確認できます。下の一覧からも選択を切り替えられます。</p>
+  <section class="card" aria-label="Action編集モックアップ">
+    <div class="head"><strong>≡　1　🎬 OBS</strong><span class="tag">KEY 1 · Press</span></div>
+    <div class="fields">
+      <label>Action<select aria-label="Action"><option>OBS</option></select></label>
+      <label>OBS操作<select id="operation">
+        <option value="scene">シーン切り替え</option>
+        <option value="mute">ミュート設定</option>
+        <optgroup label="配信・録画制御">
+          <option value="startStream">配信開始</option>
+          <option value="stopStream">配信停止</option>
+          <option value="startRecord">録画開始</option>
+          <option value="stopRecord">録画停止</option>
+        </optgroup>
+        <optgroup label="アイテム表示制御">
+          <option value="groupItem">グループ内アイテム表示制御</option>
+          <option value="sceneItem">シーン内アイテム表示制御</option>
+        </optgroup>
+      </select></label>
+      <div id="details" class="details"></div>
+    </div>
+    <p id="message" aria-live="polite"></p>
+  </section>
+  <section class="card comparison">
+    <div>
+      <h2>選択肢の全体像</h2>
+      <select id="overview" class="list" size="10" aria-label="OBS操作の分類一覧"></select>
+    </div>
+    <div class="note">
+      <h2>整理の内容</h2>
+      <p><strong>先頭に配置</strong><br>シーン切り替え／ミュート設定</p>
+      <p><strong>配信・録画制御</strong><br>配信開始・停止／録画開始・停止</p>
+      <p><strong>アイテム表示制御</strong><br>グループ内アイテム表示制御<br>シーン内アイテム表示制御</p>
+      <small>「シーンミュート」は現行の「ミュート設定」と解釈しています。グループ見出しは選択できません。表示はブラウザ／OSによって異なります。</small>
+    </div>
+  </section>
+  <p class="hint">表示確認専用です。設定の保存やOBSとの通信は行いません。</p>
+</main>
+<script>
+const operation=document.getElementById('operation'), overview=document.getElementById('overview');
+const details=document.getElementById('details'),message=document.getElementById('message');
+overview.replaceChildren(...Array.from(operation.children,node=>node.cloneNode(true)));
+function field(caption,value,options){
+  const label=document.createElement('label');label.textContent=caption;
+  const input=document.createElement(options?'select':'input');
+  if(options)for(const name of options){const item=document.createElement('option');item.textContent=name;input.append(item);}
+  else input.value=value;
+  label.append(input);return label;
+}
+function candidate(caption){
+  const label=document.createElement('label');label.textContent=caption+'候補';
+  const button=document.createElement('button');button.textContent=caption+'一覧から選択';button.type='button';
+  button.onclick=()=>message.textContent='モックアップのため、候補取得は行いません。';
+  label.append(button);return label;
+}
+function render(){
+  const value=operation.value;overview.value=value;details.replaceChildren();
+  if(value==='scene')details.append(field('シーン名','ゲーム画面'),candidate('シーン'));
+  if(value==='mute')details.append(field('入力名','マイク'),candidate('ミュート対象'),field('ミュート','',['Enable（ミュート）','Disable（ミュート解除）','Toggle（切り替え）']));
+  if(value==='groupItem'||value==='sceneItem'){
+    const name=value==='groupItem'?'グループ':'シーン';
+    details.append(field(name+'名',value==='groupItem'?'配信情報':'ゲーム画面'),candidate(name),field('アイテムID','12'),candidate('アイテム'),field('表示操作','',['Enable（表示）','Disable（非表示）','Toggle（切り替え）']));
+  }
+  message.textContent=details.childElementCount?'OBS接続設定を共通利用します。':'この操作には追加の設定項目はありません。';
+}
+operation.onchange=render;
+overview.onchange=()=>{operation.value=overview.value;render();};
+render();
+</script>
+</body>
+</html>

@@ -151,7 +151,7 @@ OBS WebSocket機能を利用するためには、OBS Studio側／ChainPad側双�
 - Input Eventの「Press（押した時）」「Release（離した時）」を選択することでActionの実行タイミングを切り替え可能です。
 - 入力設定エリアの一番下にある「+ Add Action」をクリックすることでActionが追加されます。一つのキーに追加できるAction数は押した時と離した時の合計で最大16です。
 - 各Actionの左端にある「≡」をドラッグ＆ドロップすることで、Actionの実行順を並べ替えることができます。
-- Action設定の詳細は [4. Actionの設定](#4-actionの設定) を参照してください。
+- Action設定の詳細は [4. Actionの設定](#4-action) を参照してください。
 
 #### 3-7-2. エンコーダープッシュ（Encoder Push）の場合
 
@@ -202,7 +202,7 @@ Preview Positionにエンコーダーのポジション（何クリック分回�
 
 - 「全体設定Export」を押すことでWi-Fi設定を除くChainPadの設定を外部ファイルに保存します。
 - 「全体設定Import」を押すことでExportした設定ファイルを読み込みます。
-- キー単位の設定は入力設定エリアの「…」メニューからエクスポート／インポートが可能です。
+- キー単位の設定は入力設定エリアの右上にある「…」メニューからエクスポート／インポートが可能です。
 - 「Defaultを読み込む」はChainPad購入時の初期設定（テンキー風設定）を読み込みます。
 - 「Emptyを読み込む」はすべてのキー・エンコーダーの設定がされていない状態の設定を読み込みます。
 
@@ -223,7 +223,7 @@ Preview Positionにエンコーダーのポジション（何クリック分回�
 
 ![ChainPad WebUI OSCアクション](./images/chainpad-webui-action-osc.png)
 
-- Address欄には、送信するOSC Addressを指定します。VRChatで指定できるOSCアドレスに関しては<https://wiki.vrchat.com/wiki/OSC>を参照してください。
+- Address欄には、送信するOSC Addressを指定します。VRChatで指定できるOSCアドレスに関しては[VRChat WikiのOSCの項目](https://wiki.vrchat.com/wiki/OSC)を参照してください。
 - Typeでは、値の型を指定します。
 - Value欄には送信する値を入力します。
 

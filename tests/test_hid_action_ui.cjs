@@ -121,6 +121,25 @@ for(const supported of [true,false]){
   }
 }
 ctx.capabilities.obsActions=true;
+// One UI operation retains the two existing persisted mute operations.
+for(const supported of [true,false]){
+  ctx.capabilities.obsActions=supported;
+  const mute={protocol:'obs',delayMs:0,operation:'toggleInputMute',inputName:'マイク'};
+  show(mute);assert.equal(field('OBS操作').value,'setInputMute');assert.equal(field('ミュート').value,'toggle');
+  assert(!field('OBS操作').children.some(n=>n.value==='toggleInputMute'));
+  assert.deepEqual(field('ミュート').children.map(n=>n.textContent),['Enable（ミュート）','Disable（ミュート解除）','Toggle（切り替え）']);
+  choose('OBS操作','setInputMute');assert.equal(mute.operation,'toggleInputMute');assert(!('inputMuted' in mute));
+  for(const value of ['true','false','toggle']){
+    choose('ミュート',value);
+    assert.equal(mute.operation,value==='toggle'?'toggleInputMute':'setInputMute');
+    if(value==='toggle')assert(!('inputMuted' in mute));else assert.equal(mute.inputMuted,value==='true');
+    assert.equal(mute.inputName,'マイク');assert.equal(mute.delayMs,0);
+    const saved=plain(mute);show(mute);assert.equal(field('ミュート').value,value);assert.deepEqual(plain(mute),saved);
+    assert.deepEqual(plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]),saved);
+    assert.deepEqual(plain(P.read(P.key(config,0),'key',ctx.capabilities).chains[0].actions[0]),saved);
+  }
+}
+ctx.capabilities.obsActions=true;
 show({protocol:'obs',delayMs:0,operation:'setCurrentProgramScene',sceneName:'missing'});
 sceneCache={state:'ready',complete:true,scenes:['ゲーム','<script>']};sceneListener();
 const candidates=all().find(n=>n.tag==='select'&&n.size===6);
@@ -147,7 +166,7 @@ assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
 for(const operation of ['setInputMute','toggleInputMute']){
   show({protocol:'obs',delayMs:0,operation,inputName:'missing',...(operation==='setInputMute'?{inputMuted:true}:{})});
   const muteFields=all().find(n=>n.className.split(' ').includes('obs-mute'));
-  assert.equal(muteFields.children.findIndex(n=>n.className==='obs-name-picker'),operation==='setInputMute'?5:4);
+  assert.equal(muteFields.children.findIndex(n=>n.className==='obs-name-picker'),5);
   sceneCache={state:'ready',complete:true,scenes:['Mic','<audio>']};sceneListener();
   const audio=field('入力名');audio.selectionStart=1;audio.composing=true;
   sceneListener();assert.equal(field('入力名'),audio);assert.equal(audio.selectionStart,1);assert(audio.composing);
