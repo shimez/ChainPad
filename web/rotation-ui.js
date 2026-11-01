@@ -3,7 +3,7 @@
 const RotationPreview = (() => {
   function map(output, position, steps) {
     if (!Number.isInteger(steps) || steps < 1 || steps > 65535 || !Number.isInteger(position) || position < 0 || position > steps) throw Error('Preview Positionは0〜Range Stepsの整数で指定してください。');
-    const floating=output.protocol==='osc'&&output.type==='float';
+    const floating=output.protocol==='obs'||output.protocol==='osc'&&output.type==='float';
     const start=floating?Math.fround(output.start):output.start, end=floating?Math.fround(output.end):output.end;
     if(position===0)return start;
     if(position===steps)return end;
@@ -67,7 +67,7 @@ const RotationEditor = (() => {
       const duplicates=Presets.duplicateDestinations(rotation);
       $('rotationDuplicates').textContent=duplicates.length?`重複Action: ${duplicates.join(', ')}。OSC送信先は共通です。重複は保存できますが、送信順・到着順・最終値は保証されません。`:'';
       RotationPreview.map({protocol:'midi',start:0,end:0},previewPosition,axis.rangeSteps);
-      axis.outputs.forEach((o,i)=>values.append(node('li',`Action ${i+1}: ${RotationPreview.format(RotationPreview.map(o,previewPosition,axis.rangeSteps))}`)));
+      axis.outputs.forEach((o,i)=>values.append(node('li',`Action ${i+1}: ${RotationPreview.format(RotationPreview.map(o,previewPosition,axis.rangeSteps))}${o.protocol==='obs'?' dB':''}`)));
       if(!axis.outputs.length)values.append(node('li','Actionsは0件です。Rotation ValueモードではPositionのみ更新されます。'));
     }catch(e){$('rotationValidation').textContent=e.message;$('rotationDuplicates').textContent='';}
   }
@@ -86,19 +86,21 @@ const RotationEditor = (() => {
       const heading=node('div');heading.className='output-heading';
       heading.append(node('h3',`Action ${i+1}`),button('削除',()=>{r.outputs.splice(i,1);changed();render();}));card.append(heading);
       const fields=node('div');fields.className='fields';
-      const kind=o.protocol==='midi'?'midi':o.type;
-      fields.append(field('Action Type',kind,v=>{r.outputs[i]=v==='midi'?{protocol:'midi',message:'cc',transport:capabilities.defaultMidiTransport,channel:1,number:7,start:0,end:127}:{protocol:'osc',transport:'wifi',type:v,address:o.address||'/avatar/parameters/Value',start:0,end:v==='float'?1:127};render();},{options:[['int','🛜OSC Int'],['float','🛜OSC Float'],['midi','🎹MIDI CC']]}));
+      const kind=o.protocol==='obs'?'obs':o.protocol==='midi'?'midi':o.type;
+      fields.append(field('Action Type',kind,v=>{if(v===kind)return;r.outputs[i]=v==='obs'?{protocol:'obs',operation:'setInputVolume',inputName:'',start:-60,end:0}:v==='midi'?{protocol:'midi',message:'cc',transport:capabilities.defaultMidiTransport,channel:1,number:7,start:0,end:127}:{protocol:'osc',transport:'wifi',type:v,address:o.address||'/avatar/parameters/Value',start:0,end:v==='float'?1:127};render();},{options:[['int','🛜OSC Int'],['float','🛜OSC Float'],['midi','🎹MIDI CC'],['obs','🎬OBS 音量調整']]}));
       if(o.protocol==='osc') {
         const address=field('OSC Address（最大192 UTF-8 bytes）',o.address,v=>{o.address=v;render();});
         address.append(node('small',`${new TextEncoder().encode(o.address).length} / 192 bytes`));fields.append(address);
+      } else if(o.protocol==='obs') {
+        ObsActionsUI.render(o,fields,control,changed,render,capabilities,obsScenes,true);
       } else {
         const allowed=capabilities.midiTransports;
         const transport=field('Transport',o.transport,v=>o.transport=v,{options:allowed.map(t=>[t,t==='both'?'Both (USB + BLE)':t.toUpperCase()])});
         if(!capabilities.usbMidi){transport.lastChild.disabled=true;transport.append(node('small','この機種はBLEのみ対応（固定）'));}
         fields.append(transport,field('Channel',o.channel,v=>o.channel=v,{min:1,max:16}),field('CC',o.number,v=>o.number=v,{min:0,max:127}));
       }
-      const limits=kind==='midi'?{min:0,max:127}:kind==='int'?{min:-2147483648,max:2147483647}:{float:true,min:-3.4028234663852886e38,max:3.4028234663852886e38};
-      fields.append(field('Start',o.start,v=>o.start=v,limits),field('End',o.end,v=>o.end=v,limits));
+      const limits=kind==='obs'?{float:true,min:-100,max:26}:kind==='midi'?{min:0,max:127}:kind==='int'?{min:-2147483648,max:2147483647}:{float:true,min:-3.4028234663852886e38,max:3.4028234663852886e38};
+      fields.append(field(kind==='obs'?'Start（dB）':'Start',o.start,v=>o.start=v,limits),field(kind==='obs'?'End（dB）':'End',o.end,v=>o.end=v,limits));
       card.append(fields);list.append(card);
     });
     refresh();
@@ -111,7 +113,7 @@ const RotationEditor = (() => {
     const mode=node('div');mode.id='encoderMode';mode.className='fields';
     const modeHelp=node('ul');modeHelp.className='hint';
     modeHelp.append(
-      node('li','Rotation Value（回転量モード）はエンコーダーの回転した量に応じてOSC/MIDI CCの値を変化させて送信するモードです。'),
+      node('li','Rotation Value（回転量モード）はエンコーダーの回転した量に応じてOSC/MIDI CC/OBS音量の値を変化させて送信するモードです。'),
       node('li','Rotation Direction（回転方向モード）はエンコーダーの回転方向（時計回り、反時計回り）それぞれにKeyと同様のAction Chainを設定するモードです。1クリックの回転でAction Chainが実行されます')
     );
     settings.append(node('h2','Encoder'),mode,modeHelp);

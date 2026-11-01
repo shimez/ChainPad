@@ -67,10 +67,13 @@ bool parseAction(JsonVariantConst j, Action& a) {
     const bool volume = a.obsOperation == obs::Operation::SetInputVolume;
     if (j.as<JsonObjectConst>().size() != size_t(3 + named + mute + media + (volume ? 2 : 0) + (item ? 3 : 0))) return false;
     if (volume) {
-      if (!(j["volumeMode"] == "absolute" || j["volumeMode"] == "relative") || !j["volumePercent"].is<double>()) return false;
-      const double value = j["volumePercent"].as<double>();
+      const auto number = j["volumeDb"];
+      if (!(j["volumeMode"] == "absolute" || j["volumeMode"] == "relative") || !number.is<double>()) return false;
+      const double value = number.as<double>();
       const bool relative = j["volumeMode"] == "relative";
-      if (!(value >= (relative ? -100.0 : 0.0) && value <= 100.0)) return false;
+      const double low = relative ? -126.0 : -100.0;
+      const double high = relative ? 126.0 : 26.0;
+      if (!(value >= low && value <= high)) return false;
       a.obsVolume = {float(value), relative};
     }
     a.obsTarget[0] = 0; a.boolValue = false;
@@ -297,7 +300,7 @@ template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocum
         if (a.obsOperation == obs::Operation::SetInputVolume) {
           if (!obs::validVolume(a.obsVolume)) return false;
           j["volumeMode"] = a.obsVolume.relative ? "relative" : "absolute";
-          j["volumePercent"] = a.obsVolume.percent();
+          j["volumeDb"] = a.obsVolume.value();
         }
         if (a.obsOperation == obs::Operation::TriggerMediaInputAction) {
           const char* mediaAction = obs::mediaActionName(a.obsMediaAction);
@@ -357,7 +360,14 @@ bool decodeRotation(JsonVariantConst root, EncoderRotationSettings& out, String&
   for (auto j : value["outputs"].as<JsonArrayConst>()) {
     RotationOutput output;
     if (!j.is<JsonObjectConst>()) return false;
-    if (j["protocol"] == "osc") {
+    if (j["protocol"] == "obs") {
+      if (j.as<JsonObjectConst>().size() != 5 || j["operation"] != "setInputVolume" ||
+          !text(j["inputName"], output.inputName, sizeof(output.inputName)) ||
+          !j["start"].is<double>() || !j["end"].is<double>()) return false;
+      const double start=j["start"].as<double>(), end=j["end"].as<double>();
+      if (!(start >= -100 && start <= 26 && end >= -100 && end <= 26)) return false;
+      output.kind=RotationOutputKind::ObsVolume; output.range.floating={float(start),float(end)};
+    } else if (j["protocol"] == "osc") {
       if (j["transport"] != "wifi" || !text(j["address"], output.address, sizeof(output.address))) return false;
       if (j["type"] == "int") {
         if (!integer(j["start"], INT32_MIN, INT32_MAX) || !integer(j["end"], INT32_MIN, INT32_MAX)) return false;
@@ -397,7 +407,9 @@ bool encodeRotation(const EncoderRotationSettings& source, JsonDocument& doc, bo
   for (uint32_t i = 0; i < source.outputCount; ++i) {
     const auto& output = source.outputs[i]; auto j = outputs.add<JsonObject>();
     if (j.isNull()) return false;
-    if (output.kind == RotationOutputKind::MidiCC) {
+    if (output.kind == RotationOutputKind::ObsVolume) {
+      j["protocol"]="obs"; j["operation"]="setInputVolume"; j["inputName"]=output.inputName;
+    } else if (output.kind == RotationOutputKind::MidiCC) {
       j["protocol"] = "midi"; j["message"] = "cc";
       j["transport"] = output.transport == Transport::Usb ? "usb" : output.transport == Transport::Ble ? "ble" : "both";
       j["channel"] = output.channel; j["number"] = output.number;
@@ -405,7 +417,7 @@ bool encodeRotation(const EncoderRotationSettings& source, JsonDocument& doc, bo
       j["protocol"] = "osc"; j["transport"] = "wifi"; j["address"] = output.address;
       j["type"] = output.kind == RotationOutputKind::OscFloat ? "float" : "int";
     }
-    if (output.kind == RotationOutputKind::OscFloat) {
+    if (rotationFloat(output.kind)) {
       if (losslessWire) {
         // ArduinoJson compresses exact doubles back to float and serializes only
         // 7 significant digits. Seventeen digits preserve the promoted float32

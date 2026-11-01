@@ -2,6 +2,11 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const context=vm.createContext({TextEncoder});
 vm.runInContext(fs.readFileSync('web/presets.js','utf8')+'\n'+fs.readFileSync('web/rotation-ui.js','utf8')+'\nthis.preview=RotationPreview;this.presets=Presets;',context);
 const {preview,presets}=context;
+for(const [start,end] of [[-100,26],[26,-100],[-6.5,-6.5],[-60.25,0]]){
+  const o={protocol:'obs',operation:'setInputVolume',inputName:'Mic',start,end};
+  for(const n of [1,2,20,65535])for(const p of [0,Math.floor(n/2),n])
+    assert.equal(preview.map(o,p,n),Math.fround(start+(end-start)*(p/n)));
+}
 const int=(start,end)=>({protocol:'osc',transport:'wifi',type:'int',address:'/test',start,end});
 assert.equal(preview.map(int(-2,1),1,2),-1);
 assert.equal(preview.map(int(-1,0),1,2),-1);

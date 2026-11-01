@@ -22,7 +22,7 @@ void obsActionTests() {
     source.chains[chain].count=2;
     for(unsigned i=0;i<2;++i){
       auto& a=source.chains[chain].actions[i];a.protocol=Protocol::Obs;a.obsOperation=obs::Operation::SetInputVolume;
-      strcpy(a.obsTarget,"音声 日本語");a.obsVolume={i?-5.25f:37.5f,i!=0};
+      strcpy(a.obsTarget,"音声 日本語");a.obsVolume={i?-1.25f:-6.5f,i!=0};
     }
   }
   JsonDocument doc; assert(encodeConfig(source,doc));
@@ -33,14 +33,16 @@ void obsActionTests() {
   String before,after; serializeJson(doc,before); serializeJson(restored,after);
   assert(before==after);
   auto volume=doc["chains"][2]["actions"][0];
-  for(const char* invalid:{"null","true","\"50\"","-0.01","100.01","1e100"}){
-    JsonDocument v;deserializeJson(v,invalid);volume["volumePercent"]=v.as<JsonVariantConst>();assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  for(const char* invalid:{"null","true","\"0\"","-100.01","26.01","1e100"}){
+    JsonDocument v;deserializeJson(v,invalid);volume["volumeDb"]=v.as<JsonVariantConst>();assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
   }
-  volume["volumePercent"]=100;volume["volumeMode"]="bad";assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
-  volume["volumeMode"]="relative";volume["volumePercent"]=-100;assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
-  volume["volumePercent"]=-100.01;assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
-  volume["volumePercent"]=0;volume["inputMuted"]=false;assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));volume.remove("inputMuted");
-  volume["volumeMode"]="absolute";volume["volumePercent"]=37.5;assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  volume["volumeDb"]=26;volume["volumeMode"]="bad";assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  volume["volumeMode"]="relative";
+  for(float v:{-126.0f,126.0f}){volume["volumeDb"]=v;assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));}
+  for(float v:{-126.01f,126.01f}){volume["volumeDb"]=v;assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));}
+  volume["volumeDb"]=0;volume["inputMuted"]=false;assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));volume.remove("inputMuted");
+  volume.remove("volumeDb");volume["volumePercent"]=50;assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));volume.remove("volumePercent");
+  volume["volumeMode"]="absolute";volume["volumeDb"]=-6.5;assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
   for(unsigned i=10;i<16;++i){
     assert(config.chains[0].actions[i].obsOperation==obs::Operation::TriggerMediaInputAction);
     assert(config.chains[0].actions[i].obsMediaAction==obs::MediaAction(i-10));

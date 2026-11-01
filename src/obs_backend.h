@@ -37,6 +37,8 @@ void obsBegin();
 bool obsApplySettings(const ObsSettings& snapshot); // Also explicitly retries terminal errors.
 SendResult obsDispatch(const char* scene, uint32_t& requestId);
 SendResult obsDispatch(const obs::Command&, uint32_t& requestId);
+// Latest-state Rotation admission: only when all earlier OBS requests finished.
+SendResult obsRotationDispatch(const obs::Command&, uint32_t generation);
 void obsPanic();
 void obsTick(bool allowed); // Permission + loop metrics only; never network I/O.
 ObsStatus obsStatusSnapshot(); // Approximate independent counters, no secret data.
@@ -51,6 +53,7 @@ inline void obsBegin() {}
 inline bool obsApplySettings(const ObsSettings&) { return false; }
 inline SendResult obsDispatch(const char*, uint32_t& id) { id = 0; return SendResult::Unavailable; }
 inline SendResult obsDispatch(const obs::Command&, uint32_t& id) { id = 0; return SendResult::Unavailable; }
+inline SendResult obsRotationDispatch(const obs::Command&, uint32_t) { return SendResult::Unavailable; }
 inline void obsPanic() {}
 inline void obsTick(bool) {}
 inline ObsStatus obsStatusSnapshot() { return {}; }

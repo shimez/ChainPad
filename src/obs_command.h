@@ -9,12 +9,16 @@ constexpr size_t TARGET_LIMIT = 192;
 enum class Operation : uint8_t { SetCurrentProgramScene, StartStream, StopStream, StartRecord, StopRecord, SetInputMute, ToggleInputMute, SetSceneItemVisibility, TriggerMediaInputAction, SetInputVolume, GetSceneList, GetInputList, GetGroupList, GetSceneItemList, GetGroupSceneItemList, GetSceneItemEnabled, GetMediaInputList, GetInputVolume };
 // Byte storage keeps the OSC-string union's byte alignment and Action size.
 struct VolumeSettings {
-  uint8_t percentBytes[sizeof(float)];
+  uint8_t valueBytes[sizeof(float)];
   bool relative;
-  VolumeSettings(float value = 0, bool relativeValue = false) : relative(relativeValue) { memcpy(percentBytes, &value, sizeof(value)); }
-  float percent() const { float value; memcpy(&value, percentBytes, sizeof(value)); return value; }
+  VolumeSettings(float value = 0, bool relativeValue = false) : relative(relativeValue) { memcpy(valueBytes, &value, sizeof(value)); }
+  float value() const { float value; memcpy(&value, valueBytes, sizeof(value)); return value; }
 };
-inline bool validVolume(const VolumeSettings& v) { return v.percent() >= (v.relative ? -100.0f : 0.0f) && v.percent() <= 100.0f; }
+inline bool validVolume(const VolumeSettings& v) {
+  const float low=v.relative?-126.0f:-100.0f;
+  const float high=v.relative?126.0f:26.0f;
+  return v.value() >= low && v.value() <= high;
+}
 enum class Visibility : uint8_t { Enable, Disable, Toggle };
 enum class MediaAction : uint8_t { Restart, Stop, Pause, Play, Next, Previous };
 inline const char* mediaActionName(MediaAction action) {

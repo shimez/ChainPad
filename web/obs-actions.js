@@ -6,7 +6,7 @@ const ObsActionsUI = (() => {
   function defaults(operation='setCurrentProgramScene') {
     if(operation==='groupItemVisibility')return {...defaults('setSceneItemVisibility'),containerType:'group'};
     if(operation==='triggerMediaInputAction')return {protocol:'obs',delayMs:0,operation,inputName:'',mediaAction:'restart'};
-    if(operation==='setInputVolume')return {protocol:'obs',delayMs:0,operation,inputName:'',volumeMode:'absolute',volumePercent:100};
+    if(operation==='setInputVolume')return {protocol:'obs',delayMs:0,operation,inputName:'',volumeMode:'absolute',volumeDb:0};
     return {protocol:'obs',delayMs:0,operation,...(operation==='setCurrentProgramScene'?{sceneName:''}:operation==='setInputMute'?{inputName:'',inputMuted:true}:operation==='toggleInputMute'?{inputName:''}:operation==='setSceneItemVisibility'?{containerType:'scene',sceneName:'',sceneItemId:null,visibility:'enable'}:{})};
   }
   function validName(name) {
@@ -64,17 +64,19 @@ const ObsActionsUI = (() => {
       subscribe(fn){listeners.clear();listeners.add(fn);},clear(){listeners.clear();},
       failed(){++epoch;ready=false;state={...state,state:'error',complete:false};emit();}};
   }
-  function render(a, fields, control, changed, rerender, capabilities, scenes) {
+  function render(a, fields, control, changed, rerender, capabilities, scenes, sourceOnly=false) {
     fields.className+=' obs-fields';
     const supported=capabilities.obsActions===true;
     let picker;
     const media=a.operation==='triggerMediaInputAction';
     const volume=a.operation==='setInputVolume';
+    if(volume)fields.className+=sourceOnly?' obs-rotation-volume':' obs-volume';
     if(media)fields.className+=' obs-media';
     if(['setInputMute','toggleInputMute'].includes(a.operation))fields.className+=' obs-mute';
     const note=document.createElement('p');note.className='hint';note.style.gridColumn='1 / -1';
     note.textContent=supported?'OBS接続設定を共通利用します。':'この機種ではOBS Action非対応です。設定は保持・編集できますが、実行時はスキップします。';
     // The group operation is an editor-only choice; the persisted operation stays unchanged.
+    if(!sourceOnly){
     const selectedOperation=a.operation==='toggleInputMute'?'setInputMute':a.operation==='setSceneItemVisibility'&&a.containerType==='group'?'groupItemVisibility':a.operation;
     const operationField=control('OBS操作',selectedOperation,operations,op=>{
       if(op===selectedOperation)return;
@@ -99,6 +101,7 @@ const ObsActionsUI = (() => {
     });
     operationSelect.value=selectedOperation;
     fields.append(operationField);
+    }
     if(a.operation==='setSceneItemVisibility'){
       renderItem(a,fields,control,changed,supported,scenes);
       fields.append(note);return;
@@ -106,7 +109,9 @@ const ObsActionsUI = (() => {
     const key=a.operation==='setCurrentProgramScene'?'sceneName':media||volume||['setInputMute','toggleInputMute'].includes(a.operation)?'inputName':null;
     if(key){
       const label=key==='sceneName'?'シーン':media?'メディア':volume?'音声ソース':'ミュート対象';
-      scenes.select?.(key==='sceneName'?'scenes':media?'media-inputs':'inputs');
+      const kind=key==='sceneName'?'scenes':media?'media-inputs':'inputs';
+      let active=!sourceOnly;
+      if(active)scenes.select?.(kind);
       const field=control(key==='sceneName'?'シーン名':media?'対象のメディア/VLCビデオ':volume?'対象の音声ソース':'入力名',a[key],null,value=>{a[key]=value;update();});
       const input=field.lastChild, warning=document.createElement('small');
       input.oninput=()=>{a[key]=input.value;changed();update();};
@@ -127,15 +132,16 @@ const ObsActionsUI = (() => {
         const caption=document.createElement('span');caption.textContent=label+'候補';
         refresh=document.createElement('button');refresh.className='obs-list-button';refresh.type='button';refresh.textContent=label+'一覧から選択';refresh.style.minHeight='42px';
         refreshField.append(caption,refresh);
-        refresh.onclick=()=>{panel.hidden=false;void scenes.refresh();update();};
-        scenes.subscribe(()=>{refresh.disabled=!supported||scenes.busy();update();});
-        refresh.disabled=!supported||scenes.busy();
+        const listen=()=>scenes.subscribe(()=>{refresh.disabled=!supported||scenes.busy();update();});
+        refresh.onclick=()=>{active=true;if(sourceOnly)scenes.select?.(kind);listen();panel.hidden=false;void scenes.refresh();update();};
+        if(active)listen();
+        refresh.disabled=!supported;
       }
       function update(){
         const valid=validName(input.value);input.setCustomValidity(valid?'':'UTF-8で1〜192 bytes（制御文字不可）を指定してください。');
         let message=valid?'':'対象名はUTF-8で1〜192 bytes（制御文字不可）です。',error=!valid;
         if(list){
-          const cache=scenes.snapshot();
+          const cache=active?scenes.snapshot():{state:'unavailable',complete:false,scenes:[]};
           const names=cache.state==='ready'&&cache.complete?cache.scenes:[];
           const nextKey=JSON.stringify(names);
           if(nextKey!==choicesKey){
@@ -157,6 +163,7 @@ const ObsActionsUI = (() => {
       }
       field.append(warning);fields.append(field);if(refresh)fields.append(refreshField);update();
     }
+    if(sourceOnly){if(picker){picker.style.order='1';fields.append(picker);}note.style.order='1';fields.append(note);return;}
     if(['setInputMute','toggleInputMute'].includes(a.operation))fields.append(control('ミュート',a.operation==='toggleInputMute'?'toggle':String(a.inputMuted),[['true','Enable（ミュート）'],['false','Disable（ミュート解除）'],['toggle','Toggle（切り替え）']],value=>{
       a.operation=value==='toggle'?'toggleInputMute':'setInputMute';
       if(value==='toggle')delete a.inputMuted;else a.inputMuted=value==='true';
@@ -167,14 +174,15 @@ const ObsActionsUI = (() => {
       note.textContent+=' 再生再開は一時停止からの再開です。停止・終了後は「先頭から再生」を使用してください。「次へ」「前へ」は対応するプレイリストで動作します。';
     }
     if(volume){
-      fields.append(control('調整方法',a.volumeMode,[['absolute','指定値に設定'],['relative','相対的に増減']],value=>{a.volumeMode=value;a.volumePercent=value==='relative'?0:100;rerender();}));
-      const relative=a.volumeMode==='relative',min=relative?-100:0;
-      const field=control(relative?'増減量（パーセントポイント）':'音量（%）',a.volumePercent,null,value=>{a.volumePercent=value===''?NaN:Number(value);validate();});
-      const input=field.lastChild;input.type='number';input.min=min;input.max=100;input.step='any';
-      function validate(){input.setCustomValidity(Number.isFinite(a.volumePercent)&&a.volumePercent>=min&&a.volumePercent<=100?'':`${min}〜100の数値を指定してください。`);}
-      input.oninput=()=>{a.volumePercent=input.value===''?NaN:Number(input.value);validate();changed();};
+      const mode=control('調整方法',a.volumeMode,[['absolute','指定値に設定'],['relative','相対的に増減']],value=>{if(value===a.volumeMode)return;a.volumeMode=value;a.volumeDb=value==='relative'?1:0;rerender();});
+      mode.style.gridColumn='1';fields.append(mode);
+      const relative=a.volumeMode==='relative',min=relative?-126:-100,max=relative?126:26;
+      const field=control(relative?'増減量（dB）':'音量（dB）',a.volumeDb,null,value=>{a.volumeDb=value===''?NaN:Number(value);validate();});
+      const input=field.lastChild;input.type='number';input.min=min;input.max=max;input.step='any';
+      function validate(){input.setCustomValidity(Number.isFinite(a.volumeDb)&&a.volumeDb>=min&&a.volumeDb<=max?'':`${min}〜${max}の数値を指定してください。`);}
+      input.oninput=()=>{a.volumeDb=input.value===''?NaN:Number(input.value);validate();changed();};
       validate();fields.append(field);
-      note.textContent+=' 100% = 線形振幅倍率1.0（0 dB）。相対調整は現在値を取得して加算し、結果を0〜100%に収めます。ミュート状態は変更しません。';
+      note.textContent+=' 0 dBは元の音量、正数は増幅です。相対調整はOBSの現在のdB値に加算し、結果を−100〜＋26 dBに収めます。ミュート状態は変更しません。';
     }
     if(picker)fields.append(picker);
     fields.append(note);

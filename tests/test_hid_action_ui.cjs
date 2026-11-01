@@ -186,19 +186,21 @@ for(const operation of ['setInputMute','toggleInputMute']){
 console.log('PASS OBS editor: seven operations, supported/unsupported Full/Key roundtrip, unfiltered picker/apply/cancel, stable input/caret/composition, advisory and byte limits');
 for(const supported of [true,false])for(let input=0;input<28;input++)for(const volumeMode of ['absolute','relative']){
   ctx.capabilities.obsActions=supported;
-  const a={protocol:'obs',delayMs:0,operation:'setInputVolume',inputName:'Mic',volumeMode,volumePercent:volumeMode==='relative'?-5.25:37.5};
+  const a={protocol:'obs',delayMs:0,operation:'setInputVolume',inputName:'Mic',volumeMode,volumeDb:volumeMode==='relative'?-1.25:-6.5};
   show(a,input);assert.equal(field('OBS操作').value,'setInputVolume');assert.equal(field('調整方法').value,volumeMode);
   assert.deepEqual(plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[input].actions[0]),plain(a));
   if(input<26)assert.deepEqual(plain(P.read(P.key(config,Math.floor(input/2)),'key',ctx.capabilities).chains[input%2].actions[0]),plain(a));
-  const caption=volumeMode==='relative'?'増減量（パーセントポイント）':'音量（%）';
-  choose(caption,volumeMode==='relative'?-100:0);assert.equal(field(caption).validationMessage,'');
-  choose(caption,101);assert(field(caption).validationMessage);assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
-  choose(caption,50);assert(ctx.actionSummary(a).includes('音量調整'));
-  choose('調整方法',volumeMode==='relative'?'absolute':'relative');assert.equal(a.volumePercent,volumeMode==='relative'?100:0);
+  const caption=volumeMode==='relative'?'増減量（dB）':'音量（dB）';
+  choose(caption,volumeMode==='relative'?-126:-100);assert.equal(field(caption).validationMessage,'');
+  choose(caption,volumeMode==='relative'?126:26);assert.equal(field(caption).validationMessage,'');
+  choose(caption,127);assert(field(caption).validationMessage);assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
+  choose(caption,-6.5);assert(ctx.actionSummary(a).includes('dB'));
+  choose('調整方法',volumeMode);assert.equal(a.volumeDb,-6.5);
+  choose('調整方法',volumeMode==='relative'?'absolute':'relative');assert.equal(a.volumeDb,volumeMode==='relative'?0:1);
   assert.equal(a.inputName,'Mic');
 }
 ctx.capabilities.obsActions=true;
-show({protocol:'obs',delayMs:0,operation:'setInputVolume',inputName:'manual',volumeMode:'relative',volumePercent:5});
+show({protocol:'obs',delayMs:0,operation:'setInputVolume',inputName:'manual',volumeMode:'relative',volumeDb:1});
 sceneCache={state:'ready',complete:true,scenes:['Mic','Desktop']};sceneListener();click('音声ソース一覧から選択');
 const volumeChoices=all().find(n=>n.tag==='select'&&n.size===6);volumeChoices.selectedIndex=1;volumeChoices.value='Desktop';volumeChoices.ondblclick();
 assert.equal(config.chains[0].actions[0].inputName,'Desktop');

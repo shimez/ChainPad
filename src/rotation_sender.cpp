@@ -1,5 +1,6 @@
 #include "rotation_sender.h"
 #include "backend_internal.h"
+#include "obs_backend.h"
 #include <WiFi.h>
 #include <atomic>
 
@@ -16,6 +17,7 @@ struct Pending {
 };
 Pending pending[ROTATION_OUTPUT_CAPACITY][ROTATION_ROUTES];
 struct Connection { uint32_t epoch = 0; bool ready = false; } connections[ROTATION_ROUTES];
+Connection obsConnection;
 std::atomic<uint32_t> wifiEpoch{0};
 unsigned cursor = 0;
 constexpr unsigned SLOT_COUNT = ROTATION_OUTPUT_CAPACITY * ROTATION_ROUTES;
@@ -24,6 +26,13 @@ void discard(Pending& p) {
   if (p.valid) { p.valid = false; ++rotationSendStats.discarded; }
 }
 void sync() {
+  const auto obsStatus = obsStatusSnapshot();
+  const bool obsReady = obsStatus.state == obs::State::Ready;
+  if (obsConnection.epoch != obsStatus.generation || obsConnection.ready != obsReady || !obsReady) {
+    for (unsigned i=0;i<activeConfig().encoderRotation.outputCount;++i)
+      if (activeConfig().encoderRotation.outputs[i].kind == RotationOutputKind::ObsVolume) discard(pending[i][0]);
+    obsConnection = {obsStatus.generation,obsReady};
+  }
   for (unsigned route = 0; route < ROTATION_ROUTES; ++route) {
     const auto transport = routeTransport(route);
     const uint32_t epoch = route ? midiEpoch(transport) : wifiEpoch.load();
@@ -62,7 +71,7 @@ unsigned rotationPendingCount() {
 }
 size_t rotationPendingBytes() { return sizeof(pending); }
 size_t rotationSenderBytes() {
-  return sizeof(pending) + sizeof(connections) + sizeof(wifiEpoch) + sizeof(cursor) + sizeof(rotationSendStats);
+  return sizeof(pending) + sizeof(connections) + sizeof(obsConnection) + sizeof(wifiEpoch) + sizeof(cursor) + sizeof(rotationSendStats);
 }
 void rotationPublish(uint32_t position) {
   sync();
@@ -77,10 +86,11 @@ void rotationPublish(uint32_t position) {
       const bool target = output.kind == RotationOutputKind::MidiCC ?
         (route && (output.transport == Transport::Both || output.transport == routeTransport(route))) : route == 0;
       if (!target) continue;
+      if (output.kind == RotationOutputKind::ObsVolume && !obsConnection.ready) { ++rotationSendStats.unavailable; continue; }
       if (!connections[route].ready) { ++rotationSendStats.unavailable; continue; }
       auto& p = pending[i][route];
       if (p.valid) ++rotationSendStats.overwritten;
-      if (output.kind == RotationOutputKind::OscFloat) p.value.floating = value.floating;
+      if (rotationFloat(output.kind)) p.value.floating = value.floating;
       else p.value.integer = value.integer;
       p.generation = rotationSendStats.generation;
       p.valid = true;
@@ -105,6 +115,16 @@ void rotationSendTick() {
     if (route && midiQueued(routeTransport(route))) continue;
     --budget;
     const auto& output = activeConfig().encoderRotation.outputs[i];
+    if (output.kind == RotationOutputKind::ObsVolume) {
+      obs::Command command; command.operation=obs::Operation::SetInputVolume;
+      memcpy(command.target,output.inputName,sizeof(command.target));command.volume={p.value.floating,false};
+      const auto result=obsRotationDispatch(command,obsConnection.epoch);
+      if (result == SendResult::Busy) continue; // Keep only the latest value until the ordinary FIFO is idle.
+      p.valid=false;
+      if (result == SendResult::Accepted) ++rotationSendStats.accepted[route];
+      else { ++rotationSendStats.failed[route]; ++rotationSendStats.discarded; }
+      continue;
+    }
     p.valid = false; // One API attempt only; failures are never retried.
     bool accepted;
     if (route) accepted = midiWrite(routeTransport(route), 0xb0 | (output.channel - 1), output.number, p.value.integer);

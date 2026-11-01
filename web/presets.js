@@ -18,7 +18,7 @@ const Presets = (() => {
       const mute=a.operation==='setInputMute';
       if (!['setCurrentProgramScene','startStream','stopStream','startRecord','stopRecord','setInputMute','toggleInputMute','setSceneItemVisibility','triggerMediaInputAction','setInputVolume'].includes(a.operation) || a.delayMs!==0 ||
           Object.keys(a).length!==3+Number(named)+Number(mute)+Number(media)+(volume?2:0)+(item?3:0)) fail('OBS Actionが不正です。');
-      if(volume&&(!['absolute','relative'].includes(a.volumeMode)||!Number.isFinite(a.volumePercent)||a.volumePercent<(a.volumeMode==='relative'?-100:0)||a.volumePercent>100))fail('OBS音量の調整方法・値が不正です。');
+      if(volume&&(!['absolute','relative'].includes(a.volumeMode)||!Number.isFinite(a.volumeDb)||a.volumeDb<(a.volumeMode==='relative'?-126:-100)||a.volumeDb>(a.volumeMode==='relative'?126:26)))fail('OBS音量の調整方法・dB値が不正です。');
       if(named){
         const name=a[a.operation==='setCurrentProgramScene'||item?'sceneName':'inputName'];
         if(!text(name,192)||!name.length||/[\x00-\x1f\x7f]/.test(name)||[...name].some(c=>{const cp=c.codePointAt(0);return cp>=0xd800&&cp<=0xdfff;})) fail('OBS対象名はUTF-8で1〜192 bytes（制御文字不可）にしてください。');
@@ -84,6 +84,11 @@ const Presets = (() => {
     if (!object(r) || !int(r.rangeSteps,1,65535) || !int(r.initialPosition,0,r.rangeSteps) || !['stop','wrap'].includes(r.boundary) || !Array.isArray(r.outputs) || r.outputs.length>16) fail('Rotation Axis / Actionsが不正です（暫定最大16 Actions）。');
     const outputs=r.outputs.map(o=>{
       if (!object(o)) fail('Rotation Actionが不正です。');
+      if(o.protocol==='obs'){
+        const valid=v=>Number.isFinite(v)&&v>=-100&&v<=26;
+        if(Object.keys(o).length!==5||o.operation!=='setInputVolume'||!text(o.inputName,192)||!o.inputName.length||/[\x00-\x1f\x7f]/.test(o.inputName)||[...o.inputName].some(c=>{const n=c.codePointAt(0);return n>=0xd800&&n<=0xdfff;})||!valid(o.start)||!valid(o.end))fail('Rotation OBS音声ソース・音量（−100〜＋26 dB）が不正です。');
+        return {protocol:'obs',operation:'setInputVolume',inputName:o.inputName,start:Math.fround(o.start),end:Math.fround(o.end)};
+      }
       if (o.protocol==='osc') {
         if (o.transport!=='wifi' || !text(o.address,192) || !o.address.startsWith('/') || /[\x00-\x20]/.test(o.address) || !['int','float'].includes(o.type)) fail('Rotation OSCが不正です。');
         const valid=v=>o.type==='int'?int(v,-2147483648,2147483647):typeof v==='number'&&Number.isFinite(v)&&Math.abs(v)<=3.4028234663852886e38;
@@ -100,7 +105,7 @@ const Presets = (() => {
   function duplicateDestinations(rotation) {
     const seen=new Set(), duplicates=new Set();
     for(const o of rotation.rotationValue.outputs){
-      const keys=o.protocol==='osc'?['OSC '+o.address]:(o.transport==='both'?['usb','ble']:[o.transport]).map(t=>`${t} Ch ${o.channel} CC ${o.number}`);
+      const keys=o.protocol==='obs'?['OBS '+o.inputName]:o.protocol==='osc'?['OSC '+o.address]:(o.transport==='both'?['usb','ble']:[o.transport]).map(t=>`${t} Ch ${o.channel} CC ${o.number}`);
       for(const key of keys){if(seen.has(key))duplicates.add(key);seen.add(key);}
     }
     return [...duplicates];

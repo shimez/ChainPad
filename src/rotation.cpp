@@ -1,4 +1,5 @@
 #include "rotation.h"
+#include "obs_command.h"
 #include <cmath>
 #include <limits>
 
@@ -18,6 +19,11 @@ bool normalizeRotationFloat(double value, float& result) {
   return true;
 }
 bool validRotationOutput(const RotationOutput& output) {
+  if (output.kind == RotationOutputKind::ObsVolume) {
+    return output.transport == Transport::Wifi && obs::validText(output.inputName, obs::TARGET_LIMIT) &&
+      output.range.floating.start >= -100 && output.range.floating.start <= 26 &&
+      output.range.floating.end >= -100 && output.range.floating.end <= 26;
+  }
   if (output.kind == RotationOutputKind::MidiCC) {
     return (output.transport == Transport::Usb || output.transport == Transport::Ble || output.transport == Transport::Both) &&
       output.channel >= 1 && output.channel <= 16 && output.number <= 127 &&
@@ -49,7 +55,7 @@ bool mapRotation(const RotationAxis& axis, uint32_t position,
   if (!validRotationPosition(axis, position) || !validRotationOutput(output)) return false;
   RotationMappedValue mapped;
   mapped.kind = output.kind;
-  if (output.kind == RotationOutputKind::OscFloat) {
+  if (rotationFloat(output.kind)) {
     const auto& r = output.range.floating;
     if (!position) mapped.floating = r.start;
     else if (position == axis.rangeSteps) mapped.floating = r.end;

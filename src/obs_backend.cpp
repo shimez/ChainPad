@@ -139,8 +139,8 @@ void message(const char* bytes, size_t size) {
     case Received::Result:
       responseMs = millis() - protocol.sentAt;
       if (toggleAction && protocol.operation == Operation::GetInputVolume && protocol.success) {
-        const float percent = protocol.inputVolume * 100.0f + toggleCommand.volume.percent();
-        toggleCommand.volume = {percent < 0 ? 0 : percent > 100 ? 100 : percent, false};
+        const float value = protocol.inputVolume + toggleCommand.volume.value();
+        toggleCommand.volume = {value < -100 ? -100 : value > 26 ? 26 : value, false};
         protocol.pending = 0; toggleAdvance = true; break;
       }
       if (toggleAction && protocol.operation == Operation::GetSceneItemEnabled && protocol.success) {
@@ -330,17 +330,26 @@ SendResult obsDispatch(const char* scene, uint32_t& id) {
   obs::Command command; memcpy(command.target, scene, strlen(scene) + 1);
   return obsDispatch(command, id);
 }
-SendResult obsDispatch(const obs::Command& command, uint32_t& id) {
+static SendResult submitCommand(const obs::Command& command, uint32_t& id, bool rotation, uint32_t generation) {
   id = 0;
   if (!obs::validCommand(command)) { ++rejected; return SendResult::Failed; }
   if (!task || !station()) { ++rejected; return SendResult::Unavailable; }
   Request r{}; r.command = command;
   Lock lock;
   if (!lifecycle.claim(lifecycle.epoch)) { ++rejected; return SendResult::Unavailable; }
+  if (rotation) {
+    if (lifecycle.epoch.session != generation) return SendResult::Unavailable;
+    if (accepted.load() != uint32_t(completed.load() + failed.load())) return SendResult::Busy;
+  }
   r.epoch = lifecycle.epoch; r.id = lifecycle.nextId();
   if (!r.id) { ++rejected; return SendResult::Failed; }
   if (xQueueSend(requestQueue, &r, 0) != pdTRUE) { ++rejected; return SendResult::Busy; }
   id = r.id; ++accepted; return SendResult::Accepted;
+}
+SendResult obsDispatch(const obs::Command& command, uint32_t& id) { return submitCommand(command, id, false, 0); }
+SendResult obsRotationDispatch(const obs::Command& command, uint32_t generation) {
+  if (command.operation != obs::Operation::SetInputVolume || command.volume.relative) return SendResult::Failed;
+  uint32_t id; return submitCommand(command, id, true, generation);
 }
 void obsPanic() { Lock lock; lifecycle.panic(); }
 void obsTick(bool allowed) {

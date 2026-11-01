@@ -9,6 +9,20 @@
 using namespace chimera;
 
 void rotationTests() {
+  static_assert(sizeof(RotationOutput)==208,"OBS source name reuses OSC address storage");
+  {
+    RotationOutput obs;obs.kind=RotationOutputKind::ObsVolume;strcpy(obs.inputName,"Mic 日本語");
+    RotationMappedValue mapped;RotationAxis axis{20,0,RotationBoundary::Stop};
+    for(auto range:{RotationFloatRange{-100,26},RotationFloatRange{26,-100},RotationFloatRange{-6.5f,-6.5f}}){
+      obs.range.floating=range;
+      for(unsigned p=0;p<=20;++p){assert(mapRotation(axis,p,obs,mapped));assert(mapped.kind==RotationOutputKind::ObsVolume);
+        assert(mapped.floating==float(double(range.start)+(double(range.end)-range.start)*p/20));}
+    }
+    obs.range.floating={-100.01f,0};assert(!validRotationOutput(obs));
+    obs.range.floating={0,26.01f};assert(!validRotationOutput(obs));
+    obs.range.floating={0,std::numeric_limits<float>::quiet_NaN()};assert(!validRotationOutput(obs));
+    obs.range.floating={-60,0};obs.inputName[0]=0;assert(!validRotationOutput(obs));
+  }
   RotationSettings<16> settings;
   assert(settings.mode == RotationMode::ActionChain && settings.outputCount == 0);
   assert(settings.axis.rangeSteps == 20 && settings.axis.initialPosition == 0);

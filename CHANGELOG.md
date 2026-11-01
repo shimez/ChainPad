@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.0
+
+- Add OBS volume Actions with absolute and relative dB adjustment, clamped to
+  -100 through +26 dB. Replace the unpublished linear-volume Action schema with `volumeDb`.
+- Add OBS volume to Rotation Value Action Link with source discovery, dB Start/End
+  interpolation and latest-state output alongside OSC and MIDI. Control is one-way to OBS.
+- Preserve existing OSC/MIDI settings and configuration/Preset format versions.
+- Rename Rotation output controls to Action Link, add a Preview Position slider,
+  and improve OBS volume field layouts.
+- Extend the standalone OBS tester with linear-volume controls.
+- Host, OBS and UI regression tests passed. Hardware OBS volume validation was
+  completed by the user.
+
 ## 0.7.0
 
 - Add OBS media control: restart, stop, pause, resume, next and previous, with

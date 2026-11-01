@@ -6,7 +6,8 @@ constexpr uint32_t MAX_RANGE_STEPS = 65535;
 constexpr size_t ROTATION_OUTPUT_CAPACITY = 16; // Provisional hardware evaluation capacity.
 enum class RotationMode : uint8_t { ActionChain, RotationValue };
 enum class RotationBoundary : uint8_t { Stop, Wrap };
-enum class RotationOutputKind : uint8_t { OscInt, OscFloat, MidiCC };
+enum class RotationOutputKind : uint8_t { OscInt, OscFloat, MidiCC, ObsVolume };
+inline bool rotationFloat(RotationOutputKind kind) { return kind == RotationOutputKind::OscFloat || kind == RotationOutputKind::ObsVolume; }
 
 struct RotationAxis {
   uint32_t rangeSteps = 20;
@@ -28,7 +29,7 @@ struct RotationOutput {
   Transport transport = Transport::Wifi;
   uint8_t channel = 1;
   uint8_t number = 7;
-  char address[MAX_OSC_ADDRESS_BYTES + 1] = "/avatar/parameters/Costume";
+  union { char address[MAX_OSC_ADDRESS_BYTES + 1] = "/avatar/parameters/Costume"; char inputName[MAX_OSC_ADDRESS_BYTES + 1]; };
   RotationRange range;
 };
 // Capacity is deliberately a template parameter until hardware evaluation.

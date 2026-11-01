@@ -33,6 +33,7 @@ void rotationStorageTests() {
     else{o.kind=RotationOutputKind::MidiCC;o.transport=Transport::Both;o.range.integer={127,0};}
   }
   // All 224 Actions remain allocated and persisted, including inactive CW/CCW.
+  r.outputs[15].kind=RotationOutputKind::ObsVolume;strcpy(r.outputs[15].inputName,"Mic 日本語");r.outputs[15].range.floating={-60.5f,26};
   for(uint8_t i=0;i<28;++i){auto& chain=c.chains[i];chain.count=i>=26?8:i%2?0:16;
     for(unsigned k=0;k<chain.count;++k){auto& a=chain.actions[k];a.oscType=OscType::String;
       memset(a.address,'"',192);a.address[0]='/';a.address[192]=0;memset(a.stringValue,1,128);a.stringValue[128]=0;}}
@@ -42,6 +43,14 @@ void rotationStorageTests() {
   assert(config.encoderRotation.outputCount==16 && config.encoderRotation.axis.initialPosition==32768);
   assert(config.encoderRotation.outputs[0].range.floating.start==std::numeric_limits<float>::max());
   assert(config.encoderRotation.outputs[0].range.floating.end==std::numeric_limits<float>::denorm_min());
+  assert(config.encoderRotation.outputs[15].kind==RotationOutputKind::ObsVolume&&config.encoderRotation.outputs[15].range.floating.start==-60.5f);
+  assert(!strcmp(config.encoderRotation.outputs[15].inputName,"Mic 日本語"));
+  for(const char* bad:{"null","true","\"0\"","-100.0001","26.0001"}){
+    encodeRotation(r,doc);JsonDocument v;deserializeJson(v,bad);doc["rotationValue"]["outputs"][15]["start"]=v.as<JsonVariantConst>();
+    EncoderRotationSettings decoded;assert(!decodeRotation(doc.as<JsonVariantConst>(),decoded,error));
+  }
+  encodeRotation(r,doc);doc["rotationValue"]["outputs"][15]["volumeMode"]="relative";
+  EncoderRotationSettings badFields;assert(!decodeRotation(doc.as<JsonVariantConst>(),badFields,error));
   const auto original=*fake::files.at("/config.records");
   assert(original.find("\\u0001")!=std::string::npos && original.find('\x01')==std::string::npos);
   encodeChain(c.chains[0],0,doc);String strictJson;serializeSettingsJson(doc,strictJson);

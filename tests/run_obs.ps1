@@ -20,8 +20,8 @@ if ($LASTEXITCODE -ne 0) { throw 'OBS protocol/auth tests failed' }
 $command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe /nologo /c /Fo:`"$build\b64.obj`" `"$ws\libb64\cencode.c`" && cl.exe $common /DESP32 /DWEBSOCKETS_MAX_DATA_SIZE=16384 /DWEBSOCKETS_TCP_TIMEOUT=20 /I`"$ws`" /Fe:`"$build\frames.exe`" `"$root\tests\obs\frame_tests.cpp`" `"$ws\WebSockets.cpp`" `"$build\b64.obj`" && `"$build\frames.exe`""
 & cmd.exe /d /c $command
 if ($LASTEXITCODE -ne 0) { throw 'WebSocket frame patch tests failed' }
-$sources = @('tests\obs\backend_tests.cpp','tests\obs\native_crypto.cpp','src\obs_backend.cpp','src\obs_protocol.cpp','src\obs_auth.cpp','src\obs_actions.cpp','src\engine.cpp','src\backends.cpp') | ForEach-Object { "`"$root\$_`"" }
-$command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe $common /I`"$root\tests\obs\runtime`" /I`"$json`" /I`"$root\src`" /Fe:`"$build\backend.exe`" $($sources -join ' ') && `"$build\backend.exe`""
+$sources = @('tests\obs\backend_tests.cpp','tests\obs\native_crypto.cpp','src\obs_backend.cpp','src\obs_protocol.cpp','src\obs_auth.cpp','src\obs_actions.cpp','src\engine.cpp','src\backends.cpp','src\rotation.cpp','src\rotation_sender.cpp') | ForEach-Object { "`"$root\$_`"" }
+$command = "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl.exe $common /DCHAINPAD_HOST_TEST=1 /I`"$root\tests\obs\runtime`" /I`"$json`" /I`"$root\src`" /Fe:`"$build\backend.exe`" $($sources -join ' ') && `"$build\backend.exe`""
 & cmd.exe /d /c $command
 if ($LASTEXITCODE -ne 0) { throw 'OBS production worker tests failed' }
 $sources = @('tests\obs\console_tests.cpp','src\obs_test_console.cpp','src\obs_protocol.cpp','src\obs_actions.cpp') | ForEach-Object { "`"$root\$_`"" }

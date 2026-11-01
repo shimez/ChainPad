@@ -4,6 +4,7 @@
 #include "obs_scenes.h"
 #include "engine.h"
 #include "rotation_runtime.h"
+#include "rotation_sender.h"
 #include <WebSocketsClient.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
@@ -15,11 +16,13 @@ using namespace chimera;
 static_assert(CHAINPAD_HAS_OBS && !CHAINPAD_HAS_USB, "OBS must not enable USB HID/MIDI on C-series");
 #endif
 // Production Engine/dispatch/OBS adapter/Worker; unrelated output transports are sinks.
-static unsigned hidSent=0, oscSent=0;
+static unsigned hidSent=0, oscSent=0, midiSent=0;
 namespace chimera {
 Config config; RotationRuntime rotationRuntime;
 bool RotationRuntime::step(bool) { return false; }
-void transportsBegin() {} void transportsTick() {} void rotationSenderBegin() {} void rotationDiscard() {}
+void transportsBegin() {} void transportsTick() {}
+uint32_t midiEpoch(Transport) {return 0;}
+bool midiWrite(Transport,uint8_t,uint8_t,uint8_t) {++midiSent;return true;}
 void midiTick() {} void keyboardTick() {} void midiPanic() {} void keyboardPanic() {}
 bool midiReady(Transport) {return true;} bool keyboardReady(Transport) {return true;}
 bool midiQueued(Transport) {return false;} bool keyboardQueued(Transport) {return false;}
@@ -399,37 +402,62 @@ int main(){
     rtos::step(3001);ready();backendsTick(0);assert(requests()==mediaSent&&obsActionStatus().last.code==-4);
     std::cout<<"PASS media Worker: filtered isolated cache, manual fallback, six actions, nonblocking chains, FIFO, failure and no replay\n";
     a.obsOperation=obs::Operation::SetInputVolume;strcpy(a.obsTarget,"manual audio");
-    for(float percent:{0.0f,37.5f,100.0f}){
-      a.obsVolume={percent,false};assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();
+    for(float db:{-100.0f,-6.5f,0.0f,26.0f}){
+      a.obsVolume={db,false};assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();
       auto sent=packet();assert(sent["d"]["requestType"]=="SetInputVolume");
-      assert(sent["d"]["requestData"]["inputVolumeMul"].as<float>()==percent/100);reply(sent,true);backendsTick(0);
+      assert(sent["d"]["requestData"]["inputVolumeDb"].as<float>()==db);reply(sent,true);backendsTick(0);
     }
-    for(float delta:{-100.0f,-5.0f,0.0f,5.0f,100.0f}){
+    for(float delta:{-126.0f,-1.0f,0.0f,1.0f,126.0f}){
       a.obsVolume={delta,true};config.chains[0].actions[1]=a;const auto oscCount=oscSent;
       assert(engine.trigger({0,0})&&!engine.activeCount()&&oscSent==oscCount+1);const auto logical=obsActionStatus().requestId;
       normal=submit("after-volume");rtos::step();auto get=packet();assert(get["d"]["requestType"]=="GetInputVolume");
-      const auto completed=obsActionStatus().completed;reply(get,true,R"({"inputVolumeMul":0.5})");backendsTick(0);
+      const auto completed=obsActionStatus().completed;reply(get,true,R"({"inputVolumeDb":-20})");backendsTick(0);
       auto set=packet();assert(set["d"]["requestType"]=="SetInputVolume"&&set["d"]["requestId"]!=get["d"]["requestId"]);
-      const float expected=delta==-100?0:delta==100?1:(50+delta)/100;
-      assert(set["d"]["requestData"]["inputVolumeMul"].as<float>()==expected&&obsActionStatus().completed==completed);
-      const auto count=requests();reply(get,true,R"({"inputVolumeMul":0.1})");assert(requests()==count);
+      const float expected=delta==-126?-100:delta==126?26:-20+delta;
+      assert(set["d"]["requestData"]["inputVolumeDb"].as<float>()==expected&&obsActionStatus().completed==completed);
+      const auto count=requests();reply(get,true,R"({"inputVolumeDb":-30})");assert(requests()==count);
       reply(set,true);backendsTick(0);assert(obsActionStatus().last.id==logical&&obsActionStatus().last.operation==obs::Operation::SetInputVolume);
       response(normal);backendsTick(0);
     }
-    for(const char* invalid:{"{}",R"({"inputVolumeMul":null})",R"({"inputVolumeMul":true})",R"({"inputVolumeMul":-1})"}){
+    a.obsVolume={1,true};
+    assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();reply(packet(),true,R"({"inputVolumeDb":-100,"inputVolumeMul":0})");
+    assert(packet()["d"]["requestData"]["inputVolumeDb"]==-99);reply(packet(),true);backendsTick(0);
+    for(const char* invalid:{"{}",R"({"inputVolumeDb":null})",R"({"inputVolumeDb":true})",R"({"inputVolumeDb":"-20"})",R"({"inputVolumeMul":0.5})"}){
       assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();const auto count=requests();reply(packet(),true,invalid);backendsTick(0);
       assert(requests()==count&&!obsActionStatus().last.success);
     }
     for(bool second:{false,true}){
-      assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();if(second)reply(packet(),true,R"({"inputVolumeMul":1.5})");
+      assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();if(second)reply(packet(),true,R"({"inputVolumeDb":10})");
       const auto count=requests();reply(packet(),false);backendsTick(0);assert(requests()==count&&!obsActionStatus().last.success);
-      assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();if(second)reply(packet(),true,R"({"inputVolumeMul":0.5})");
+      assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();if(second)reply(packet(),true,R"({"inputVolumeDb":-20})");
       const auto timeoutCount=requests();rtos::step(3001);ready();backendsTick(0);assert(requests()==timeoutCount&&obsActionStatus().last.code==-4);
     }
     assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();auto getVolume=packet();const auto panicCount=requests();
-    wire::afterMessage=[] {obsPanic();};reply(getVolume,true,R"({"inputVolumeMul":0.5})");ready();backendsTick(0);
+    wire::afterMessage=[] {obsPanic();};reply(getVolume,true,R"({"inputVolumeDb":-20})");ready();backendsTick(0);
     assert(requests()==panicCount&&!obsActionStatus().last.success);
     std::cout<<"PASS volume Worker: absolute endpoints, relative read/write, clamping, FIFO, nonblocking chain, invalid reads, failures, timeouts, stale replies and Panic\n";
+    auto& rotation=config.encoderRotation;rotation.mode=RotationMode::RotationValue;rotation.axis={20,0,RotationBoundary::Stop};rotation.outputCount=3;
+    rotation.outputs[0].kind=RotationOutputKind::ObsVolume;strcpy(rotation.outputs[0].inputName,"Rotation Mic");rotation.outputs[0].range.floating={-100,26};
+    rotation.outputs[1]=RotationOutput{};
+    rotation.outputs[2].kind=RotationOutputKind::MidiCC;rotation.outputs[2].transport=Transport::Ble;
+    const auto oscCount=oscSent,midiCount=midiSent;
+    normal=submit("priority-before-rotation");rotationPublish(0);rotationSendTick();rtos::step();
+    assert(packet()["d"]["requestType"]=="SetCurrentProgramScene");assert(rotationPendingCount()==1&&oscSent>oscCount&&midiSent>midiCount);
+    rotationPublish(10);rotationSendTick();response(normal);backendsTick(0);rotationSendTick();rtos::step();
+    auto rotationPacket=packet();assert(rotationPacket["d"]["requestType"]=="SetInputVolume");
+    assert(rotationPacket["d"]["requestData"]["inputName"]=="Rotation Mic"&&rotationPacket["d"]["requestData"]["inputVolumeDb"]==-37);
+    rotationPublish(15);rotationSendTick();rotationPublish(20);rotationSendTick();
+    assert(rotationPendingCount()==1);reply(rotationPacket,true);backendsTick(0);rotationSendTick();rtos::step();
+    assert(packet()["d"]["requestData"]["inputVolumeDb"]==26);reply(packet(),false);backendsTick(0);
+    const auto noReplay=requests();rotationSendTick();rtos::step();assert(requests()==noReplay);
+    normal=submit("park-rotation");rtos::step();rotationPublish(5);rotationSendTick();assert(rotationPendingCount()==1);
+    const auto generation=obsStatusSnapshot().generation;obsPanic();ready();backendsTick(0);rotationSendTick();
+    assert(rotationPendingCount()==0);
+    obs::Command stale;stale.operation=obs::Operation::SetInputVolume;strcpy(stale.target,"Rotation Mic");stale.volume={0,false};
+    assert(obsRotationDispatch(stale,generation)==SendResult::Unavailable);
+    rotationPublish(20);rotationDiscard();const auto discardedCount=requests();rotationSendTick();rtos::step();assert(requests()==discardedCount);
+    rotation.outputCount=0;
+    std::cout<<"PASS Rotation OBS: mixed OSC/MIDI, latest overwrite, FIFO priority, SetInputVolume only, failure/no replay, epoch and explicit discard\n";
   }
   cfg=settings();cfg.enabled=false;assert(obsApplySettings(cfg));rtos::step();assert(obsStatusSnapshot().state==obs::State::Disabled);
   oscBefore=oscSent;assert(engine.trigger({0,0}));

@@ -114,9 +114,9 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
   success = d["requestStatus"]["result"]; code = d["requestStatus"]["code"];
   if (success && code != 100) return Received::Invalid;
   if (success && operation == Operation::GetInputVolume) {
-    const auto value = d["responseData"]["inputVolumeMul"];
+    const auto value = d["responseData"]["inputVolumeDb"];
     const double volume = value.as<double>();
-    if (!value.is<double>() || !isfinite(volume) || volume < 0 || volume > 20) { success = false; code = -10; }
+    if (!value.is<double>() || !isfinite(volume) || !isfinite(float(volume))) { success = false; code = -10; }
     else inputVolume = float(volume);
   }
   if (success && operation == Operation::GetSceneItemEnabled) {
@@ -184,7 +184,7 @@ bool Protocol::request(const Command& command, uint32_t id, uint32_t now) {
   if (named(command.operation)) d["requestData"][command.operation == Operation::SetInputVolume || command.operation == Operation::GetInputVolume || command.operation == Operation::SetInputMute || command.operation == Operation::ToggleInputMute || command.operation == Operation::TriggerMediaInputAction ? "inputName" : "sceneName"] = command.target;
   if (command.operation == Operation::SetInputVolume) {
     if (command.volume.relative) return false;
-    d["requestData"]["inputVolumeMul"] = command.volume.percent() / 100.0f;
+    d["requestData"]["inputVolumeDb"] = command.volume.value();
   }
   if (command.operation == Operation::TriggerMediaInputAction) d["requestData"]["mediaAction"] = mediaActionWire(command.mediaAction);
   if (command.operation == Operation::SetInputMute) d["requestData"]["inputMuted"] = command.muted;

@@ -10,6 +10,19 @@ config.chains[0].actions=[{protocol:'wait',delayMs:123},{protocol:'midi',transpo
 config.chains[1].actions=[{protocol:'keyboard',transport:'usb',delayMs:0,message:'keyUp',usage:104,modifiers:0}];
 config.chains[27].actions=[{protocol:'osc',transport:'wifi',delayMs:0,address:'/test',type:'string',value:'hello'}];
 const normalized=v=>JSON.parse(JSON.stringify(v));
+{
+  const c=normalized(config),o={protocol:'obs',operation:'setInputVolume',inputName:'マイク 🎙',start:-60.5,end:26};
+  c.chains.forEach(chain=>chain.actions=[]);
+  c.encoderRotation.rotationValue.outputs=[{protocol:'osc',transport:'wifi',type:'float',address:'/mix',start:0,end:1},{protocol:'midi',message:'cc',transport:'ble',channel:1,number:7,start:0,end:127},o];
+  for(const caps of [{...usb,obsActions:true},{...ble,obsActions:false}]){
+    const result=P.read(P.full(c),'full',caps);assert.deepEqual(normalized(result.config.encoderRotation),c.encoderRotation);
+    assert.equal(result.converted,0);
+  }
+  for(const patch of [{inputName:''},{inputName:'x'.repeat(193)},{inputName:'\ud800'},{inputName:'a\0b'},{start:-100.00001},{end:26.00001},{start:'0'},{start:null},{operation:'getInputVolume'},{volumeMode:'relative'}]){
+    const bad=normalized(c);Object.assign(bad.encoderRotation.rotationValue.outputs[2],patch);assert.throws(()=>P.read(P.full(bad),'full',usb));
+  }
+  c.encoderRotation.rotationValue.outputs.push({...o});assert.deepEqual(normalized(P.duplicateDestinations(c.encoderRotation)),['OBS マイク 🎙']);
+}
 const full=P.full(config);
 const obsConfig=normalized(config);
 obsConfig.chains.forEach(c=>c.actions=[]);

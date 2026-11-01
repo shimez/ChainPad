@@ -26,6 +26,7 @@ struct FakeWiFi {
   std::function<void(int,int)> disconnectEvent;
   int getMode() const { return mode; }
   int status() const { return state; }
+  int softAPgetStationNum() const { return 0; }
   void onEvent(std::function<void(int,int)> fn, int) { disconnectEvent=fn; }
   void lose() { state=0; disconnectEvent(5,0); }
 };
