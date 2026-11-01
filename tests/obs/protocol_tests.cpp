@@ -10,6 +10,17 @@ static Received receive(Protocol& p, const char* text) { return p.receive(text, 
 int main() {
   static_assert(sizeof(SceneList) == 4172, "Discovery stays within the existing two-slot pool");
   {
+    const char* actions[]={"RESTART","STOP","PAUSE","PLAY","NEXT","PREVIOUS"};
+    for(unsigned i=0;i<6;++i){
+      Protocol p;p.state=State::Ready;Command c;c.operation=Operation::TriggerMediaInputAction;c.mediaAction=MediaAction(i);
+      strcpy(c.target,u8"動画 \"日本語\"");assert(p.request(c,1,0));JsonDocument wire;assert(!deserializeJson(wire,p.wire));
+      assert(wire["d"]["requestType"]=="TriggerMediaInputAction");
+      assert(wire["d"]["requestData"]["inputName"]==c.target&&wire["d"]["requestData"].size()==2);
+      assert(wire["d"]["requestData"]["mediaAction"]==std::string("OBS_WEBSOCKET_MEDIA_INPUT_ACTION_")+actions[i]);
+      p.pending=0;c.mediaAction=MediaAction(255);assert(!p.request(c,2,0));
+    }
+  }
+  {
     Protocol p; p.state=State::Ready; SceneList list; p.scenes=&list;
     Command c; c.operation=Operation::SetSceneItemVisibility; strcpy(c.target,"group"); c.itemId=ITEM_ID_LIMIT;
     assert(p.request(c,1,0));JsonDocument sent;deserializeJson(sent,p.wire);
@@ -25,6 +36,15 @@ int main() {
       return p.receive(wire.c_str(),wire.size(),"",authentication);
     };
     assert(fetch(Operation::GetGroupList,"groups",R"(["g1","g2"])")==Received::Result&&p.success&&list.count==2);
+    assert(fetch(Operation::GetMediaInputList,"inputs",R"([{"inputName":"movie","inputKind":"ffmpeg_source"},{"inputName":"playlist","inputKind":"vlc_source_v2","unversionedInputKind":"vlc_source"},{"inputName":"mic","inputKind":"wasapi_input_capture","inputKindCaps":2}])")==Received::Result&&p.success&&list.count==2);
+    assert(!strcmp(list.names+list.offsets[0],"movie")&&!strcmp(list.names+list.offsets[1],"playlist"));
+    assert(fetch(Operation::GetMediaInputList,"inputs","[]")==Received::Result&&p.success&&list.count==0);
+    for(const char* invalid:{R"([{"inputName":"x"}])",R"([{"inputName":"x","inputKind":7}])",R"([{"inputName":"x","inputKind":"ffmpeg_source\u0000bad"}])",R"([{"inputName":"x\u0000bad","inputKind":"vlc_source"}])"})
+      assert(fetch(Operation::GetMediaInputList,"inputs",invalid)==Received::Result&&!p.success&&list.count==0);
+    std::string mediaMany="[";for(unsigned i=0;i<33;++i)mediaMany+=(i?",":"")+std::string(R"({"inputName":"x","inputKind":"ffmpeg_source"})");mediaMany+="]";
+    assert(fetch(Operation::GetMediaInputList,"inputs",mediaMany)==Received::Result&&!p.success&&list.count==0);
+    std::string otherMany="[";for(unsigned i=0;i<40;++i)otherMany+=(i?",":"")+std::string(R"({"inputName":"x","inputKind":"image_source"})");otherMany+="]";
+    assert(fetch(Operation::GetMediaInputList,"inputs",otherMany)==Received::Result&&p.success&&list.count==0);
     for(auto op:{Operation::GetSceneItemList,Operation::GetGroupSceneItemList}){
       assert(fetch(op,"sceneItems",R"([{"sourceName":"same","sceneItemId":0},{"sourceName":"same","sceneItemId":9007199254740991}])")==Received::Result&&p.success);
       assert(list.count==2 && list.itemId(0)==0 && list.itemId(1)==ITEM_ID_LIMIT);

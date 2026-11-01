@@ -71,6 +71,9 @@ int main(){
   WebServer web;registerObsHttp(web,control,maintenance,outputs);
   web.request(HTTP_GET,"/api/obs/scenes");assert(response(web,200)["complete"]==false);
   web.request(HTTP_GET,"/api/obs/inputs");assert(response(web,200)["inputs"].is<JsonArray>());
+  web.request(HTTP_GET,"/api/obs/media-inputs");assert(response(web,200)["media-inputs"].is<JsonArray>());
+  web.request(HTTP_GET,"/api/obs/media-inputs/refresh");response(web,405);
+  web.request(HTTP_POST,"/api/obs/media-inputs/refresh");response(web,503);assert(fake::lastDiscovery.operation==obs::Operation::GetMediaInputList);
   web.request(HTTP_GET,"/api/obs/groups");assert(response(web,200)["groups"].is<JsonArray>());
   web.request(HTTP_POST,"/api/obs/groups/refresh");response(web,503);assert(fake::lastDiscovery.operation==obs::Operation::GetGroupList);
   for(const char* route:{"/api/obs/scene-items","/api/obs/group-items"}){

@@ -379,6 +379,25 @@ int main(){
     // Cached discovery failure does not gate a manually specified Action.
     a.obsItem.visibility=obs::Visibility::Enable;assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();reply(packet(),true);backendsTick(0);assert(obsActionStatus().last.success);
     std::cout<<"PASS item Worker: explicit states, two-stage Toggle, FIFO, logical completion, stale replies, errors, no replay, Panic and independent parameterized discovery\n";
+    const auto media=obs::Operation::GetMediaInputList;
+    assert(obsNamesRefresh(media,"")==SendResult::Accepted);rtos::step();
+    reply(packet(),true,R"({"inputs":[{"inputName":"movie","inputKind":"ffmpeg_source"},{"inputName":"mic","inputKind":"wasapi_input_capture"}]})");backendsTick(0);
+    assert(names(media,"")["media-inputs"][0]=="movie");
+    assert(names(obs::Operation::GetInputList,"")["inputs"].size()==0);
+    assert(obsNamesRefresh(media,"")==SendResult::Accepted);rtos::step();reply(packet(),false);backendsTick(0);
+    assert(names(media,"")["state"]=="error");
+    a.obsOperation=obs::Operation::TriggerMediaInputAction;strcpy(a.obsTarget,"manual movie");
+    for(unsigned i=0;i<6;++i){
+      a.obsMediaAction=obs::MediaAction(i);config.chains[0].actions[1]=a;
+      const auto count=oscSent;assert(engine.trigger({0,0})&&!engine.activeCount());assert(oscSent==count+1);
+      rtos::step();auto sentMedia=packet();assert(sentMedia["d"]["requestType"]=="TriggerMediaInputAction");
+      assert(sentMedia["d"]["requestData"]["mediaAction"]==obs::mediaActionWire(a.obsMediaAction));
+      normal=submit("after-media");reply(sentMedia,i!=1);backendsTick(0);
+      assert(obsActionStatus().last.success==(i!=1));response(normal);backendsTick(0);
+    }
+    assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();const auto mediaSent=requests();
+    rtos::step(3001);ready();backendsTick(0);assert(requests()==mediaSent&&obsActionStatus().last.code==-4);
+    std::cout<<"PASS media Worker: filtered isolated cache, manual fallback, six actions, nonblocking chains, FIFO, failure and no replay\n";
   }
   cfg=settings();cfg.enabled=false;assert(obsApplySettings(cfg));rtos::step();assert(obsStatusSnapshot().state==obs::State::Disabled);
   oscBefore=oscSent;assert(engine.trigger({0,0}));

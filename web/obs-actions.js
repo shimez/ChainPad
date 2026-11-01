@@ -1,8 +1,10 @@
 // Shared scene/audio-input discovery is input assistance only.
 const ObsActionsUI = (() => {
-  const operations = [['setCurrentProgramScene','シーン切り替え'],['setInputMute','ミュート設定'],['startStream','配信開始','配信・録画制御'],['stopStream','配信停止','配信・録画制御'],['startRecord','録画開始','配信・録画制御'],['stopRecord','録画停止','配信・録画制御'],['groupItemVisibility','グループ内アイテム表示制御','アイテム表示制御'],['setSceneItemVisibility','シーン内アイテム表示制御','アイテム表示制御']];
+  const operations = [['setCurrentProgramScene','シーン切り替え'],['setInputMute','ミュート設定'],['startStream','配信開始','配信・録画制御'],['stopStream','配信停止','配信・録画制御'],['startRecord','録画開始','配信・録画制御'],['stopRecord','録画停止','配信・録画制御'],['groupItemVisibility','グループ内アイテム表示制御','アイテム表示制御'],['setSceneItemVisibility','シーン内アイテム表示制御','アイテム表示制御'],['triggerMediaInputAction','メディア制御']];
+  const mediaActions=[['restart','先頭から再生'],['stop','停止'],['pause','一時停止'],['play','再生再開'],['next','次へ'],['previous','前へ']];
   function defaults(operation='setCurrentProgramScene') {
     if(operation==='groupItemVisibility')return {...defaults('setSceneItemVisibility'),containerType:'group'};
+    if(operation==='triggerMediaInputAction')return {protocol:'obs',delayMs:0,operation,inputName:'',mediaAction:'restart'};
     return {protocol:'obs',delayMs:0,operation,...(operation==='setCurrentProgramScene'?{sceneName:''}:operation==='setInputMute'?{inputName:'',inputMuted:true}:operation==='toggleInputMute'?{inputName:''}:operation==='setSceneItemVisibility'?{containerType:'scene',sceneName:'',sceneItemId:null,visibility:'enable'}:{})};
   }
   function validName(name) {
@@ -64,6 +66,8 @@ const ObsActionsUI = (() => {
     fields.className+=' obs-fields';
     const supported=capabilities.obsActions===true;
     let picker;
+    const media=a.operation==='triggerMediaInputAction';
+    if(media)fields.className+=' obs-media';
     if(['setInputMute','toggleInputMute'].includes(a.operation))fields.className+=' obs-mute';
     const note=document.createElement('p');note.className='hint';note.style.gridColumn='1 / -1';
     note.textContent=supported?'OBS接続設定を共通利用します。':'この機種ではOBS Action非対応です。設定は保持・編集できますが、実行時はスキップします。';
@@ -96,11 +100,11 @@ const ObsActionsUI = (() => {
       renderItem(a,fields,control,changed,supported,scenes);
       fields.append(note);return;
     }
-    const key=a.operation==='setCurrentProgramScene'?'sceneName':['setInputMute','toggleInputMute'].includes(a.operation)?'inputName':null;
+    const key=a.operation==='setCurrentProgramScene'?'sceneName':media||['setInputMute','toggleInputMute'].includes(a.operation)?'inputName':null;
     if(key){
-      const label=key==='sceneName'?'シーン':'ミュート対象';
-      scenes.select?.(key==='sceneName'?'scenes':'inputs');
-      const field=control(key==='sceneName'?'シーン名':'入力名',a[key],null,value=>{a[key]=value;update();});
+      const label=key==='sceneName'?'シーン':media?'メディア':'ミュート対象';
+      scenes.select?.(key==='sceneName'?'scenes':media?'media-inputs':'inputs');
+      const field=control(key==='sceneName'?'シーン名':media?'対象のメディア/VLCビデオ':'入力名',a[key],null,value=>{a[key]=value;update();});
       const input=field.lastChild, warning=document.createElement('small');
       input.oninput=()=>{a[key]=input.value;changed();update();};
       let list,refresh,refreshField,panel,choicesKey='';
@@ -155,6 +159,10 @@ const ObsActionsUI = (() => {
       if(value==='toggle')delete a.inputMuted;else a.inputMuted=value==='true';
       rerender();
     }));
+    if(media){
+      fields.append(control('メディア操作',a.mediaAction,mediaActions,value=>a.mediaAction=value));
+      note.textContent+=' 再生再開は一時停止からの再開です。停止・終了後は「先頭から再生」を使用してください。「次へ」「前へ」は対応するプレイリストで動作します。';
+    }
     if(picker)fields.append(picker);
     fields.append(note);
   }

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0
+
+- Add OBS media control: restart, stop, pause, resume, next and previous, with
+  manual media/VLC source discovery and Full/Key Preset persistence.
+- Add scene/group item visibility control and manual item discovery.
+- Group OBS operations in the WebUI and unify mute controls under one editor choice.
+- Add the standalone OBS media tester and update setup/action documentation.
+- Preserve configuration and Preset format versions and existing discovery memory limits.
+- Media-control UI, protocol, Worker, HTTP and storage tests passed, along with
+  S3/C3/C5/C6 builds and image checks. Hardware media-control validation is pending.
+
 ## 0.6.0 — Local integration (not published)
 
 - Add OBS WebSocket Actions on XIAO ESP32S3, ESP32C5 and ESP32C6: scene switching,

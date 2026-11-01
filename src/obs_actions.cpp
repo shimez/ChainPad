@@ -59,7 +59,7 @@ SendResult obsNamesRefresh(obs::Operation kind, const char* target) {
 }
 void obsNamesJson(JsonObject json, obs::Operation kind, const char* target) {
   const bool items = obs::itemList(kind);
-  const char* field = items ? "items" : kind == obs::Operation::GetGroupList ? "groups" : kind == obs::Operation::GetInputList ? "inputs" : "scenes";
+  const char* field = items ? "items" : kind == obs::Operation::GetMediaInputList ? "media-inputs" : kind == obs::Operation::GetGroupList ? "groups" : kind == obs::Operation::GetInputList ? "inputs" : "scenes";
   if (items) {
     json["sceneName"] = target;
     json["containerType"] = kind == obs::Operation::GetGroupSceneItemList ? "group" : "scene";
@@ -99,6 +99,7 @@ SendResult obsActionDispatch(const Action& a) {
   (void)a; status.admission = "testConsoleOwned"; return SendResult::Unavailable;
 #else
   obs::Command command; command.operation = a.obsOperation; command.muted = a.boolValue;
+  if (a.obsOperation == obs::Operation::TriggerMediaInputAction) command.mediaAction = a.obsMediaAction;
   if (a.obsOperation == obs::Operation::SetSceneItemVisibility) {
     command.itemId = a.obsItem.id(); command.visibility = a.obsItem.visibility;
   }

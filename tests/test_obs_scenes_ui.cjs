@@ -51,6 +51,9 @@ async function main(){
   await manager.refresh();assert.equal(manager.snapshot().error,'audioCapabilitiesUnavailable');
   assert(!manager.snapshot().complete);
   manager.select('groups');reply={state:'ready',complete:true,groups:['g'],generation:4,ageMs:0};await manager.refresh();
+  manager.select('media-inputs');reply={state:'ready',complete:true,'media-inputs':['動画'],generation:4,ageMs:0};await manager.refresh();
+  assert.equal(calls.at(-1).path,'/api/obs/media-inputs/refresh');assert.equal(manager.snapshot().scenes[0],'動画');
+  manager.select('groups');reply={state:'ready',complete:true,groups:['g'],generation:4,ageMs:0};await manager.refresh();
   assert.equal(calls.at(-1).path,'/api/obs/groups/refresh');assert.equal(manager.snapshot().scenes[0],'g');
   manager.select('group-items','日本語 & group');
   reply={state:'ready',complete:true,items:[{sourceName:'same',sceneItemId:42}],sceneName:'日本語 & group',containerType:'group',generation:4,ageMs:0};

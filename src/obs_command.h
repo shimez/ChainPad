@@ -6,11 +6,42 @@
 // Shared schema, including builds without an OBS Worker. No networking dependency.
 namespace chimera { namespace obs {
 constexpr size_t TARGET_LIMIT = 192;
-enum class Operation : uint8_t { SetCurrentProgramScene, StartStream, StopStream, StartRecord, StopRecord, SetInputMute, ToggleInputMute, SetSceneItemVisibility, GetSceneList, GetInputList, GetGroupList, GetSceneItemList, GetGroupSceneItemList, GetSceneItemEnabled };
+enum class Operation : uint8_t { SetCurrentProgramScene, StartStream, StopStream, StartRecord, StopRecord, SetInputMute, ToggleInputMute, SetSceneItemVisibility, TriggerMediaInputAction, GetSceneList, GetInputList, GetGroupList, GetSceneItemList, GetGroupSceneItemList, GetSceneItemEnabled, GetMediaInputList };
 enum class Visibility : uint8_t { Enable, Disable, Toggle };
+enum class MediaAction : uint8_t { Restart, Stop, Pause, Play, Next, Previous };
+inline const char* mediaActionName(MediaAction action) {
+  switch (action) {
+    case MediaAction::Restart: return "restart";
+    case MediaAction::Stop: return "stop";
+    case MediaAction::Pause: return "pause";
+    case MediaAction::Play: return "play";
+    case MediaAction::Next: return "next";
+    case MediaAction::Previous: return "previous";
+  }
+  return nullptr;
+}
+inline const char* mediaActionWire(MediaAction action) {
+  switch (action) {
+    case MediaAction::Restart: return "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_RESTART";
+    case MediaAction::Stop: return "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_STOP";
+    case MediaAction::Pause: return "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE";
+    case MediaAction::Play: return "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY";
+    case MediaAction::Next: return "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_NEXT";
+    case MediaAction::Previous: return "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PREVIOUS";
+  }
+  return nullptr;
+}
+inline bool parseMediaAction(const char* name, MediaAction& out) {
+  if (!name) return false;
+  for (unsigned i = 0; i <= unsigned(MediaAction::Previous); ++i) {
+    const auto action = MediaAction(i);
+    if (!strcmp(name, mediaActionName(action))) { out = action; return true; }
+  }
+  return false;
+}
 constexpr uint64_t ITEM_ID_LIMIT = 9007199254740991ULL;
 inline bool itemList(Operation op) { return op == Operation::GetSceneItemList || op == Operation::GetGroupSceneItemList; }
-inline bool discovery(Operation op) { return op == Operation::GetSceneList || op == Operation::GetInputList || op == Operation::GetGroupList || itemList(op); }
+inline bool discovery(Operation op) { return op == Operation::GetSceneList || op == Operation::GetInputList || op == Operation::GetMediaInputList || op == Operation::GetGroupList || itemList(op); }
 inline const char* visibilityName(Visibility value) { return value == Visibility::Enable ? "enable" : value == Visibility::Disable ? "disable" : value == Visibility::Toggle ? "toggle" : nullptr; }
 // Stored over the mutually exclusive OSC string field, without 64-bit alignment growth.
 struct ItemSettings {
@@ -24,6 +55,8 @@ inline const char* operationName(Operation op) {
   switch (op) {
     case Operation::GetSceneList: return "getSceneList"; // Internal discovery, never an Action.
     case Operation::GetInputList: return "getInputList";
+    case Operation::GetMediaInputList: return "getMediaInputList";
+    case Operation::TriggerMediaInputAction: return "triggerMediaInputAction";
     case Operation::GetGroupList: return "getGroupList";
     case Operation::GetSceneItemList: return "getSceneItemList";
     case Operation::GetGroupSceneItemList: return "getGroupSceneItemList";
@@ -43,6 +76,8 @@ inline const char* requestType(Operation op) {
   switch (op) {
     case Operation::GetSceneList: return "GetSceneList";
     case Operation::GetInputList: return "GetInputList";
+    case Operation::GetMediaInputList: return "GetInputList";
+    case Operation::TriggerMediaInputAction: return "TriggerMediaInputAction";
     case Operation::GetGroupList: return "GetGroupList";
     case Operation::GetSceneItemList: return "GetSceneItemList";
     case Operation::GetGroupSceneItemList: return "GetGroupSceneItemList";
@@ -58,10 +93,10 @@ inline const char* requestType(Operation op) {
   }
   return nullptr;
 }
-inline bool named(Operation op) { return op == Operation::SetCurrentProgramScene || op == Operation::SetInputMute || op == Operation::ToggleInputMute || op == Operation::SetSceneItemVisibility || op == Operation::GetSceneItemEnabled || itemList(op); }
+inline bool named(Operation op) { return op == Operation::SetCurrentProgramScene || op == Operation::SetInputMute || op == Operation::ToggleInputMute || op == Operation::TriggerMediaInputAction || op == Operation::SetSceneItemVisibility || op == Operation::GetSceneItemEnabled || itemList(op); }
 inline bool parseOperation(const char* name, Operation& out) {
   if (!name) return false;
-  for (unsigned i = 0; i <= unsigned(Operation::SetSceneItemVisibility); ++i) {
+  for (unsigned i = 0; i <= unsigned(Operation::TriggerMediaInputAction); ++i) {
     const auto op = Operation(i);
     if (!strcmp(name, operationName(op))) { out = op; return true; }
   }
@@ -92,9 +127,10 @@ struct Command {
   bool muted = false;
   uint64_t itemId = 0;
   Visibility visibility = Visibility::Enable;
+  MediaAction mediaAction = MediaAction::Restart;
 };
 inline bool validCommand(const Command& c) {
   return operationName(c.operation) && (named(c.operation) ? validText(c.target, TARGET_LIMIT) : c.target[0] == 0) &&
-    (c.operation == Operation::SetInputMute || !c.muted) && c.itemId <= ITEM_ID_LIMIT && visibilityName(c.visibility);
+    (c.operation == Operation::SetInputMute || !c.muted) && c.itemId <= ITEM_ID_LIMIT && visibilityName(c.visibility) && mediaActionName(c.mediaAction);
 }
 } }

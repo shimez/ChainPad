@@ -60,13 +60,21 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
     return Received::Invalid;
   }
   Budget budget(discovery ? 32768 : 8192); JsonDocument doc(&budget), filter(&budget);
-  if (itemList(operation) && discovery) {
+  const bool mediaList = operation == Operation::GetMediaInputList;
+  const bool filtered = (itemList(operation) || mediaList) && discovery;
+  if (filtered) {
     filter["op"] = true; filter["d"]["requestId"] = true; filter["d"]["requestType"] = true;
     filter["d"]["requestStatus"]["result"] = true; filter["d"]["requestStatus"]["code"] = true;
-    filter["d"]["responseData"]["sceneItems"][0]["sourceName"] = true;
-    filter["d"]["responseData"]["sceneItems"][0]["sceneItemId"] = true;
+    if (mediaList) {
+      filter["d"]["responseData"]["inputs"][0]["inputName"] = true;
+      filter["d"]["responseData"]["inputs"][0]["inputKind"] = true;
+      filter["d"]["responseData"]["inputs"][0]["unversionedInputKind"] = true;
+    } else {
+      filter["d"]["responseData"]["sceneItems"][0]["sourceName"] = true;
+      filter["d"]["responseData"]["sceneItems"][0]["sceneItemId"] = true;
+    }
   }
-  const auto parseError = itemList(operation) && discovery ?
+  const auto parseError = filtered ?
     deserializeJson(doc, data, size, DeserializationOption::Filter(filter), DeserializationOption::NestingLimit(6)) :
     deserializeJson(doc, data, size, DeserializationOption::NestingLimit(6));
   if (discovery && sceneMemoryProbe) sceneMemoryProbe();
@@ -110,7 +118,7 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
   }
   if (success && discovery) {
     // A bounded but incomplete list is a failure, never an authoritative cache.
-    const bool inputs = operation == Operation::GetInputList;
+    const bool inputs = operation == Operation::GetInputList || mediaList;
     const bool items = itemList(operation), groups = operation == Operation::GetGroupList;
     auto list = d["responseData"][items ? "sceneItems" : groups ? "groups" : inputs ? "inputs" : "scenes"];
     if (!scenes || !list.is<JsonArray>() || (!inputs && list.size() > SCENE_COUNT_LIMIT)) {
@@ -118,7 +126,13 @@ Received Protocol::receive(const char* data, size_t size, const char* password, 
     }
     scenes->count = scenes->used = 0;
     for (auto entry : list.as<JsonArray>()) {
-      if (inputs) {
+      if (mediaList) {
+        const auto kind = (entry["unversionedInputKind"].isNull() ? entry["inputKind"] : entry["unversionedInputKind"]).as<JsonString>();
+        if (!kind.c_str() || kind.size() != strlen(kind.c_str()) || !validText(kind.c_str(), TARGET_LIMIT)) {
+          scenes->count = scenes->used = 0; success = false; code = -10; return Received::Result;
+        }
+        if (strcmp(kind.c_str(), "ffmpeg_source") && strcmp(kind.c_str(), "vlc_source")) continue;
+      } else if (inputs) {
         if (!entry["inputKindCaps"].is<uint32_t>()) {
           scenes->count = scenes->used = 0; success = false; code = -11; return Received::Result;
         }
@@ -160,7 +174,8 @@ bool Protocol::request(const Command& command, uint32_t id, uint32_t now) {
   char name[32]; snprintf(name, sizeof(name), "chainpad-%lu", static_cast<unsigned long>(id));
   doc["op"] = 6; auto d = doc["d"].to<JsonObject>();
   d["requestType"] = requestType(command.operation); d["requestId"] = name;
-  if (named(command.operation)) d["requestData"][command.operation == Operation::SetInputMute || command.operation == Operation::ToggleInputMute ? "inputName" : "sceneName"] = command.target;
+  if (named(command.operation)) d["requestData"][command.operation == Operation::SetInputMute || command.operation == Operation::ToggleInputMute || command.operation == Operation::TriggerMediaInputAction ? "inputName" : "sceneName"] = command.target;
+  if (command.operation == Operation::TriggerMediaInputAction) d["requestData"]["mediaAction"] = mediaActionWire(command.mediaAction);
   if (command.operation == Operation::SetInputMute) d["requestData"]["inputMuted"] = command.muted;
   if (command.operation == Operation::SetSceneItemVisibility || command.operation == Operation::GetSceneItemEnabled)
     d["requestData"]["sceneItemId"] = command.itemId;

@@ -3,7 +3,7 @@
 // Shared by full host and each BLE-only target: real codec and LittleFS path.
 void obsActionTests() {
   Config source, decoded; String error;
-  source.chains[0].count = 10;
+  source.chains[0].count = 16;
   for (unsigned i=0;i<7;++i) {
     auto& a=source.chains[0].actions[i]; a.protocol=Protocol::Obs;
     a.obsOperation=obs::Operation(i); a.boolValue=i==5;
@@ -13,6 +13,10 @@ void obsActionTests() {
     auto& a=source.chains[0].actions[i];a.protocol=Protocol::Obs;a.obsOperation=obs::Operation::SetSceneItemVisibility;
     strcpy(a.obsTarget,"group / 日本語");a.obsItem={};a.obsItem.id(i==7?0:obs::ITEM_ID_LIMIT);a.obsItem.group=i!=7;a.obsItem.visibility=obs::Visibility(i-7);
   }
+  for(unsigned i=10;i<16;++i){
+    auto& a=source.chains[0].actions[i];a.protocol=Protocol::Obs;a.obsOperation=obs::Operation::TriggerMediaInputAction;
+    strcpy(a.obsTarget,"動画 日本語");a.obsMediaAction=obs::MediaAction(i-10);
+  }
   JsonDocument doc; assert(encodeConfig(source,doc));
   assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
   assert(saveSource(decoded,error));
@@ -20,6 +24,17 @@ void obsActionTests() {
   JsonDocument restored; assert(encodeConfig(config,restored));
   String before,after; serializeJson(doc,before); serializeJson(restored,after);
   assert(before==after);
+  for(unsigned i=10;i<16;++i){
+    assert(config.chains[0].actions[i].obsOperation==obs::Operation::TriggerMediaInputAction);
+    assert(config.chains[0].actions[i].obsMediaAction==obs::MediaAction(i-10));
+    assert(dispatch(config.chains[0].actions[i],0)==SendResult::Unavailable);
+  }
+  auto media=doc["chains"][0]["actions"][10];
+  for(const char* invalid:{"null","true","123","\"toggle\"","\"play\\u0000bad\""}){
+    JsonDocument v;deserializeJson(v,invalid);media["mediaAction"]=v.as<JsonVariantConst>();assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  }
+  media["mediaAction"]="restart";media["inputMuted"]=true;assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));media.remove("inputMuted");
+  assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
   auto item=doc["chains"][0]["actions"][7];
   for(const char* invalid:{"-1","1.5","true","null","\"1\"","9007199254740992"}){
     JsonDocument v;deserializeJson(v,invalid);item["sceneItemId"]=v.as<JsonVariantConst>();assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));

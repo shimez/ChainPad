@@ -63,11 +63,16 @@ bool parseAction(JsonVariantConst j, Action& a) {
     if (name.size() != strlen(name.c_str()) || !obs::parseOperation(name.c_str(), a.obsOperation)) return false;
     const bool named = obs::named(a.obsOperation), mute = a.obsOperation == obs::Operation::SetInputMute;
     const bool item = a.obsOperation == obs::Operation::SetSceneItemVisibility;
-    if (j.as<JsonObjectConst>().size() != size_t(3 + named + mute + (item ? 3 : 0))) return false;
+    const bool media = a.obsOperation == obs::Operation::TriggerMediaInputAction;
+    if (j.as<JsonObjectConst>().size() != size_t(3 + named + mute + media + (item ? 3 : 0))) return false;
     a.obsTarget[0] = 0; a.boolValue = false;
     if (named && (!text(j[a.obsOperation == obs::Operation::SetCurrentProgramScene || item ? "sceneName" : "inputName"], a.obsTarget, sizeof(a.obsTarget)) ||
                   !obs::validText(a.obsTarget, obs::TARGET_LIMIT))) return false;
     if (mute) { if (!j["inputMuted"].is<bool>()) return false; a.boolValue = j["inputMuted"]; }
+    if (media) {
+      const auto action = j["mediaAction"].as<JsonString>();
+      if (!action.c_str() || action.size() != strlen(action.c_str()) || !obs::parseMediaAction(action.c_str(), a.obsMediaAction)) return false;
+    }
     if (item) {
       if (!j["sceneItemId"].is<uint64_t>() || j["sceneItemId"].as<uint64_t>() > obs::ITEM_ID_LIMIT ||
           !(j["containerType"] == "scene" || j["containerType"] == "group")) return false;
@@ -281,6 +286,11 @@ template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocum
           j["sceneItemId"] = a.obsItem.id(); j["visibility"] = obs::visibilityName(a.obsItem.visibility);
         }
         if (a.obsOperation == obs::Operation::SetInputMute) j["inputMuted"] = a.boolValue;
+        if (a.obsOperation == obs::Operation::TriggerMediaInputAction) {
+          const char* mediaAction = obs::mediaActionName(a.obsMediaAction);
+          if (!mediaAction) return false;
+          j["mediaAction"] = mediaAction;
+        }
         continue;
       }
       if (pairedAction(a) && a.delayMs) j["holdMs"] = a.delayMs;

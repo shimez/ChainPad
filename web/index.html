@@ -25,6 +25,9 @@ header,main{max-width:1280px;padding-left:16px;padding-right:16px}
 .header-controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-left:auto}
 .action-card .action-details>.fields{grid-template-columns:repeat(2,minmax(0,1fr));overflow-x:visible}
 @container(min-width:600px){.action-card .action-details>.fields{grid-template-columns:160px repeat(auto-fit,minmax(150px,1fr))}.action-card .action-details>.fields.obs-fields{grid-template-columns:160px 240px repeat(auto-fit,minmax(150px,1fr))}}
+.action-card .action-details>.fields.obs-media{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container(min-width:600px){.action-card .action-details>.fields.obs-media{grid-template-columns:160px 240px}.action-card .fields.obs-media>.hint{grid-column:1 / -1}}
+@container(min-width:850px){.action-card .action-details>.fields.obs-media{grid-template-columns:160px 240px minmax(0,1fr) max-content minmax(0,1fr)}}
 .output-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.output-heading h3{margin:0}
 #rotationDuplicates+h3{border-top:1px solid var(--line);margin-top:28px;padding-top:24px}
 .input-heading{display:flex;align-items:start;justify-content:space-between;gap:12px}.input-heading h2{flex:1}

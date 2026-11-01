@@ -19,6 +19,7 @@ class ObsHandler : public RequestHandler {
     return !strcmp(uri.c_str(), "/api/obs") || !strcmp(uri.c_str(), "/api/obs/reconnect") ||
       !strcmp(uri.c_str(), "/api/obs/scenes") || !strcmp(uri.c_str(), "/api/obs/scenes/refresh") ||
       !strcmp(uri.c_str(), "/api/obs/inputs") || !strcmp(uri.c_str(), "/api/obs/inputs/refresh") ||
+      !strcmp(uri.c_str(), "/api/obs/media-inputs") || !strcmp(uri.c_str(), "/api/obs/media-inputs/refresh") ||
       !strcmp(uri.c_str(), "/api/obs/groups") || !strcmp(uri.c_str(), "/api/obs/groups/refresh") ||
       !strcmp(uri.c_str(), "/api/obs/scene-items") || !strcmp(uri.c_str(), "/api/obs/scene-items/refresh") ||
       !strcmp(uri.c_str(), "/api/obs/group-items") || !strcmp(uri.c_str(), "/api/obs/group-items/refresh");
@@ -87,15 +88,16 @@ public:
     if (repliedEarly) { clearBody(); return true; }
     control.tick(outputsAllowed());
     const bool inputs = !strcmp(uri.c_str(), "/api/obs/inputs") || !strcmp(uri.c_str(), "/api/obs/inputs/refresh");
+    const bool mediaInputs = !strcmp(uri.c_str(), "/api/obs/media-inputs") || !strcmp(uri.c_str(), "/api/obs/media-inputs/refresh");
     const bool scenes = !strcmp(uri.c_str(), "/api/obs/scenes") || !strcmp(uri.c_str(), "/api/obs/inputs");
     const bool refreshScenes = !strcmp(uri.c_str(), "/api/obs/scenes/refresh") || !strcmp(uri.c_str(), "/api/obs/inputs/refresh");
     const bool groups = !strcmp(uri.c_str(), "/api/obs/groups") || !strcmp(uri.c_str(), "/api/obs/groups/refresh");
     const bool sceneItems = !strcmp(uri.c_str(), "/api/obs/scene-items") || !strcmp(uri.c_str(), "/api/obs/scene-items/refresh");
     const bool groupItems = !strcmp(uri.c_str(), "/api/obs/group-items") || !strcmp(uri.c_str(), "/api/obs/group-items/refresh");
-    if (scenes || refreshScenes || groups || sceneItems || groupItems) {
+    if (scenes || refreshScenes || groups || sceneItems || groupItems || mediaInputs) {
       const auto kind = groupItems ? obs::Operation::GetGroupSceneItemList : sceneItems ? obs::Operation::GetSceneItemList :
-        groups ? obs::Operation::GetGroupList : inputs ? obs::Operation::GetInputList : obs::Operation::GetSceneList;
-      const bool refresh = refreshScenes || !strcmp(uri.c_str(), "/api/obs/groups/refresh") || !strcmp(uri.c_str(), "/api/obs/scene-items/refresh") || !strcmp(uri.c_str(), "/api/obs/group-items/refresh");
+        groups ? obs::Operation::GetGroupList : mediaInputs ? obs::Operation::GetMediaInputList : inputs ? obs::Operation::GetInputList : obs::Operation::GetSceneList;
+      const bool refresh = refreshScenes || !strcmp(uri.c_str(), "/api/obs/media-inputs/refresh") || !strcmp(uri.c_str(), "/api/obs/groups/refresh") || !strcmp(uri.c_str(), "/api/obs/scene-items/refresh") || !strcmp(uri.c_str(), "/api/obs/group-items/refresh");
       String target;
       bool validTarget = true;
       if (obs::itemList(kind)) {

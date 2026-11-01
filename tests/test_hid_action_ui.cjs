@@ -113,6 +113,7 @@ for(const supported of [true,false]){
     const a=config.chains[0].actions[0];assert.equal(a.operation,operation==='groupItemVisibility'?'setSceneItemVisibility':operation);
     if(operation==='setCurrentProgramScene'){assert(field('シーン名'));choose('シーン名','手入力');}
     if(operation.includes('InputMute')){assert(field('入力名'));choose('入力名','マイク');}
+    if(operation==='triggerMediaInputAction')choose('対象のメディア/VLCビデオ','動画');
     if(operation==='setInputMute'){choose('ミュート','false');assert.equal(a.inputMuted,false);}
     if(a.operation==='setSceneItemVisibility'){choose(operation==='groupItemVisibility'?'グループ名':'シーン名','手入力');choose('アイテムID','0');choose('表示操作','toggle');}
     const saved=plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]);
@@ -182,6 +183,19 @@ for(const operation of ['setInputMute','toggleInputMute']){
   assert(all().some(n=>String(n.textContent).includes('音声候補の抽出に非対応')));
 }
 console.log('PASS OBS editor: seven operations, supported/unsupported Full/Key roundtrip, unfiltered picker/apply/cancel, stable input/caret/composition, advisory and byte limits');
+for(const supported of [true,false])for(const mediaAction of ['restart','stop','pause','play','next','previous']){
+  ctx.capabilities.obsActions=supported;
+  const a={protocol:'obs',delayMs:0,operation:'triggerMediaInputAction',inputName:'手入力',mediaAction};show(a);
+  assert.deepEqual(field('メディア操作').children.map(n=>n.textContent),['先頭から再生','停止','一時停止','再生再開','次へ','前へ']);
+  choose('メディア操作',mediaAction);assert.equal(a.mediaAction,mediaAction);
+  sceneCache={state:'ready',complete:true,scenes:['動画','VLC']};sceneListener();click('メディア一覧から選択');
+  const choices=all().find(n=>n.tag==='select'&&n.size===6);choices.selectedIndex=1;choices.value='VLC';choices.ondblclick();
+  assert.equal(a.inputName,'VLC');assert(ctx.actionSummary(a).includes('メディア制御'));
+  assert.deepEqual(plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]),plain(a));
+  assert.deepEqual(plain(P.read(P.key(config,0),'key',ctx.capabilities).chains[0].actions[0]),plain(a));
+  a.mediaAction='toggle';assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
+}
+ctx.capabilities.obsActions=true;
 for(const containerType of ['scene','group'])for(const visibility of ['enable','disable','toggle']){
   const a={protocol:'obs',delayMs:0,operation:'setSceneItemVisibility',containerType,sceneName:'所属先',sceneItemId:Number.MAX_SAFE_INTEGER,visibility};
   show(a);assert.equal(a.sceneItemId,Number.MAX_SAFE_INTEGER);
