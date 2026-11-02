@@ -1,40 +1,77 @@
-# GitHub Pagesの構成と更新
+# GitHub PagesとタグによるRelease公開
+
+## 公開サイトの構成
 
 - `/`：ChainPadポータル（`site/index.html`）
 - `/installer/`：Web Installer（`site/installer/index.html`）
-- `/getting-started/`：Markdownから生成するガイド（本文：`site/getting-started/index.md`）。[執筆方法](getting-started-authoring.md)
-- `/manifest.json`、`/build.json`、`/firmware/`：Firmware配布データ。既存URLを維持します。
-- `/site-build.json`：PagesコンテンツのコミットID。`build.json`のコミットIDはFirmwareのものです。
+- `/getting-started/`、`/manual/`、`/assembly-guide/`：Markdownから生成するガイド
+- `/manifest.json`、`/build.json`、`/firmware/`：正式公開Firmware。既存URLを維持します。
+- `/site-build.json`：サイトのコミットID。`build.json`のコミットIDはFirmwareのものです。
 
-## Pagesだけを変更する場合
+## mainへのプッシュ
 
-`site/` を編集してmainへpushします。ワークフローは公開中の `build.json` にあるFirmwareコミットと、今回のコミットを比較します。Firmware入力が同じならPlatformIOのインストール・4機種ビルド・イメージ検査をスキップします。
+ワークフロー **Validate main and publish tagged firmware** は、mainの対象パス変更で起動します。
+ファームウェア入力（`src/`、`web/`、`include/`、`lib/`、`boards/`、`platformio.ini`、
+`partitions*.csv`、`scripts/build.py`、`scripts/builtin_config.py`）をpush前のコミットと比較し、
+変更があれば4機種をビルド・イメージ検査します。複数コミットのpushでも全体の差分を確認します。
 
-公開中のmanifest・build情報・配布対象3機種（S3/C6/C5）の結合binを取得し、ファイル一覧・サイズ・SHA256・manifestの参照先／versionを検証してそのまま再配信します。FirmwareのコミットID・ハッシュを書き換えず、`site/` を再帰コピーして新しいページを公開します。
+**mainでビルドした開発版は、Web InstallerやReleaseへ配布しません。**
+公開中のmanifest・build情報・S3/C5/C6用binを取得し、サイズ・SHA256・参照先を検証して維持します。
+その上にmainのサイト本文をコピーしてPagesを更新します。マニュアルだけの変更ならFirmwareビルドを省略します。
+公開データの取得・検証に失敗した場合は停止し、開発版への置き換えは行いません。
 
-C3は動作上の問題により対応・配布を一時停止しています。CIの4機種ビルド・image検査は継続しますが、C3はmanifest・build情報・配布binに含めません。公開済みデータの対象機種が現在の配布対象と異なる場合（旧4機種からの切替を含む）は、自動的に再ビルドして3機種をパッケージします。
+`README.md`や`docs/`だけの変更ではこのワークフローは起動しません。
+`web/`は本体に埋め込むConfiguratorなので、サイト本文の`site/`とは異なりFirmwareビルド対象です。
+C3はビルド・検査のみ継続し、Web Installer／Releaseの配布対象には含めません。
 
-「直前のpush」ではなく「公開済みFirmware」と比較するため、先行するFirmwareビルドが失敗した後のPages更新でも未公開のFirmware変更を見落としません。ワークフロー全体の同時実行を制限し、配信データの競合を避けます。
+## 正式公開：バージョンタグをプッシュ
 
-## Firmwareを変更する場合
+1. `src/main.cpp`のバージョンを`major.minor.patch`形式で更新する。
+2. `CHANGELOG.md`へ同じバージョンの見出し（例：`## 0.10.0`）と変更内容を追加する。
+3. mainへコミット・pushし、検証結果を確認する。
+4. 公開するコミットにタグを付けてpushする。
 
-`src/`、`web/`、`include/`、`lib/`、`boards/`、`platformio.ini`、`partitions*.csv`、`scripts/build.py` が比較対象です。`web/` は本体へ埋め込むConfigurator／Wi-Fi設定画面なので、変更にはFirmwareビルドが必要です。
+```powershell
+git tag v0.10.0 <公開するコミットSHA>
+git push origin v0.10.0
+```
 
-Pagesのfaviconは `site/favicon.svg`、本体のfaviconは `web/favicon.svg` と独立させています。Pagesの画像更新だけでFirmwareビルドが発生することはありません。今回の初回更新は埋め込み画像の参照先変更も含むため、Firmwareをビルドします。
+タグpushではパスによる絞り込みは適用されません。タグ名・ソース内バージョン・変更履歴が一致し、
+コミットがmainの履歴に含まれることを検査してから、4機種をビルド・検査します。
 
-## 手動実行・復旧
+- 新しいバージョン：Web Installerを更新し、デプロイ成功後にGitHub Releaseを公開します。
+- 公開中より古いバージョン：Releaseだけを公開し、Web Installerとサイト本文は更新しません。
+- 公開中と同じバージョン：同一コミットのみ再実行可能です。異なるコミットなら停止します。
 
-Actionsの **Build firmware and deploy Web Installer** → **Run workflow** で実行できます。初回公開や公開ファイルが破損／取得不能の場合は `force_firmware` をONにすると4機種をビルド・検査し、配布対象の3機種を公開し直します。
+ReleaseはタグのFirmwareコミットを対象とし、S3/C5/C6用の統合bin、`build.json`、`manifest.json`を添付します。
+バージョン・コミット・配布機種・サイズ・SHA256・manifest参照先を公開前に検査します。
+リリースノートはそのコミットの`CHANGELOG.md`から生成します。過去の安定版より新しい版だけをLatestにします。
 
-通常実行で公開データの取得・検証に失敗した場合は公開を停止します。ただし配布対象一覧の変更は明示的な再ビルド条件です。Firmwareを欠いたサイトは公開しません。
+公開済みの同名Releaseは変更しません。修正版を配布する場合は、新しいバージョンとタグを作成してください。
+Configuratorの更新通知はWeb Installerの`build.json`を参照するため、正式公開版に連動します。
+
+## 再実行・復旧
+
+- 新規ReleaseはDraftで作成し、全添付ファイルのアップロード後に公開します。
+- 途中失敗時は失敗ジョブを再実行するとDraftから再開します。既存タグ／Draftが別コミットを指す場合は停止します。
+- Release用成果物は7日間保持します。期限後は元のタグを選択してワークフロー全体を手動実行してください。
+- mainを選択した手動実行は検証とサイト本文更新のみです。`force_firmware`で検証ビルドを強制しても正式公開はしません。
+- このタグ対応ワークフローを含まない過去コミットのタグは、自動公開の対象にならない場合があります。過去版の公開は個別対応してください。
+- Release公開が失敗しても、成功済みのPagesデプロイは巻き戻しません。
+
+mainとタグの実行は共通の同時実行グループで直列化し、旧版タグによるダウングレードも防ぎます。
+認証は標準の`GITHUB_TOKEN`を使用し、`contents: write`はReleaseジョブだけに付与します。
+追加のSecretは不要です。
 
 ## ローカル確認
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r scripts/requirements-pages.txt
 .\.venv\Scripts\python.exe -m unittest discover -s tests -p test_build_site.py
-.\.venv\Scripts\python.exe scripts/build_site.py
-.\.venv\Scripts\python.exe -m http.server 8770 --directory _site
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p test_release_plan.py
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p test_publish_release.py
 ```
 
-通常のパッケージ生成には `.pio/build/` のS3/C6/C5の結合binが必要です。ポータルとInstallerの相互リンク、favicon、Installerからのmanifest・ビルド情報・ダウンロード先を確認してください。manifest・配布ディレクトリにC3が含まれないことも確認します。
+サイトのローカル生成は`python scripts/build_site.py`、プレビューは
+`python -m http.server 8770 --directory _site`で実行できます。
+通常生成には`.pio/build/`のS3/C5/C6の結合binが必要です。
