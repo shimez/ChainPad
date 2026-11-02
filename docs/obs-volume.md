@@ -1,5 +1,7 @@
 # OBS 音量調整（Action Chain）
 
+**ChainPad v0.8.0以降**の機能です。Rotation ValueのOBS音量調整もv0.8.0以降で利用できます。
+
 KEY、Encoder PushのPress/Release、Rotation DirectionのCW/CCWで、
 Action「OBS」→OBS操作「音量調整」を選びます。
 
@@ -34,6 +36,8 @@ Config、Full/Key Preset、LittleFS保存復元に対応し、OBS非対応機種
 - 候補取得は `/api/obs/inputs` と `/api/obs/inputs/refresh` を共用します。候補取得失敗は手入力Actionの実行を妨げません。
 
 ## Rotation Value / Action Link
+
+v0.8.0で「Linked Outputs」（Link Outputs）を「Action Link」、「Output」を「Action」へ改称しました。v0.6.0／v0.7.0のOSC/MIDI出力設定と同じ欄で、既存設定の作り直しは不要です。
 
 Action Type「OBS 音量調整」を選択し、音声ソース名とStart / End（−100〜＋26 dB、小数可）を指定します。
 既存の浮動小数補間処理を共用し、位置0でStart、Range StepsでEndになります。降順・同値にも対応します。

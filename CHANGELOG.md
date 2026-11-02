@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.0
+
+- Add a Configurator firmware update notification using the public Web Installer's
+  build metadata, checked once after device status is available.
+- Compare numeric versions and distributed chip families; link to the Installer
+  without automatically updating firmware. Offline, timeout and metadata failures
+  do not interrupt configuration or device status polling.
+- Add automated coverage and CI checks for version comparison, hardware mapping,
+  status sequencing and failure isolation; verify public metadata access in a browser.
+- Clarify v0.7.0/v0.8.0 feature availability and the Linked Outputs / Output to
+  Action Link / Action terminology change in the manuals.
+
 ## 0.8.0
 
 - Add OBS volume Actions with absolute and relative dB adjustment, clamped to

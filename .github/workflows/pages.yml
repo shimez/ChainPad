@@ -16,6 +16,7 @@ on:
       - 'tests/test_hid_action_ui.cjs'
       - 'tests/test_stop_chain_save.cjs'
       - 'tests/test_rotation_preview.cjs'
+      - 'tests/test_firmware_update.cjs'
       - 'tests/test_build_site.py'
       - 'platformio.ini'
       - 'partitions*.csv'
@@ -66,6 +67,8 @@ jobs:
         run: node tests/test_presets.cjs
       - name: Validate Rotation Preview calculations
         run: node tests/test_rotation_preview.cjs
+      - name: Validate firmware update notification
+        run: node --test tests/test_firmware_update.cjs
       - name: Validate Action editing and Stop Chain save/load
         run: |
           node tests/test_hid_action_ui.cjs

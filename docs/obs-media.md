@@ -1,5 +1,7 @@
 # OBS メディア制御
 
+**ChainPad v0.7.0以降**の機能です。v0.6.0では利用できません。
+
 `TriggerMediaInputAction` を使い、指定したメディア/VLCビデオソースを操作します。
 
 ```json
