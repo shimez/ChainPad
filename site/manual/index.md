@@ -116,7 +116,7 @@ OSC送信先設定エリアでは、OSCの送信先に関する情報を設定�
 ![ChainPad WebUI OSC送信先設定エリア](./images/chainpad-webui-area03.png)
 
 - OSC IPv4欄にはVRChatなどのアプリを実行しているPCのIPアドレスを入力してください。
-- OSC PortはVRChatでの利用時は変更する必要はありません。
+- OSC PortはVRChatでの通常利用時は変更する必要はありません。
 
 ### 3-5. OBS WebSocket設定
 
