@@ -17,7 +17,7 @@
 <section class="card"><h2>Firmwareをインストール</h2>
 <p>PCの<strong>Google Chrome / Microsoft Edge</strong>で開き、データ通信対応USBケーブルでXIAOを接続してください。接続したチップに合うFirmwareが自動選択されます。現行ChainOSCPad PCB向けです。</p>
 <div class="install"><esp-web-install-button manifest="../manifest.json"><button slot="activate">ChainPadをインストール</button><span slot="unsupported">このブラウザはWeb Serialに対応していません。PC版ChromeまたはEdgeを使用してください。</span></esp-web-install-button></div>
-<ol><li>ボタンを押し、XIAOのシリアルポートを選択します。</li><li>画面の案内に従って書き込みます。</li><li>完了後、必要に応じてRESETボタンで本体を再起動します。</li></ol>
+<ol><li>ボタンを押し、XIAOのシリアルポートを選択します。（XIAOのシリアルポートは通常「USB JTAG/serial debug unit」と表示されます）</li><li>画面の案内に従って書き込みます。</li><li>完了後、必要に応じてRESETボタンで本体を再起動します。</li></ol>
 <p class="muted">ポートが見つからない場合は、BOOTを押しながらUSBを接続するか、BOOTを押しながらRESETしてダウンロードモードにしてください。シリアルモニターなど、ポートを使用中のアプリは閉じてください。</p>
 <p class="muted">「Erase device」を選ぶと保存設定も消去されます。必要な設定は書き込み前に本体の <code>/api/config</code> から控えてください。Wi-FiパスワードはAPIから取得できないため、このバックアップには含まれません。消去後は別途再入力してください。ConfiguratorのPreset ExportにはSSIDも含まれません。</p>
 </section>
