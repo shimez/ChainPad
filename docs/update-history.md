@@ -2,9 +2,8 @@
 
 ## 実装状況
 
-Phase 1：CHANGELOGの整理、生成・検証モジュール、自動テストまで実装済み。
-Actionsへの組み込み・Pages配信・Configurator表示は後続Phaseで行います。
-この段階で公開ファイルやファームウェアのバージョンは変更しません。
+Phase 1・2：CHANGELOG整理、生成・検証、Actionsでの自動生成・保持・公開前検査まで実装済み。
+Configurator表示はPhase 3で行います。実装段階ではタグ作成・公開は行いません。
 
 ## 情報源と記載方法
 
@@ -75,16 +74,36 @@ Actionsへの組み込み・Pages配信・Configurator表示は後続Phaseで行
 デコード時はJSONの重複キーと受信バイト数も検証します。
 
 開発・テスト用CLIは`--changelog`、`--build`、`--output`を受け取ります。
-Phase 2で既存のタグ公開処理から自動呼び出しするため、日常運用に手動コマンドは追加しません。
+既存のタグ公開処理から自動呼び出しするため、日常運用に手動コマンドは追加しません。
 このCLIだけでは、渡されたbuild情報のコミットが実際のタグやソースと一致するかは判定しません。
-その照合は既存の公開処理との統合時に行います。
+その照合は公開処理の`verify_source()`で行います。
 
-## 後続Phaseの統合条件
+## Actions・公開処理（Phase 2）
+
+新規配布の`build.json`には次の`changes`参照情報を追加します。既存フィールドは維持します。
+
+```json
+"changes": {
+  "path": "changes.json",
+  "schemaVersion": 1,
+  "bytes": 2652,
+  "sha256": "<生成したJSONのSHA256・64文字>"
+}
+```
+
+パスは`changes.json`に固定します。`changes`自体がない場合のみ旧形式として扱い、
+`null`・不完全な参照・未対応schema・不正なサイズ／ハッシュはエラーにします。
+新規タグ配布では参照とJSONを必須にします。
 
 - 初回移行：旧`build.json`は履歴参照情報なしを許容。履歴対応版は参照情報を持ち、JSON欠落をエラーにします。
 - main：編集途中の履歴は検査のみ。公開済みJSONを検証してそのまま保持します。
 - タグ：同じコミットのCHANGELOGから生成し、build情報と同じPages成果物へ含めます。
 - 文書更新：JSONを再生成せず保持し、`site/`コピーによる上書きも防ぎます。
+- 旧形式ではJSONを取得せず、出力先の古い`changes.json`も削除します。現在の公開版にJSONがなくても移行できます。
+- 配布前にJSONのサイズ・SHA256・schema・版・コミットを照合します。
+- さらにFirmwareコミットの`CHANGELOG.md`から再生成したバイト列と比較します。main上で履歴を編集しても混入しません。
+- `--validate-only`でPages成果物アップロード前に検査し、Release公開時にも同じ検査を行います。
+- Release添付にも`changes.json`を含めます。過去版タグは従来どおりPagesをダウングレードしません。
 - 公開順序はPages→GitHub Releaseを維持し、リンク先が一時的に未公開でも履歴本文は読めるようにします。
 - Configurator：通知・Installerリンクを先に表示し、履歴失敗は履歴欄だけで扱います。
 
@@ -92,5 +111,10 @@ Phase 2で既存のタグ公開処理から自動呼び出しするため、日�
 
 `python -m unittest discover -s tests -p test_changelog.py`
 
+`python -m unittest discover -s tests -p test_history_distribution.py`
+
 数値順、未来版除外、対象版必須、空分類、折り返し、重複、型、版・コミット不一致、
 サイズ・文字上限、決定的な出力、CLI、既存履歴の正式タグ基準を確認します。
+配布テストでは旧形式移行、mainの未来版混入防止、文書更新時の完全保持、予約パス保護、
+欠落・破損・不整合、実Gitコミットとの照合と公開なしの検証CLIを確認します。
+既存のpackaging・release-plan・publish-releaseテストでも自動生成・タグ方針・添付を確認します。

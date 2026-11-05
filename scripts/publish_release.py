@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import changelog as history
 
 ROOT = Path(__file__).resolve().parents[1]
 FAMILIES = ("ESP32-S3", "ESP32-C5", "ESP32-C6")
@@ -21,7 +22,7 @@ def version_tuple(value):
     return tuple(map(int, value.split(".")))
 
 
-def validate(directory):
+def validate(directory, require_history=False):
     info = json.loads((directory / "build.json").read_text(encoding="utf-8"))
     manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
     version_tuple(info["version"])
@@ -33,6 +34,13 @@ def validate(directory):
     if len(files) != len(FAMILIES) or {f["chipFamily"] for f in files} != set(FAMILIES):
         raise ValueError("Unexpected firmware distribution targets")
     expected_builds, assets = [], [directory / "build.json", directory / "manifest.json"]
+    ref = history.history_reference(info, required=require_history)
+    if ref is not None:
+        path = directory / ref["path"]
+        history.verify_payload(path.read_bytes(), info)
+        assets.append(path)
+    elif (directory / "changes.json").exists():
+        raise ValueError("Unreferenced history file in legacy distribution")
     for file in files:
         expected = f'firmware/ChainPad-{file["chipFamily"]}.bin'
         if file["path"] != expected:
@@ -65,8 +73,7 @@ def release_notes(changelog, version, commit):
             f"Source commit: `{commit}`\n")
 
 
-def publish(directory, repo, require_tag=False):
-    info, assets = validate(directory)
+def verify_source(directory, info, require_tag=False):
     version, commit = info["version"], info["commit"]
     tag = f"v{version}"
     if require_tag:
@@ -77,6 +84,18 @@ def publish(directory, repo, require_tag=False):
     if f'doc["version"] = "{version}"' not in source:
         raise ValueError("Firmware source version mismatch")
     command("git", "merge-base", "--is-ancestor", commit, "HEAD")
+    if history.history_reference(info) is not None:
+        text = command("git", "show", f"{commit}:CHANGELOG.md")
+        expected = history.encode_changes(history.generate_changes(text, version, commit), version, commit)
+        if (directory / "changes.json").read_bytes() != expected:
+            raise ValueError("History does not match the firmware commit's CHANGELOG")
+
+
+def publish(directory, repo, require_tag=False):
+    info, assets = validate(directory, require_history=require_tag)
+    verify_source(directory, info, require_tag)
+    version, commit = info["version"], info["commit"]
+    tag = f"v{version}"
     pages = json.loads(command("gh", "api", "--paginate", "--slurp", f"repos/{repo}/releases?per_page=100"))
     releases = [release for page in pages for release in page]
     existing = next((release for release in releases if release["tag_name"] == tag), None)
@@ -125,7 +144,14 @@ if __name__ == "__main__":
     parser.add_argument("directory", type=Path)
     parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"))
     parser.add_argument("--require-tag", action="store_true")
+    parser.add_argument("--validate-only", action="store_true", help="Verify all assets and provenance without GitHub access")
     args = parser.parse_args()
-    if not args.repo:
+    if args.validate_only:
+        directory = args.directory.resolve()
+        info, _ = validate(directory, require_history=args.require_tag)
+        verify_source(directory, info, args.require_tag)
+        print(f'Validated distribution and provenance for {info["version"]}')
+    elif not args.repo:
         parser.error("--repo or GITHUB_REPOSITORY is required")
-    publish(args.directory.resolve(), args.repo, args.require_tag)
+    else:
+        publish(args.directory.resolve(), args.repo, args.require_tag)

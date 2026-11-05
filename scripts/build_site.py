@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import markdown
+import changelog
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -47,6 +48,11 @@ def reuse_published(base, metadata):
     if manifest["version"] != f'{info["version"]}+{info["commit"][:7]}':
         raise ValueError("Published manifest version mismatch")
     payloads = {}
+    history = changelog.history_reference(info)
+    if history is not None:
+        data = fetch(base, history["path"])
+        changelog.verify_payload(data, info)
+        payloads[history["path"]] = data
     for file in files:
         if file["chipFamily"] != expected[file["path"]]:
             raise ValueError("Published chip family mismatch")
@@ -59,6 +65,8 @@ def reuse_published(base, metadata):
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
     (OUTPUT / "firmware/ChainPad-ESP32-C3.bin").unlink(missing_ok=True)
+    if history is None:
+        (OUTPUT / "changes.json").unlink(missing_ok=True)
 
 
 def prepare(base):
@@ -77,7 +85,12 @@ def prepare(base):
 
 
 def copy_site():
-    shutil.copytree(ROOT / "site", OUTPUT, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md", ".gitkeep"))
+    def ignore(directory, names):
+        omitted = set(shutil.ignore_patterns("*.md", ".gitkeep")(directory, names))
+        if Path(directory) == ROOT / "site":
+            omitted.update({"build.json", "manifest.json", "changes.json", "firmware", "site-build.json"} & set(names))
+        return omitted
+    shutil.copytree(ROOT / "site", OUTPUT, dirs_exist_ok=True, ignore=ignore)
     for page in ("getting-started", "manual", "assembly-guide"):
         source = ROOT / f"site/{page}/index.md"
         template = (ROOT / f"scripts/templates/{page}.html").read_text(encoding="utf-8")
@@ -93,6 +106,8 @@ def main():
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     source = (ROOT / "src/main.cpp").read_text(encoding="utf-8")
     version = re.search(r'doc\["version"\] = "([^"]+)"', source).group(1)
+    history = changelog.generate_changes((ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), version, commit)
+    history_data = changelog.encode_changes(history, version, commit)
     OUTPUT.mkdir(exist_ok=True)
     copy_site()
     (OUTPUT / "firmware").mkdir(exist_ok=True)
@@ -113,8 +128,10 @@ def main():
                       "sha256": hashlib.sha256(data).hexdigest()})
     manifest = {"name": "ChainPad", "version": f"{version}+{commit[:7]}",
                 "new_install_prompt_erase": True, "builds": builds}
+    (OUTPUT / "changes.json").write_bytes(history_data)
     for name, value in (("manifest.json", manifest),
-                        ("build.json", {"version": version, "commit": commit, "files": files})):
+                        ("build.json", {"version": version, "commit": commit, "files": files,
+                                        "changes": changelog.make_reference(history_data)})):
         (OUTPUT / name).write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
     print(f"Packaged {len(builds)} firmware images for {commit[:7]} in {OUTPUT}")
 

@@ -6,6 +6,7 @@
 - `/installer/`：Web Installer（`site/installer/index.html`）
 - `/getting-started/`、`/manual/`、`/assembly-guide/`：Markdownから生成するガイド
 - `/manifest.json`、`/build.json`、`/firmware/`：正式公開Firmware。既存URLを維持します。
+- `/changes.json`：FirmwareコミットのCHANGELOGから自動生成する履歴（対応版から配信）。
 - `/site-build.json`：サイトのコミットID。`build.json`のコミットIDはFirmwareのものです。
 
 ## mainへのプッシュ
@@ -19,6 +20,12 @@
 公開中のmanifest・build情報・S3/C5/C6用binを取得し、サイズ・SHA256・参照先を検証して維持します。
 その上にmainのサイト本文をコピーしてPagesを更新します。マニュアルだけの変更ならFirmwareビルドを省略します。
 公開データの取得・検証に失敗した場合は停止し、開発版への置き換えは行いません。
+
+CHANGELOGの変更もワークフローを起動しますが、mainでは形式検証のみです。
+履歴対応版の`build.json.changes`がある場合、公開済み`changes.json`を取得し、
+サイズ・SHA256・版・コミットを検証してそのまま維持します。mainのCHANGELOGから再生成しません。
+参照情報のない旧版はJSON未対応として許容し、取得を行いません。参照があるのに欠落・不整合なら停止します。
+`site/`の同名ファイルが配布メタデータやFirmwareを上書きすることも防ぎます。
 
 `README.md`や`docs/`だけの変更ではこのワークフローは起動しません。
 `web/`は本体に埋め込むConfiguratorなので、サイト本文の`site/`とは異なりFirmwareビルド対象です。
@@ -43,9 +50,15 @@ git push origin v0.10.0
 - 公開中より古いバージョン：Releaseだけを公開し、Web Installerとサイト本文は更新しません。
 - 公開中と同じバージョン：同一コミットのみ再実行可能です。異なるコミットなら停止します。
 
-ReleaseはタグのFirmwareコミットを対象とし、S3/C5/C6用の統合bin、`build.json`、`manifest.json`を添付します。
+ReleaseはタグのFirmwareコミットを対象とし、S3/C5/C6用の統合bin、`build.json`、`manifest.json`、`changes.json`を添付します。
 バージョン・コミット・配布機種・サイズ・SHA256・manifest参照先を公開前に検査します。
+新規タグ配布の履歴は必須です。Pages成果物アップロード前とRelease公開前に、
+FirmwareコミットのCHANGELOGから再生成した内容との一致も検査します。
 リリースノートはそのコミットの`CHANGELOG.md`から生成します。過去の安定版より新しい版だけをLatestにします。
+
+履歴生成はActionsが自動処理します。Astraによるバージョン更新・CHANGELOG更新・Commit／Push、
+ユーザーの公開承認後のタグ作成／Pushという運用は変わりません。JSONの手編集・手動生成は不要です。
+CHANGELOGの記法と参照情報の詳細は[変更履歴データ仕様](update-history.md)を参照してください。
 
 公開済みの同名Releaseは変更しません。修正版を配布する場合は、新しいバージョンとタグを作成してください。
 Configuratorの更新通知はWeb Installerの`build.json`を参照するため、正式公開版に連動します。
@@ -70,6 +83,8 @@ mainとタグの実行は共通の同時実行グループで直列化し、旧�
 .\.venv\Scripts\python.exe -m unittest discover -s tests -p test_build_site.py
 .\.venv\Scripts\python.exe -m unittest discover -s tests -p test_release_plan.py
 .\.venv\Scripts\python.exe -m unittest discover -s tests -p test_publish_release.py
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p test_changelog.py
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p test_history_distribution.py
 ```
 
 サイトのローカル生成は`python scripts/build_site.py`、プレビューは

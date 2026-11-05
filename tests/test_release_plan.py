@@ -22,7 +22,7 @@ class PlanTests(unittest.TestCase):
         root = Path(temp.name)
         (root / "src").mkdir()
         (root / "src/main.cpp").write_text('doc["version"] = "0.10.0";', encoding="utf-8")
-        (root / "CHANGELOG.md").write_text("## 0.10.0\n\n- Feature\n", encoding="utf-8")
+        (root / "CHANGELOG.md").write_text("## 0.10.0\n### 追加機能\n- Feature\n### 修正・改善\n- なし\n", encoding="utf-8")
         self.root = root
         self.commit = "a" * 40
         self.info = {"version": "0.9.0", "commit": "b" * 40}

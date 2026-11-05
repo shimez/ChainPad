@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import changelog
 
 import build_site as site
 from publish_release import command, release_notes, version_tuple
@@ -13,6 +14,8 @@ def plan(ref, before="", force=False):
     tagged = ref.startswith("refs/tags/")
     if not tagged and ref != "refs/heads/main":
         raise ValueError("Only main or a version tag may run this workflow")
+    text = (site.ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    changelog.parse_changelog(text)  # Main validates edits but never publishes them.
     if tagged:
         tag = ref.removeprefix("refs/tags/")
         if not tag.startswith("v"):
@@ -25,6 +28,7 @@ def plan(ref, before="", force=False):
         release_notes((site.ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), version, "validation")
         commit = command("git", "rev-parse", "HEAD")
         command("git", "merge-base", "--is-ancestor", commit, "origin/main")
+        changelog.generate_changes(text, version, commit)
     metadata = site.fetch(BASE, "build.json")
     info = json.loads(metadata)
     if tagged:

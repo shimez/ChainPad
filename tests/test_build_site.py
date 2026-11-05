@@ -4,13 +4,16 @@ import importlib.util
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location("build_site", Path(__file__).resolve().parents[1] / "scripts/build_site.py")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 site = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(site)
+sys.path.pop(0)
 
 
 class PagesTests(unittest.TestCase):
@@ -137,7 +140,8 @@ class PagesTests(unittest.TestCase):
     def test_packaging_excludes_c3_even_when_built(self):
         root = Path(self.temp.name) / 'source'
         (root / 'src').mkdir(parents=True)
-        (root / 'src/main.cpp').write_text('doc["version"] = "test";')
+        (root / 'src/main.cpp').write_text('doc["version"] = "0.10.0";')
+        (root / 'CHANGELOG.md').write_text('## 0.10.0\n### 追加機能\n- Feature\n### 修正・改善\n- なし\n', encoding='utf-8')
         for chip in ('s3', 'c3', 'c6', 'c5'):
             target = root / f'.pio/build/xiao_esp32{chip}/firmware.factory.bin'
             target.parent.mkdir(parents=True)
@@ -154,6 +158,9 @@ class PagesTests(unittest.TestCase):
         self.assertEqual({b['chipFamily'] for b in json.loads((self.output / 'manifest.json').read_bytes())['builds']}, expected)
         self.assertEqual({f['chipFamily'] for f in json.loads((self.output / 'build.json').read_bytes())['files']}, expected)
         self.assertEqual(len(list((self.output / 'firmware').glob('*.bin'))), 3)
+        info = json.loads((self.output / 'build.json').read_bytes())
+        history = site.changelog.verify_payload((self.output / 'changes.json').read_bytes(), info)
+        self.assertEqual(history['releases'][0]['features'], ['Feature'])
 
     def test_real_git_changes_distinguish_site_and_device_ui(self):
         root = Path(self.temp.name) / "repo"

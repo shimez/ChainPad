@@ -4,6 +4,7 @@ No network, Git mutation, or publication. The caller supplies the build metadata
 whose version and commit bind the generated history to its firmware artifact.
 """
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -185,6 +186,38 @@ def decode_changes(payload, firmware_version, firmware_commit):
     except (UnicodeError, ValueError, RecursionError) as error:
         raise ValueError("Invalid history JSON") from error
     return validate_changes(document, firmware_version, firmware_commit)
+
+
+def make_reference(payload):
+    """Bind build.json to exact history bytes, without changing its existing fields."""
+    if not isinstance(payload, bytes) or not 0 < len(payload) <= MAX_JSON_BYTES:
+        raise ValueError("Invalid history payload size")
+    return {"path": "changes.json", "schemaVersion": SCHEMA_VERSION,
+            "bytes": len(payload), "sha256": hashlib.sha256(payload).hexdigest()}
+
+
+def history_reference(build, required=False):
+    if "changes" not in build:
+        if required:
+            raise ValueError("History reference is required for new tagged firmware")
+        return None  # Only absence denotes a legacy publication; null is invalid.
+    ref = build["changes"]
+    if not isinstance(ref, dict) or set(ref) != {"path", "schemaVersion", "bytes", "sha256"}:
+        raise ValueError("Invalid history reference fields")
+    if ref["path"] != "changes.json" or type(ref["schemaVersion"]) is not int or ref["schemaVersion"] != SCHEMA_VERSION:
+        raise ValueError("Invalid history path or schema")
+    if type(ref["bytes"]) is not int or not 0 < ref["bytes"] <= MAX_JSON_BYTES:
+        raise ValueError("Invalid history byte count")
+    if not isinstance(ref["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", ref["sha256"]):
+        raise ValueError("Invalid history SHA256")
+    return ref
+
+
+def verify_payload(payload, build):
+    ref = history_reference(build, required=True)
+    if not isinstance(payload, bytes) or len(payload) != ref["bytes"] or hashlib.sha256(payload).hexdigest() != ref["sha256"]:
+        raise ValueError("History size/SHA256 mismatch")
+    return decode_changes(payload, build["version"], build["commit"])
 
 
 def main():

@@ -12,6 +12,9 @@ on:
       - 'web/**'
       - 'site/**'
       - 'scripts/**'
+      - 'CHANGELOG.md'
+      - 'tests/test_changelog.py'
+      - 'tests/test_history_distribution.py'
       - 'tests/check_image.py'
       - 'tests/test_presets.cjs'
       - 'tests/test_hid_action_ui.cjs'
@@ -55,6 +58,10 @@ jobs:
         run: python -m pip install -r scripts/requirements-pages.txt
       - name: Test Pages packaging
         run: python -m unittest discover -s tests -p test_build_site.py
+      - name: Test history generation and distribution
+        run: |
+          python -m unittest discover -s tests -p test_changelog.py
+          python -m unittest discover -s tests -p test_history_distribution.py
       - name: Test Release publishing
         run: python -m unittest discover -s tests -p test_publish_release.py
       - name: Test tag and main publication policy
@@ -91,6 +98,12 @@ jobs:
       - name: Update Pages content with existing firmware
         if: steps.firmware.outputs.release != 'true'
         run: python scripts/build_site.py --site-only
+      - name: Verify tagged distribution before deploying
+        if: steps.firmware.outputs.release == 'true'
+        run: python scripts/publish_release.py _site --validate-only --require-tag
+      - name: Verify preserved distribution before deploying
+        if: steps.firmware.outputs.release != 'true'
+        run: python scripts/publish_release.py _site --validate-only
       - uses: actions/configure-pages@v6
         if: steps.firmware.outputs.deploy == 'true'
       - name: Retain firmware for Release publishing
@@ -101,6 +114,7 @@ jobs:
           path: |
             _site/build.json
             _site/manifest.json
+            _site/changes.json
             _site/firmware/*.bin
           if-no-files-found: error
           retention-days: 7

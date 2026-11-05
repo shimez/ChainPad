@@ -4,13 +4,16 @@ import importlib.util
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location("publish_release", Path(__file__).resolve().parents[1] / "scripts/publish_release.py")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 release = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(release)
+sys.path.pop(0)
 
 
 class ReleaseTests(unittest.TestCase):
@@ -21,6 +24,11 @@ class ReleaseTests(unittest.TestCase):
         (self.directory / "firmware").mkdir()
         self.commit = "a" * 40
         self.info = {"version": "0.10.0", "commit": self.commit, "files": []}
+        self.changelog = "## 0.10.0\n### 追加機能\n- New feature.\n### 修正・改善\n- なし\n\n## 0.9.0\n### 追加機能\n- Previous.\n### 修正・改善\n- なし\n"
+        document = release.history.generate_changes(self.changelog, "0.10.0", self.commit)
+        payload = release.history.encode_changes(document, "0.10.0", self.commit)
+        self.info["changes"] = release.history.make_reference(payload)
+        (self.directory / "changes.json").write_bytes(payload)
         self.manifest = {"version": "0.10.0+aaaaaaa", "builds": []}
         for family in release.FAMILIES:
             data = bytearray(0x10001)
@@ -41,7 +49,7 @@ class ReleaseTests(unittest.TestCase):
         if args[:2] == ("git", "show"):
             if args[2].endswith(":src/main.cpp"):
                 return 'doc["version"] = "0.10.0";'
-            return "# Changelog\n\n## 0.10.0\n\n- New feature.\n\n## 0.9.0\n\n- Previous.\n"
+            return self.changelog
         if args[:2] == ("git", "merge-base"):
             return ""
         if args[:2] == ("gh", "api"):
@@ -69,7 +77,7 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual([c[2] for c in self.mutations()], ["create", "upload", "edit"])
         self.assertIn("--draft", create)
         self.assertEqual(create[create.index("--target") + 1], self.commit)
-        for name in ["build.json", "manifest.json", *[f"ChainPad-{family}.bin" for family in release.FAMILIES]]:
+        for name in ["build.json", "manifest.json", "changes.json", *[f"ChainPad-{family}.bin" for family in release.FAMILIES]]:
             self.assertTrue(any(arg.endswith(name) for arg in upload))
         self.assertIn("--draft=false", publish)
         self.assertIn("--latest=true", publish)
