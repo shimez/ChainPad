@@ -1,56 +1,77 @@
 # Changelog
 
+変更内容は正式リリースタグ間の差分を基準に記載しています。
+「追加機能」「修正・改善」はConfigurator表示用です。「なし」は空の一覧に変換します。
+開発中に同じバージョン番号のまま配布された版では、一部の機能が既に含まれている場合があります。
+技術情報・検証記録は「補足」に記載し、表示用データには含めません。
+
 ## 0.9.0
 
-- Add a Configurator firmware update notification using the public Web Installer's
-  build metadata, checked once after device status is available.
-- Compare numeric versions and distributed chip families; link to the Installer
-  without automatically updating firmware. Offline, timeout and metadata failures
-  do not interrupt configuration or device status polling.
-- Add automated coverage and CI checks for version comparison, hardware mapping,
-  status sequencing and failure isolation; verify public metadata access in a browser.
-- Clarify v0.7.0/v0.8.0 feature availability and the Linked Outputs / Output to
-  Action Link / Action terminology change in the manuals.
+### 追加機能
+- Configuratorで新しいファームウェアの公開を通知し、Web Installerを開けるようになりました。
+
+### 修正・改善
+- マニュアルにv0.7.0／v0.8.0の追加機能と、Action Linkへの名称変更を明記しました。
+
+### 補足
+- 更新確認は本体情報取得後にブラウザから1回だけ行い、バージョンと配布機種を照合します。
+- オフライン・タイムアウト・取得失敗でも通常の設定操作や本体情報更新を継続します。自動更新は行いません。
+- 機種対応、数値比較、取得順序、失敗時の分離を自動テストし、実ブラウザで公開情報取得と表示を確認しました。
 
 ## 0.8.0
 
-- Add OBS volume Actions with absolute and relative dB adjustment, clamped to
-  -100 through +26 dB. Replace the unpublished linear-volume Action schema with `volumeDb`.
-- Add OBS volume to Rotation Value Action Link with source discovery, dB Start/End
-  interpolation and latest-state output alongside OSC and MIDI. Control is one-way to OBS.
-- Preserve existing OSC/MIDI settings and configuration/Preset format versions.
-- Rename Rotation output controls to Action Link, add a Preview Position slider,
-  and improve OBS volume field layouts.
-- Extend the standalone OBS tester with linear-volume controls.
-- Host, OBS and UI regression tests passed. Hardware OBS volume validation was
-  completed by the user.
+### 追加機能
+- OBS音量調整に対応しました（S3／C5／C6）。Action ChainでdBによる絶対指定と相対増減ができます。
+- Rotation ValueのAction LinkからOBS音量を操作できます（S3／C5／C6）。Start／EndのdB値を回転位置で補間し、OSC／MIDIと併用できます。
+
+### 修正・改善
+- Rotation Valueの「Linked Outputs」「Output」を「Action Link」「Action」に変更しました。
+- Preview Positionをスライダーに変更しました。
+- OBS音量調整の入力項目の配置を改善しました。
+
+### 補足
+- 絶対音量は−100〜＋26 dB、相対増減は−126〜＋126 dB。相対調整の結果は−100〜＋26 dBに収めます。
+- 音声ソースの手入力・候補選択に対応します。Rotation ValueはChainPadからOBSへの一方向制御で、OBS側からのPosition同期は行いません。
+- 既存OSC／MIDIの設定とConfig／Preset形式を維持しています。
+- 開発途中の線形音量版（adce000、表示バージョン0.7.0）のvolumePercentは正式v0.7.0タグには含まれません。
+  正式v0.8.0はvolumeDbを使用し、開発途中の線形版との自動変換は行いません。
+- 独立したOBS Media Testerには線形％による音量操作を追加しました。本体のdB方式とは異なります。
+- ホスト・OBS・UIテスト、4機種のビルド・イメージ検査が成功しました。OBS音量操作の実機確認はユーザーにより完了しています。
 
 ## 0.7.0
 
-- Add OBS media control: restart, stop, pause, resume, next and previous, with
-  manual media/VLC source discovery and Full/Key Preset persistence.
-- Add scene/group item visibility control and manual item discovery.
-- Group OBS operations in the WebUI and unify mute controls under one editor choice.
-- Add the standalone OBS media tester and update setup/action documentation.
-- Preserve configuration and Preset format versions and existing discovery memory limits.
-- Media-control UI, protocol, Worker, HTTP and storage tests passed, along with
-  S3/C3/C5/C6 builds and image checks. Hardware media-control validation is pending.
+### 追加機能
+- OBSメディア制御に対応しました（S3／C5／C6）。先頭から再生・停止・一時停止・再生再開・次へ・前へを操作できます。
+- メディア／VLCソースを候補一覧から選択できるようになりました（S3／C5／C6）。
+- OBSシーン／グループ内アイテムの表示・非表示・切り替えと、候補一覧からの選択に対応しました（S3／C5／C6、v0.6.0タグ公開後に追加）。
+- OBSミュート対象を音声ソースの候補一覧から選択できるようになりました（S3／C5／C6、v0.6.0タグ公開後に追加）。
 
-## 0.6.0 — Local integration (not published)
+### 修正・改善
+- OBS操作の選択肢をグループ分けし、ミュート切り替えを「ミュート設定」内のToggleにまとめました。
+- 狭い画面でのAction編集項目の配置を改善しました。
 
-- Add OBS WebSocket Actions on XIAO ESP32S3, ESP32C5 and ESP32C6: scene switching,
-  stream/record start and stop, input mute and toggle.
-- Add independent OBS connection settings, status, and manual bounded scene discovery.
-- Preserve Action Chain limits and Config / Full / Key Preset compatibility.
-- Add bounded asynchronous execution, scene-memory diagnostics and buffered S3 serial output.
-- Validate OBS operation and memory smoke on S3/C5/C6; C6 mixed OSC/OBS/BLE-HID,
-  Delay ordering, persistence and post-restart execution passed hardware regression.
-- Known caveat: one reported C5 PSRAM barrier allocation error at startup; cause unknown,
-  not reproduced in follow-up, no unexpected restart observed in follow-up tests.
-  Long-duration and high-load evaluation remains ongoing.
+### 補足
+- シーンアイテム表示制御やミュート候補選択は、表示バージョンが0.6.0の開発・Web Installer版にも存在しました。
+  ここでは正式v0.6.0タグから正式v0.7.0タグまでの差分として記載しています。
+- 音声ソース候補取得にはOBS WebSocket 5.6.0以降が必要です。候補取得に失敗した場合も手入力できます。
+- Config／Preset形式と既存の一覧取得メモリ上限を維持しています。
+- 独立したPython版OBS Media Testerを追加しました。
+- メディア制御のUI・Protocol・Worker・HTTP・保存テスト、4機種のビルド・イメージ検査が成功しました。
+  このリリース時点の記録では、メディア制御の実機確認は未実施です。
 
-Firmware version changes from `0.5.3` to `0.6.0`, retaining the existing suffix-free
-format and `/api/status` version source. WebUI displays that value. Configuration
-schema and Preset format versions are independent and unchanged.
-See [integration notes](docs/obs-integration.md). No GitHub release or installer
-publication is included in this local version update.
+## 0.6.0
+
+### 追加機能
+- OBS WebSocketに対応しました（S3／C5／C6）。シーン切り替え、配信・録画の開始／停止、入力ミュート設定・切り替えを操作できます。
+- ConfiguratorにOBS接続設定・接続状態表示・手動シーン一覧取得を追加しました（S3／C5／C6）。
+
+### 修正・改善
+- S3のUSBシリアル診断出力をバッファ化しました。
+
+### 補足
+- バージョンを0.5.3から0.6.0へ更新。Config／Preset形式、既存Action数制限を維持しています。
+- 非同期OBS Worker、上限付き受信処理、メモリ診断を追加しました。
+- S3／C5／C6のOBS動作・メモリスモークと、C6の混在OSC／OBS／BLE-HID、Delay順序、保存・再起動後の復元と実行を確認しました。
+- C5で起動時にPSRAMメモリバリア用領域の確保エラーが過去に1回観測されました。
+  原因未特定ですが、追加試験では再現せず、予期しない再起動も確認されませんでした。長時間・高負荷評価は継続事項です。
+- 本版はv0.6.0タグとGitHub Releaseとして公開済みです。[統合記録](docs/obs-integration.md)も参照してください。
