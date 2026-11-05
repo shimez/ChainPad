@@ -4,7 +4,8 @@
 
 Phase 1〜3：CHANGELOG整理、生成・検証、Actions統合、Configurator表示まで実装済み。
 Phase 4では4機種ビルド・自動テスト・ローカル配布統合・C6実機確認を実施しました。
-単発の保存時502と、他機種実機・実デプロイの未検証範囲は[統合検証記録](validation/update-history-phase4.md)を参照してください。
+保存時502と、他機種実機・実デプロイの未検証範囲は[統合検証記録](validation/update-history-phase4.md)を参照してください。
+その後の[保存20回の追加確認](validation/update-history-save-repeat.md)では502が1回再発し、通信経路を限定調査しました。
 実装・検証段階ではタグ作成・公開は行いません。
 
 ## 情報源と記載方法
