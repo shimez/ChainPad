@@ -2,8 +2,8 @@
 
 ## 実装状況
 
-Phase 1・2：CHANGELOG整理、生成・検証、Actionsでの自動生成・保持・公開前検査まで実装済み。
-Configurator表示はPhase 3で行います。実装段階ではタグ作成・公開は行いません。
+Phase 1〜3：CHANGELOG整理、生成・検証、Actions統合、Configurator表示まで実装済み。
+総合テスト・4機種ビルド・実機確認はPhase 4で行います。実装段階ではタグ作成・公開は行いません。
 
 ## 情報源と記載方法
 
@@ -107,7 +107,30 @@ Configurator表示はPhase 3で行います。実装段階ではタグ作成・�
 - 公開順序はPages→GitHub Releaseを維持し、リンク先が一時的に未公開でも履歴本文は読めるようにします。
 - Configurator：通知・Installerリンクを先に表示し、履歴失敗は履歴欄だけで扱います。
 
+## Configurator表示（Phase 3）
+
+既存の更新あり判定・機種判定の後、通知とInstallerリンクを先に表示します。
+ブラウザから`changes.json`を別途非同期取得し、5秒のタイムアウトを設けます。
+設定API・本体のステータス取得は履歴取得を待ちません。自動更新は行いません。
+
+- `build.json.changes`の固定パス・schema・サイズ・ハッシュの形式を検査します。
+- 受信ストリームを256 KiB以内かつ参照サイズ以内に制限し、UTF-8・JSONを検証します。
+- schema、Firmware版・コミットの一致、公開最新版の項目、重複・項目型・文字数を検証します。
+- SHA256の内容照合はActionsの配布検証で行います。ブラウザはHTTPで開く本体Configuratorでも動作するよう、Secure Context専用のWeb Cryptoに依存しません。
+- 現在版より新しく公開最新版以下の項目だけを数値順で表示します。未来版は表示しません。
+- 標準の`details`／`summary`で初期は折りたたみ、最大3版を用意します。
+  残りは「ほかNバージョン分を表示」で展開したときに初めてDOMを生成します。
+- 各版にGitHub Releaseリンクを設け、空の分類は省略します。両分類が空なら記載なしと表示します。
+- 履歴本文は`textContent`で描画し、HTML・Markdownとして解釈しません。
+- 旧版の参照なし、通信失敗、タイムアウト、不整合は履歴欄だけで扱い、取得失敗の案内とReleases一覧リンクを表示します。
+- 配色は既存のテーマ変数を使用します。折りたたみはキーボードでも操作できます。
+
 ## 自動テスト
+
+`node --test tests/test_firmware_update.cjs`
+
+既存の通知テストに加え、表示範囲、数値順、3件制限、遅延展開、空分類、文字列の安全な描画、
+取得失敗・サイズ超過・不整合・タイムアウト、取得中／失敗後のステータス更新継続を確認します。
 
 `python -m unittest discover -s tests -p test_changelog.py`
 

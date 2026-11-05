@@ -7,9 +7,9 @@ const metadata=(version='0.9.0',chips=['S3','C6','C5'])=>({version,files:chips.m
 const response=data=>({ok:true,json:async()=>data});
 function fixture(fetcher=async()=>response(metadata())){
   const nodes={},timers=new Map(),calls=[];let serial=0;
-  const node=()=>({hidden:true,children:[],textContent:'',replaceChildren(...items){this.children=items;},append(item){this.children.push(item);}});
+  const node=tag=>({tag,hidden:true,children:[],textContent:'',dataset:{},listeners:{},setAttribute(key,value){this[key]=value;},addEventListener(name,fn){this.listeners[name]=fn;},replaceChildren(...items){this.children=items;},append(item){this.children.push(item);}});
   const get=id=>nodes[id]??=node();
-  const ctx=vm.createContext({AbortController,document:{hidden:false,createElement:node},$:get,
+  const ctx=vm.createContext({AbortController,URL,TextDecoder,Uint8Array,document:{hidden:false,createElement:node},$:get,
     fetch:(url,options)=>{calls.push({url,options});return fetcher(url,options);},
     setTimeout:(fn,ms)=>{const id=++serial;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id)});
   vm.runInContext(source+'\nconst firmwareUpdate=FirmwareUpdate.create($("firmwareUpdate"));',ctx);
@@ -78,4 +78,77 @@ test('device status failure does not consume the one-time update check',async()=
   await f.ctx.status();assert.equal(f.calls.length,0);
   unavailable=false;await f.ctx.status();await new Promise(resolve=>setImmediate(resolve));
   assert.equal(f.calls.length,1);assert.equal(f.get('firmwareUpdate').hidden,false);
+});
+const settle=()=>new Promise(resolve=>setImmediate(resolve));
+function historyFixture(mutate=()=>{},fetchHistory){
+  const data={schemaVersion:1,firmwareVersion:'0.12.0',firmwareCommit:'a'.repeat(40),
+    releases:['0.9.0','0.13.0','0.12.0','0.8.0','0.11.0','0.10.0'].map(version=>({version,features:['機能 <img src=x>'],improvements:[]}))};
+  const info={...metadata('0.12.0'),commit:data.firmwareCommit};
+  mutate(data,info);
+  const bytes=new TextEncoder().encode(JSON.stringify(data));
+  info.changes={path:'changes.json',schemaVersion:1,bytes:bytes.length,sha256:'b'.repeat(64),...info.changes};
+  const f=fixture(async url=>url.endsWith('build.json')?response(info):fetchHistory?fetchHistory():
+    {ok:true,body:new ReadableStream({start(controller){controller.enqueue(bytes);controller.close();}})});
+  return f;
+}
+const device={version:'0.8.0',hardware:hardware('S3')};
+test('history filters numeric range, sorts, initially renders three and lazily expands the rest',async()=>{
+  const f=historyFixture();await f.check(device);await settle();
+  const panel=f.get('firmwareUpdate'),details=panel.children[2].children[0];
+  assert.equal(details.tag,'details');assert(!details.open);
+  assert.equal(details.children[0].textContent,'追加・改善された内容を見る');
+  assert.deepEqual(details.children.slice(1,4).map(n=>n.children[0].children[0].textContent),['v0.12.0 ↗','v0.11.0 ↗','v0.10.0 ↗']);
+  assert.equal(details.children[1].children[2].children[0].textContent,'機能 <img src=x>');
+  const more=details.children[4];assert.equal(more.children[0].textContent,'ほか1バージョン分を表示');
+  assert.equal(more.children.length,1);more.open=true;more.listeners.toggle();more.listeners.toggle();
+  assert.equal(more.children.length,2);assert.equal(more.children[1].children[0].children[0].href,'https://github.com/shimez/ChainPad/releases/tag/v0.9.0');
+  assert.equal(f.calls.length,2);assert.equal(f.calls[1].options.cache,'no-store');assert.equal(f.timers.size,0);
+});
+test('history errors preserve the notification and installer, with a Releases fallback',async()=>{
+  for(const mutate of [d=>d.schemaVersion=2,d=>d.firmwareVersion='0.11.0',d=>d.firmwareCommit='c'.repeat(40),
+    d=>d.releases.push(d.releases[0]),d=>d.releases=d.releases.filter(r=>r.version!=='0.12.0'),
+    d=>d.releases[0].features=['x'.repeat(1025)],d=>d.releases[0].improvements=null,
+    (d,i)=>i.changes={path:'https://other.invalid/history'},(d,i)=>i.changes={bytes:262145}]){
+    const f=historyFixture(mutate);await f.check(device);await settle();
+    const panel=f.get('firmwareUpdate');assert.equal(panel.hidden,false);
+    assert.equal(panel.children[1].href,'https://shimez.github.io/ChainPad/installer/');
+    assert.equal(panel.children[2].children[1].href,'https://github.com/shimez/ChainPad/releases');
+    assert.equal(f.timers.size,0);
+  }
+  for(const fetcher of [()=>{throw Error('offline');},()=>({ok:false}),()=>({ok:true,body:new ReadableStream({start(c){c.enqueue(new Uint8Array(262145));c.close();}})})]){
+    const f=historyFixture(()=>{},fetcher);await f.check(device);await settle();
+    assert.equal(f.get('firmwareUpdate').children[2].children[0].textContent,'変更履歴を取得できませんでした。 ');
+  }
+});
+test('history timeout is independent and does not block status or configuration tasks',async()=>{
+  const f=historyFixture(()=>{},()=>new Promise(()=>{}));await f.check(device);await settle();
+  assert.equal(f.get('firmwareUpdate').hidden,false);
+  vm.runInContext('configurationSaved=true',f.ctx);assert.equal(f.ctx.configurationSaved,true);
+  const timer=[...f.timers.values()][0];assert.equal(timer.ms,5000);timer.fn();await settle();
+  assert.equal(f.calls[1].options.signal.aborted,true);assert.equal(f.timers.size,0);
+  assert.equal(f.get('firmwareUpdate').children[2].children[1].href,'https://github.com/shimez/ChainPad/releases');
+  await f.check(device);assert.equal(f.calls.length,2);
+});
+test('production device polling continues during history retrieval and after failure',async()=>{
+  let failHistory,failures=0,polls=0;
+  const f=historyFixture(()=>{},()=>new Promise((_,reject)=>failHistory=reject));
+  Object.assign(f.ctx,{statusTimer:null,api:async()=>{polls++;return {...device,wifi:true,ip:'192.168.1.2'};},
+    obsEditor:{epoch:()=>0,updateStatus(){},statusFailed(){failures++;}},obsScenes:{tick(){},failed(){failures++;}}});
+  vm.runInContext(html.match(/^async function status\(.*$/m)[0],f.ctx);
+  await f.ctx.status();await settle();
+  assert.equal(f.calls.length,2);assert.equal(f.ctx.status.running,false);
+  await f.ctx.status();assert.equal(polls,2);assert.equal(failures,0);
+  failHistory(Error('history offline'));await settle();await f.ctx.status();
+  assert.equal(polls,3);assert.equal(failures,0);assert.equal(f.calls.length,2);
+  assert.equal(f.get('systemIp').textContent,'192.168.1.2');
+  assert.equal(f.get('firmwareUpdate').children[1].href,'https://shimez.github.io/ChainPad/installer/');
+});
+test('no update never requests history; empty categories and legacy metadata are handled',async()=>{
+  const f=historyFixture();await f.check({...device,version:'0.12.0'});await settle();assert.equal(f.calls.length,1);
+  const empty=historyFixture(d=>{d.releases=[{version:'0.12.0',features:[],improvements:[]}];});
+  await empty.check(device);await settle();
+  const details=empty.get('firmwareUpdate').children[2].children[0];assert.equal(details.children.length,2);
+  assert.equal(details.children[1].children[1].textContent,'追加機能・修正改善の記載はありません。');
+  const legacy=fixture();await legacy.check(device);await settle();assert.equal(legacy.calls.length,1);
+  assert.equal(legacy.get('firmwareUpdate').children[2].children[1].href,'https://github.com/shimez/ChainPad/releases');
 });
