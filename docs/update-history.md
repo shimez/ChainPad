@@ -8,6 +8,7 @@ Phase 4では4機種ビルド・自動テスト・ローカル配布統合・C6�
 その後の[保存20回の追加確認](validation/update-history-save-repeat.md)では502が1回再発し、通信経路を限定調査しました。
 通常Chromeの追加20回保存は全成功し、設定保持を確認しました。502の詳細調査は別課題としています。
 [v0.10.0の公開準備・最終検証](validation/update-history-0.10.0.md)は完了し、Push・公開の承認待ちです。
+その後、[Web Installerの最新版履歴表示](validation/installer-update-history.md)を追加しました。
 実装・検証段階ではタグ作成・公開は行いません。
 
 ## 情報源と記載方法
@@ -130,7 +131,29 @@ Phase 4では4機種ビルド・自動テスト・ローカル配布統合・C6�
 - 旧版の参照なし、通信失敗、タイムアウト、不整合は履歴欄だけで扱い、取得失敗の案内とReleases一覧リンクを表示します。
 - 配色は既存のテーマ変数を使用します。折りたたみはキーボードでも操作できます。
 
+## Web Installerの表示
+
+`site/installer/metadata.js`が同じ公開`build.json`・`changes.json`を参照します。
+取得済みのbuild情報をバージョン表示・ダウンロード一覧・履歴で共用し、
+`releases[].version`が`build.json.version`と完全一致する1件だけを表示します。
+表示は初期折りたたみで、追加機能・修正改善と個別Releaseリンクを含みます。
+
+- build取得と履歴取得それぞれに5秒のタイムアウトを設けます。
+- buildは64 KiB、履歴は256 KiBと参照サイズで受信を制限します。
+- 履歴のschema・サイズ・SHA256・版・コミット・項目型・文字数・重複・対象版の存在を検証します。
+- PagesのHTTPS環境でWeb Cryptoを利用してSHA256を照合します。
+  非Secure ContextのLAN内HTTPプレビュー等では履歴の失敗案内になります。localhostプレビューは対応します。
+- 参照情報のない旧公開版は履歴取得を行わず、Releases一覧への案内を表示します。
+- 履歴失敗は履歴欄だけで処理し、正常に取得済みのビルド表示・ダウンロードリンクを維持します。
+- ESP Web Tools・manifest・インストールボタンは従来のままです。表示処理から書き込み開始を待たせたり、ボタンを無効化したりしません。
+- 表示は取得した公開版のスナップショットです。ページ表示後の公開更新やPages→Releaseの公開時間差は従来どおり残ります。
+
 ## 自動テスト
+
+`node --test tests/test_installer_metadata.cjs`
+
+Installerの最新版1件選択、将来版・過去版の非表示、旧形式、SHA256・版・コミット不一致、
+サイズ超過、ネットワーク・JSON失敗、タイムアウト、空分類、安全な文字列描画、書き込み要素の維持を確認します。
 
 `node --test tests/test_firmware_update.cjs`
 

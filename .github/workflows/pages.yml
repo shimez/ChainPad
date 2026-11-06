@@ -21,6 +21,7 @@ on:
       - 'tests/test_stop_chain_save.cjs'
       - 'tests/test_rotation_preview.cjs'
       - 'tests/test_firmware_update.cjs'
+      - 'tests/test_installer_metadata.cjs'
       - 'tests/test_build_site.py'
       - 'tests/test_publish_release.py'
       - 'tests/test_release_plan.py'
@@ -82,6 +83,8 @@ jobs:
         run: node tests/test_rotation_preview.cjs
       - name: Validate firmware update notification
         run: node --test tests/test_firmware_update.cjs
+      - name: Validate Installer metadata and release history
+        run: node --test tests/test_installer_metadata.cjs
       - name: Validate Action editing and Stop Chain save/load
         run: |
           node tests/test_hid_action_ui.cjs

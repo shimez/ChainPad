@@ -21,6 +21,10 @@
 その上にmainのサイト本文をコピーしてPagesを更新します。マニュアルだけの変更ならFirmwareビルドを省略します。
 公開データの取得・検証に失敗した場合は停止し、開発版への置き換えは行いません。
 
+Web Installerの`installer/metadata.js`も公開済みbuild／changesを共用します。
+公開版1件だけを折りたたみ表示し、履歴がない旧版や取得失敗時にはReleasesへ案内します。
+履歴の取得・表示はESP Web Toolsの書き込み処理から独立しています。
+
 CHANGELOGの変更もワークフローを起動しますが、mainでは形式検証のみです。
 履歴対応版の`build.json.changes`がある場合、公開済み`changes.json`を取得し、
 サイズ・SHA256・版・コミットを検証してそのまま維持します。mainのCHANGELOGから再生成しません。
