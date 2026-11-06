@@ -11,7 +11,7 @@ import changelog
 from pathlib import Path
 from urllib.request import Request, urlopen
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("CHAINPAD_SOURCE_ROOT", Path(__file__).resolve().parents[1])).resolve()
 OUTPUT = ROOT / "_site"
 # Public installer targets. C3 remains a build/test target, but is not distributed.
 CHIPS = ("s3", "c6", "c5")

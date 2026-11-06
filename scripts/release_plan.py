@@ -47,7 +47,7 @@ def plan(ref, before="", force=False):
 
 
 if __name__ == "__main__":
-    result = plan(os.environ["GITHUB_REF"], os.environ.get("BEFORE_SHA", ""),
+    result = plan(os.environ.get("CHAINPAD_RELEASE_REF") or os.environ["GITHUB_REF"], os.environ.get("BEFORE_SHA", ""),
                   os.environ.get("FORCE_FIRMWARE") == "true")
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
         for key, value in result.items():

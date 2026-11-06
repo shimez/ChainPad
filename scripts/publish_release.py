@@ -8,7 +8,7 @@ import re
 import subprocess
 import changelog as history
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("CHAINPAD_SOURCE_ROOT", Path(__file__).resolve().parents[1])).resolve()
 FAMILIES = ("ESP32-S3", "ESP32-C5", "ESP32-C6")
 
 
@@ -77,7 +77,7 @@ def verify_source(directory, info, require_tag=False):
     version, commit = info["version"], info["commit"]
     tag = f"v{version}"
     if require_tag:
-        if os.environ.get("GITHUB_REF") != f"refs/tags/{tag}" or command("git", "rev-parse", "HEAD") != commit:
+        if os.environ.get("CHAINPAD_RELEASE_REF", os.environ.get("GITHUB_REF")) != f"refs/tags/{tag}" or command("git", "rev-parse", "HEAD") != commit:
             raise ValueError("Release must match the triggering tag and checked-out commit")
     # Check the firmware source, not the possibly newer documentation commit.
     source = command("git", "show", f"{commit}:src/main.cpp")

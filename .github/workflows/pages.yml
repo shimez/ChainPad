@@ -25,11 +25,17 @@ on:
       - 'tests/test_build_site.py'
       - 'tests/test_publish_release.py'
       - 'tests/test_release_plan.py'
+      - 'tests/test_verify_deployment.py'
+      - 'tests/test_package_tagged.py'
       - 'platformio.ini'
       - 'partitions*.csv'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: 'Publish or repair this version tag using the main deployment workflow'
+        type: string
+        default: ''
       force_firmware:
         description: 'Force validation builds on main (firmware publication requires a version tag)'
         type: boolean
@@ -43,7 +49,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  dispatch-tag:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+    steps:
+      - name: Publish tag through main deployment context
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh workflow run pages.yml --ref main -f release_tag="$RELEASE_TAG"
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     outputs:
       deploy: ${{ steps.firmware.outputs.deploy }}
@@ -51,6 +70,17 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
+      - name: Validate requested source
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          python -c 'import os,re; tag=os.environ["RELEASE_TAG"]; assert not tag or re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", tag), "Invalid release tag"'
+      - name: Checkout firmware source separately from publication tooling
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag && format('refs/tags/{0}', inputs.release_tag) || github.sha }}
+          path: firmware-source
           fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
@@ -67,11 +97,17 @@ jobs:
         run: python -m unittest discover -s tests -p test_publish_release.py
       - name: Test tag and main publication policy
         run: python -m unittest discover -s tests -p test_release_plan.py
+      - name: Test live deployment gate and immutable recovery
+        run: |
+          python -m unittest discover -s tests -p test_verify_deployment.py
+          python -m unittest discover -s tests -p test_package_tagged.py
       - name: Select validation or tagged publication
         id: firmware
         env:
           FORCE_FIRMWARE: ${{ inputs.force_firmware || false }}
           BEFORE_SHA: ${{ github.event.before }}
+          CHAINPAD_SOURCE_ROOT: ${{ github.workspace }}/firmware-source
+          CHAINPAD_RELEASE_REF: ${{ inputs.release_tag && format('refs/tags/{0}', inputs.release_tag) || '' }}
         run: python scripts/release_plan.py
       - name: Install PlatformIO
         if: steps.firmware.outputs.rebuild == 'true'
@@ -91,22 +127,34 @@ jobs:
           node tests/test_stop_chain_save.cjs
       - name: Build all four boards
         if: steps.firmware.outputs.rebuild == 'true'
+        working-directory: firmware-source
         run: pio run
       - name: Validate firmware images
         if: steps.firmware.outputs.rebuild == 'true'
-        run: python tests/check_image.py --env xiao_esp32s3 xiao_esp32c3 xiao_esp32c6 xiao_esp32c5
+        run: python tests/check_image.py --build-dir firmware-source/.pio/build --env xiao_esp32s3 xiao_esp32c3 xiao_esp32c6 xiao_esp32c5
       - name: Package installer and firmware
         if: steps.firmware.outputs.release == 'true'
-        run: python scripts/build_site.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHAINPAD_SOURCE_ROOT: ${{ github.workspace }}/firmware-source
+          CHAINPAD_RELEASE_REF: refs/tags/${{ inputs.release_tag }}
+        run: python scripts/package_tagged.py
       - name: Update Pages content with existing firmware
         if: steps.firmware.outputs.release != 'true'
+        env:
+          CHAINPAD_SOURCE_ROOT: ${{ github.workspace }}/firmware-source
         run: python scripts/build_site.py --site-only
       - name: Verify tagged distribution before deploying
         if: steps.firmware.outputs.release == 'true'
-        run: python scripts/publish_release.py _site --validate-only --require-tag
+        env:
+          CHAINPAD_SOURCE_ROOT: ${{ github.workspace }}/firmware-source
+          CHAINPAD_RELEASE_REF: refs/tags/${{ inputs.release_tag }}
+        run: python scripts/publish_release.py firmware-source/_site --validate-only --require-tag
       - name: Verify preserved distribution before deploying
         if: steps.firmware.outputs.release != 'true'
-        run: python scripts/publish_release.py _site --validate-only
+        env:
+          CHAINPAD_SOURCE_ROOT: ${{ github.workspace }}/firmware-source
+        run: python scripts/publish_release.py firmware-source/_site --validate-only
       - uses: actions/configure-pages@v6
         if: steps.firmware.outputs.deploy == 'true'
       - name: Retain firmware for Release publishing
@@ -115,16 +163,23 @@ jobs:
         with:
           name: firmware-release
           path: |
-            _site/build.json
-            _site/manifest.json
-            _site/changes.json
-            _site/firmware/*.bin
+            firmware-source/_site/build.json
+            firmware-source/_site/manifest.json
+            firmware-source/_site/changes.json
+            firmware-source/_site/firmware/*.bin
           if-no-files-found: error
           retention-days: 7
       - uses: actions/upload-pages-artifact@v5
         if: steps.firmware.outputs.deploy == 'true'
         with:
-          path: _site
+          path: firmware-source/_site
+      - name: Retain exact expected public content
+        if: steps.firmware.outputs.deploy == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: expected-pages
+          path: firmware-source/_site
+          retention-days: 7
   deploy:
     needs: build
     if: needs.build.outputs.deploy == 'true'
@@ -140,8 +195,8 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v5
   release:
-    needs: [build, deploy]
-    if: always() && needs.build.result == 'success' && needs.build.outputs.release == 'true' && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped')
+    needs: [build, deploy, verify-public]
+    if: always() && needs.build.result == 'success' && needs.build.outputs.release == 'true' && ((needs.deploy.result == 'success' && needs.verify-public.result == 'success') || (needs.build.outputs.deploy == 'false' && needs.deploy.result == 'skipped'))
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -152,6 +207,11 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ inputs.release_tag }}
+          path: firmware-source
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           name: firmware-release
@@ -159,4 +219,22 @@ jobs:
       - name: Publish new firmware version
         env:
           GH_TOKEN: ${{ github.token }}
+          CHAINPAD_SOURCE_ROOT: ${{ github.workspace }}/firmware-source
+          CHAINPAD_RELEASE_REF: refs/tags/${{ inputs.release_tag }}
         run: python scripts/publish_release.py release-assets --require-tag
+  verify-public:
+    needs: [build, deploy]
+    if: needs.deploy.result == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r scripts/requirements-pages.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: expected-pages
+          path: expected-pages
+      - name: Verify bytes served by public Pages before publishing Release
+        run: python scripts/verify_deployment.py expected-pages
