@@ -26,4 +26,12 @@
 
 ## 実環境検証
 
-修正後のmain実行、mainからのv0.10.0復旧、公開URLとの一致を確認して追記する。
+- 修正コミット：`cdec41b`。
+- main実行42168666377：通常の公開済みFirmware保持、Pages更新、公開URL照合が成功。
+- main上の手動実行42168792169（release_tag=v0.10.0）：4機種ビルド・検査、公開済みRelease添付ファイルの再利用、Pages更新、公開URL照合、既存Release保持が成功。
+- ローカル環境からも公開URLを取得し、版0.10.0・コミット`d44b70603535f950f7a228d3a2f0a7af88ff72d7`を確認。
+- build.json／manifest.json／changes.json／S3・C5・C6のbin全6ファイルについて、Release APIが返す添付ファイルのサイズ・SHA256と一致。
+- v0.10.0がDraft・PrereleaseではないLatest Releaseであることを確認。
+- 公開済みタグ・Releaseの添付ファイルは変更していない。履歴JSONは3,370 bytes。
+- 新しいタグpushからmainへの自動引き継ぎは構文検証済み。実タグを追加する試験は行っておらず、今回の実環境検証はmain手動実行からの経路。
+- GitHub内部の根本原因は未確定だが、mainコンテキストへの切り替えによる配信更新と実配信照合の成功を確認した。
