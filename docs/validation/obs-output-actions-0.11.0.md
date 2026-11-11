@@ -18,6 +18,8 @@
 - 既存処理による履歴生成：6版、3,942 bytes。配布用JSONは手編集していない。
 - バージョン変更後の`pio run`：S3／C3／C6／C5の全4機種で成功。
 - 全4機種の`tests/check_image.py`：パーティション・統合イメージ配置・Flashヘッダー・機種識別・USB descriptor gatingの検査に成功。
+- 実装・準備コミット`7abb567`に対し、最終binを既存の自動生成処理で包装。6配布ファイル、版0.11.0、コミット、サイズ・SHA256、6版・3,942 bytesの履歴を検証。
+- `publish_release.py --validate-only --require-tag`：タグの実行コンテキストのみを模擬して成功。対象コミットのソース・CHANGELOGとの一致を確認。実タグ作成や公開操作は未実施。
 
 ### 最終firmware.bin SHA256
 
