@@ -92,6 +92,43 @@ function historyFixture(mutate=()=>{},fetchHistory){
   return f;
 }
 const device={version:'0.8.0',hardware:hardware('S3')};
+test('device version changes refresh notification/history without another public lookup',async()=>{
+  const f=historyFixture();await f.check(device);await settle();
+  const panel=f.get('firmwareUpdate'),original=panel.children[2].children[0];original.open=true;
+  await f.check(device);assert.equal(panel.children[2].children[0],original);assert(original.open);
+  await f.check({...device,version:'0.11.0'});await settle();
+  assert.match(panel.children[0].textContent,/現在：v0.11.0/);
+  const details=panel.children[2].children[0];assert.equal(details.children.length,2);
+  assert.equal(details.children[1].children[0].children[0].textContent,'v0.12.0 ↗');
+  for(const version of ['0.12.0','0.13.0']){await f.check({...device,version});assert(panel.hidden);assert.equal(panel.children.length,0);}
+  await f.check(device);await settle();assert(!panel.hidden);assert.equal(f.calls.length,2);
+});
+test('metadata arriving after a device update uses the latest device version',async()=>{
+  let resolve;const f=fixture(()=>new Promise(r=>resolve=r));
+  const pending=f.check(device);
+  await f.check({...device,version:'0.12.0'});
+  resolve(response(metadata('0.12.0')));await pending;
+  assert(f.get('firmwareUpdate').hidden);assert.equal(f.calls.length,1);
+  await f.check({...device,version:'0.11.0'});await settle();
+  assert(!f.get('firmwareUpdate').hidden);assert.equal(f.calls.length,1);
+});
+test('late history cannot restore a notification cleared by a device update',async()=>{
+  let reject;const f=historyFixture(()=>{},()=>new Promise((_,r)=>reject=r));
+  await f.check(device);await f.check({...device,version:'0.12.0'});
+  reject(Error('offline'));await settle();
+  const panel=f.get('firmwareUpdate');assert(panel.hidden);assert.equal(panel.children.length,0);
+  await f.check({...device,version:'0.11.0'});await settle();
+  assert(!panel.hidden);assert.equal(panel.children[2].children[1].href,'https://github.com/shimez/ChainPad/releases');
+  assert.equal(f.calls.length,2);
+});
+test('unsupported or invalid device status clears stale notifications',async()=>{
+  const f=fixture();await f.check(device);assert(!f.get('firmwareUpdate').hidden);
+  for(const status of [{...device,hardware:hardware('C3')},{...device,version:'bad'}]){
+    await f.check(status);assert(f.get('firmwareUpdate').hidden);
+    await f.check(device);assert(!f.get('firmwareUpdate').hidden);
+  }
+  assert.equal(f.calls.length,1);
+});
 test('history filters numeric range, sorts, initially renders three and lazily expands the rest',async()=>{
   const f=historyFixture();await f.check(device);await settle();
   const panel=f.get('firmwareUpdate'),details=panel.children[2].children[0];

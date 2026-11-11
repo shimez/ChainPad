@@ -63,7 +63,7 @@ const FirmwareUpdate = (() => {
     if(!entry.features.length&&!entry.improvements.length)block.append(element('p','追加機能・修正改善の記載はありません。'));
     return block;
   }
-  async function loadHistory(container,info,current){
+  async function fetchHistory(info){
     let timer;const controller=new AbortController();
     try{
       const ref=info.changes;
@@ -72,7 +72,12 @@ const FirmwareUpdate = (() => {
       const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('history timeout'));},5000);});
       const request=async()=>readHistory(await fetch(new URL('changes.json',metadataUrl).href,
         {mode:'cors',credentials:'omit',cache:'no-store',signal:controller.signal}),ref.bytes);
-      const entries=records(await Promise.race([request(),timeout]),info,current);
+      return await Promise.race([request(),timeout]);
+    }finally{if(timer!==undefined)clearTimeout(timer);}
+  }
+  async function loadHistory(container,info,current,data){
+    try{
+      const entries=records(await data,info,current);
       const details=element('details'),summary=element('summary','追加・改善された内容を見る');
       details.append(summary);
       for(const entry of entries.slice(0,3))details.append(renderRelease(entry));
@@ -85,33 +90,42 @@ const FirmwareUpdate = (() => {
       container.replaceChildren(details);
     }catch(_){
       container.replaceChildren(element('span','変更履歴を取得できませんでした。 '),external(releasesUrl,'GitHub Releasesで確認 ↗'));
-    }finally{if(timer!==undefined)clearTimeout(timer);}
+    }
   }
   function create(panel){
-    let started=false;
+    let started=false,info=null,current=null,rendered=null,historyData;
+    function render(){
+      if(!panel)return;
+      const key=current&&info?`${current.hardware}:${current.version}`:null;
+      if(key===rendered)return;
+      rendered=key;
+      if(!current||!info||!newer(info.version,current.version)||
+        !info.files.some(file=>file&&file.chipFamily===families[current.hardware])){
+        panel.hidden=true;panel.replaceChildren();return;
+      }
+      const text=element('span',`新しいファームウェア v${info.version} が公開されています（現在：v${current.version}）。 `);
+      text.setAttribute('role','status');
+      panel.replaceChildren(text,external(installerUrl,'Web Installerを開く ↗'));panel.hidden=false;
+      const history=element('div','変更履歴を読み込み中…');history.className='firmware-history';panel.append(history);
+      // One shared request; late results can only update their original container.
+      if(!historyData)historyData=fetchHistory(info);
+      void loadHistory(history,info,current.version,historyData);
+    }
     async function check(status){
       let timer;
       try{
-        if(started||!panel||!status||!version(status.version)||
-          !Object.prototype.hasOwnProperty.call(families,status.hardware))return;
+        current=status&&version(status.version)&&Object.prototype.hasOwnProperty.call(families,status.hardware)
+          ?{version:status.version,hardware:status.hardware}:null;
+        render();
+        if(started||!panel||!current)return;
         started=true;
-        const current=status.version,family=families[status.hardware];
         const controller=new AbortController();
         timer=setTimeout(()=>controller.abort(),5000);
         const response=await fetch(metadataUrl,{mode:'cors',credentials:'omit',cache:'no-store',signal:controller.signal});
         if(!response.ok)return;
-        const info=await response.json();
-        if(!info||!newer(info.version,current)||!Array.isArray(info.files)||
-          !info.files.some(file=>file&&file.chipFamily===family))return;
-        const text=document.createElement('span');
-        text.setAttribute('role','status');
-        text.textContent=`新しいファームウェア v${info.version} が公開されています（現在：v${current}）。 `;
-        const link=document.createElement('a');
-        link.href=installerUrl;link.target='_blank';link.rel='noopener noreferrer';
-        link.textContent='Web Installerを開く ↗';
-        panel.replaceChildren(text,link);panel.hidden=false;
-        const history=element('div','変更履歴を読み込み中…');history.className='firmware-history';panel.append(history);
-        void loadHistory(history,info,current);
+        const data=await response.json();
+        if(!data||!version(data.version)||!Array.isArray(data.files))return;
+        info=data;render();
       }catch(_){
         // Offline, timeout, CORS and malformed metadata are intentionally silent.
       }finally{if(timer!==undefined)clearTimeout(timer);}
