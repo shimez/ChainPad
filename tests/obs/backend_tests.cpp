@@ -401,6 +401,20 @@ int main(){
     assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();const auto mediaSent=requests();
     rtos::step(3001);ready();backendsTick(0);assert(requests()==mediaSent&&obsActionStatus().last.code==-4);
     std::cout<<"PASS media Worker: filtered isolated cache, manual fallback, six actions, nonblocking chains, FIFO, failure and no replay\n";
+    for(unsigned i=0;i<7;++i){
+      Action output;output.protocol=Protocol::Obs;
+      output.obsOperation=obs::Operation(unsigned(obs::Operation::StartVirtualCam)+i);
+      config.chains[0].actions[1]=output;
+      const auto before=oscSent;assert(engine.trigger({0,0})&&!engine.activeCount());assert(oscSent==before+1);
+      rtos::step();auto sent=packet();
+      assert(sent["d"]["requestType"]==obs::requestType(output.obsOperation));
+      assert(sent["d"]["requestData"].isNull());
+      const auto count=requests();reply(sent,i!=6);backendsTick(0);rtos::step();
+      assert(obsActionStatus().last.success==(i!=6));
+      assert(requests()==count); // Save failure must not start the buffer or retry.
+      if(i==6)assert(obsActionStatus().last.code==600);
+    }
+    std::cout<<"PASS output Worker: seven actions in chains, direct Toggle, Save failure without auto-start/retry\n";
     a.obsOperation=obs::Operation::SetInputVolume;strcpy(a.obsTarget,"manual audio");
     for(float db:{-100.0f,-6.5f,0.0f,26.0f}){
       a.obsVolume={db,false};assert(obsActionDispatch(a)==SendResult::Accepted);rtos::step();

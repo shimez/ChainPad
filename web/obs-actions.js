@@ -3,6 +3,11 @@ const ObsActionsUI = (() => {
   const operations = [['setCurrentProgramScene','シーン切り替え'],['setInputMute','ミュート設定'],['startStream','配信開始','配信・録画制御'],['stopStream','配信停止','配信・録画制御'],['startRecord','録画開始','配信・録画制御'],['stopRecord','録画停止','配信・録画制御'],['groupItemVisibility','グループ内アイテム表示制御','アイテム表示制御'],['setSceneItemVisibility','シーン内アイテム表示制御','アイテム表示制御'],['triggerMediaInputAction','メディア制御']];
   const mediaActions=[['restart','先頭から再生'],['stop','停止'],['pause','一時停止'],['play','再生再開'],['next','次へ'],['previous','前へ']];
   operations.push(['setInputVolume','音量調整']);
+  const outputGroups=[
+    {operation:'startVirtualCam',label:'仮想カメラ',actions:[['startVirtualCam','Start（開始）'],['stopVirtualCam','Stop（停止）'],['toggleVirtualCam','Toggle（切り替え）']]},
+    {operation:'startReplayBuffer',label:'リプレイバッファ',actions:[['startReplayBuffer','Start（開始）'],['stopReplayBuffer','Stop（停止）'],['toggleReplayBuffer','Toggle（切り替え）'],['saveReplayBuffer','Save（保存）']]}
+  ];
+  outputGroups.forEach(group=>operations.push([group.operation,group.label]));
   function defaults(operation='setCurrentProgramScene') {
     if(operation==='groupItemVisibility')return {...defaults('setSceneItemVisibility'),containerType:'group'};
     if(operation==='triggerMediaInputAction')return {protocol:'obs',delayMs:0,operation,inputName:'',mediaAction:'restart'};
@@ -68,6 +73,7 @@ const ObsActionsUI = (() => {
     fields.className+=' obs-fields';
     const supported=capabilities.obsActions===true;
     let picker;
+    const outputGroup=outputGroups.find(group=>group.actions.some(([operation])=>operation===a.operation));
     const media=a.operation==='triggerMediaInputAction';
     const volume=a.operation==='setInputVolume';
     if(volume)fields.className+=sourceOnly?' obs-rotation-volume':' obs-volume';
@@ -77,7 +83,7 @@ const ObsActionsUI = (() => {
     note.textContent=supported?'OBS接続設定を共通利用します。':'この機種ではOBS Action非対応です。設定は保持・編集できますが、実行時はスキップします。';
     // The group operation is an editor-only choice; the persisted operation stays unchanged.
     if(!sourceOnly){
-    const selectedOperation=a.operation==='toggleInputMute'?'setInputMute':a.operation==='setSceneItemVisibility'&&a.containerType==='group'?'groupItemVisibility':a.operation;
+    const selectedOperation=outputGroup?outputGroup.operation:a.operation==='toggleInputMute'?'setInputMute':a.operation==='setSceneItemVisibility'&&a.containerType==='group'?'groupItemVisibility':a.operation;
     const operationField=control('OBS操作',selectedOperation,operations,op=>{
       if(op===selectedOperation)return;
       const next=defaults(op);
@@ -164,6 +170,7 @@ const ObsActionsUI = (() => {
       field.append(warning);fields.append(field);if(refresh)fields.append(refreshField);update();
     }
     if(sourceOnly){if(picker){picker.style.order='1';fields.append(picker);}note.style.order='1';fields.append(note);return;}
+    if(outputGroup)fields.append(control(outputGroup.label+'操作',a.operation,outputGroup.actions,value=>{a.operation=value;rerender();}));
     if(['setInputMute','toggleInputMute'].includes(a.operation))fields.append(control('ミュート',a.operation==='toggleInputMute'?'toggle':String(a.inputMuted),[['true','Enable（ミュート）'],['false','Disable（ミュート解除）'],['toggle','Toggle（切り替え）']],value=>{
       a.operation=value==='toggle'?'toggleInputMute':'setInputMute';
       if(value==='toggle')delete a.inputMuted;else a.inputMuted=value==='true';

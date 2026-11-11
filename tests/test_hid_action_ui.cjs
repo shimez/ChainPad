@@ -123,6 +123,33 @@ for(const supported of [true,false]){
   }
 }
 ctx.capabilities.obsActions=true;
+for(const [group,label,ops] of [
+  ['startVirtualCam','仮想カメラ',['startVirtualCam','stopVirtualCam','toggleVirtualCam']],
+  ['startReplayBuffer','リプレイバッファ',['startReplayBuffer','stopReplayBuffer','toggleReplayBuffer','saveReplayBuffer']]
+]){
+  for(const operation of ops){
+    for(let input=0;input<28;input++){
+      const a={protocol:'obs',delayMs:0,operation};show(a,input);
+      assert.equal(field('OBS操作').value,group);
+      assert.equal(field(label+'操作').value,operation);
+      assert.equal(field(label+'操作').children.length,ops.length);
+      assert(ctx.actionSummary(a).includes(label));
+      assert(ctx.actionSummary(a).includes(operation.startsWith('start')?'Start':operation.startsWith('stop')?'Stop':operation.startsWith('toggle')?'Toggle':'Save'));
+      assert.equal(all().filter(n=>n.tag==='label').length,3);
+      choose('OBS操作',group);assert.equal(a.operation,operation);
+      for(const next of ops){choose(label+'操作',next);assert.equal(a.operation,next);}
+      const saved=plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[input].actions[0]);
+      assert.deepEqual(saved,a);
+      assert.deepEqual(plain(P.read(P.full(config),'full',{...ctx.capabilities,obsActions:false}).config.chains[input].actions[0]),a);
+      if(input<26)assert.deepEqual(plain(P.read(P.key(config,Math.floor(input/2)),'key',ctx.capabilities).chains[input%2].actions[0]),a);
+      show(saved,input);assert.equal(field(label+'操作').value,saved.operation);
+      saved.inputName='unexpected';assert.throws(()=>P.read(P.full(config),'full',ctx.capabilities));
+    }
+  }
+  show({protocol:'obs',delayMs:0,operation:'setInputMute',inputName:'Mic',inputMuted:true});
+  choose('OBS操作',group);assert.deepEqual(plain(config.chains[0].actions[0]),{protocol:'obs',delayMs:0,operation:group});
+}
+console.log('PASS OBS outputs: two groups, seven operations, all chain events, summaries, Full/Key round-trip, parameter cleanup');
 // One UI operation retains the two existing persisted mute operations.
 for(const supported of [true,false]){
   ctx.capabilities.obsActions=supported;

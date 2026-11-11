@@ -6,7 +6,7 @@
 // Shared schema, including builds without an OBS Worker. No networking dependency.
 namespace chimera { namespace obs {
 constexpr size_t TARGET_LIMIT = 192;
-enum class Operation : uint8_t { SetCurrentProgramScene, StartStream, StopStream, StartRecord, StopRecord, SetInputMute, ToggleInputMute, SetSceneItemVisibility, TriggerMediaInputAction, SetInputVolume, GetSceneList, GetInputList, GetGroupList, GetSceneItemList, GetGroupSceneItemList, GetSceneItemEnabled, GetMediaInputList, GetInputVolume };
+enum class Operation : uint8_t { SetCurrentProgramScene, StartStream, StopStream, StartRecord, StopRecord, SetInputMute, ToggleInputMute, SetSceneItemVisibility, TriggerMediaInputAction, SetInputVolume, GetSceneList, GetInputList, GetGroupList, GetSceneItemList, GetGroupSceneItemList, GetSceneItemEnabled, GetMediaInputList, GetInputVolume, StartVirtualCam, StopVirtualCam, ToggleVirtualCam, StartReplayBuffer, StopReplayBuffer, ToggleReplayBuffer, SaveReplayBuffer };
 // Byte storage keeps the OSC-string union's byte alignment and Action size.
 struct VolumeSettings {
   uint8_t valueBytes[sizeof(float)];
@@ -65,6 +65,13 @@ struct ItemSettings {
 };
 inline const char* operationName(Operation op) {
   switch (op) {
+    case Operation::StartVirtualCam: return "startVirtualCam";
+    case Operation::StopVirtualCam: return "stopVirtualCam";
+    case Operation::ToggleVirtualCam: return "toggleVirtualCam";
+    case Operation::StartReplayBuffer: return "startReplayBuffer";
+    case Operation::StopReplayBuffer: return "stopReplayBuffer";
+    case Operation::ToggleReplayBuffer: return "toggleReplayBuffer";
+    case Operation::SaveReplayBuffer: return "saveReplayBuffer";
     case Operation::GetSceneList: return "getSceneList"; // Internal discovery, never an Action.
     case Operation::SetInputVolume: return "setInputVolume";
     case Operation::GetInputVolume: return "getInputVolume";
@@ -88,6 +95,13 @@ inline const char* operationName(Operation op) {
 }
 inline const char* requestType(Operation op) {
   switch (op) {
+    case Operation::StartVirtualCam: return "StartVirtualCam";
+    case Operation::StopVirtualCam: return "StopVirtualCam";
+    case Operation::ToggleVirtualCam: return "ToggleVirtualCam";
+    case Operation::StartReplayBuffer: return "StartReplayBuffer";
+    case Operation::StopReplayBuffer: return "StopReplayBuffer";
+    case Operation::ToggleReplayBuffer: return "ToggleReplayBuffer";
+    case Operation::SaveReplayBuffer: return "SaveReplayBuffer";
     case Operation::GetSceneList: return "GetSceneList";
     case Operation::SetInputVolume: return "SetInputVolume";
     case Operation::GetInputVolume: return "GetInputVolume";
@@ -112,7 +126,9 @@ inline const char* requestType(Operation op) {
 inline bool named(Operation op) { return op == Operation::SetInputVolume || op == Operation::GetInputVolume || op == Operation::SetCurrentProgramScene || op == Operation::SetInputMute || op == Operation::ToggleInputMute || op == Operation::TriggerMediaInputAction || op == Operation::SetSceneItemVisibility || op == Operation::GetSceneItemEnabled || itemList(op); }
 inline bool parseOperation(const char* name, Operation& out) {
   if (!name) return false;
-  for (unsigned i = 0; i <= unsigned(Operation::SetInputVolume); ++i) {
+  for (unsigned i = 0; i <= unsigned(Operation::SaveReplayBuffer); ++i) {
+    // Internal query operations must never be accepted as persisted Actions.
+    if (i > unsigned(Operation::SetInputVolume) && i < unsigned(Operation::StartVirtualCam)) continue;
     const auto op = Operation(i);
     if (!strcmp(name, operationName(op))) { out = op; return true; }
   }

@@ -10,6 +10,23 @@ static Received receive(Protocol& p, const char* text) { return p.receive(text, 
 int main() {
   static_assert(sizeof(Command)==216,"Volume reuses Command storage");
   {
+    const char* names[]={"startVirtualCam","stopVirtualCam","toggleVirtualCam","startReplayBuffer","stopReplayBuffer","toggleReplayBuffer","saveReplayBuffer"};
+    const char* requests[]={"StartVirtualCam","StopVirtualCam","ToggleVirtualCam","StartReplayBuffer","StopReplayBuffer","ToggleReplayBuffer","SaveReplayBuffer"};
+    for(unsigned i=0;i<7;++i){
+      Command c;assert(parseOperation(names[i],c.operation));
+      assert(!strcmp(operationName(c.operation),names[i]));
+      for(bool success:{true,false}){
+        Protocol p;p.state=State::Ready;assert(p.request(c,1,0));
+        JsonDocument wire;assert(!deserializeJson(wire,p.wire));
+        assert(wire["d"]["requestType"]==requests[i]);assert(wire["d"]["requestData"].isNull());
+        std::string response=std::string(R"({"op":7,"d":{"requestId":"chainpad-1","requestType":")")+requests[i]+R"(","requestStatus":{"result":)"+(success?"true":"false")+R"(,"code":)"+(success?"100":"500")+"}}}";
+        assert(receive(p,response.c_str())==Received::Result&&p.success==success);
+      }
+    }
+    Operation op;
+    for(const char* internal:{"getSceneList","getInputList","getGroupList","getSceneItemList","getGroupSceneItemList","getSceneItemEnabled","getMediaInputList","getInputVolume"})assert(!parseOperation(internal,op));
+  }
+  {
     for(float db:{-100.0f,-6.5f,0.0f,26.0f}){
       Protocol p;p.state=State::Ready;Command c;c.operation=Operation::SetInputVolume;c.volume={db,false};strcpy(c.target,"Mic");
       assert(p.request(c,1,0));JsonDocument wire;deserializeJson(wire,p.wire);

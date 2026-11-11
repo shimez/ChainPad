@@ -25,6 +25,11 @@ void obsActionTests() {
       strcpy(a.obsTarget,"音声 日本語");a.obsVolume={i?-1.25f:-6.5f,i!=0};
     }
   }
+  source.chains[3].count=7;
+  for(unsigned i=0;i<7;++i){
+    auto& a=source.chains[3].actions[i];a.protocol=Protocol::Obs;
+    a.obsOperation=obs::Operation(unsigned(obs::Operation::StartVirtualCam)+i);
+  }
   JsonDocument doc; assert(encodeConfig(source,doc));
   assert(decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
   assert(saveSource(decoded,error));
@@ -32,6 +37,16 @@ void obsActionTests() {
   JsonDocument restored; assert(encodeConfig(config,restored));
   String before,after; serializeJson(doc,before); serializeJson(restored,after);
   assert(before==after);
+  for(unsigned i=0;i<7;++i){
+    auto a=doc["chains"][3]["actions"][i];assert(a.size()==3);
+    assert(config.chains[3].actions[i].obsOperation==source.chains[3].actions[i].obsOperation);
+    a["inputName"]="unexpected";assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));a.remove("inputName");
+  }
+  auto output=doc["chains"][3]["actions"][0];
+  for(const char* op:{"getSceneList","getInputVolume","getSceneItemEnabled","virtualCamera","saveReplayBufferBad"}){
+    output["operation"]=op;assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));
+  }
+  output["operation"]="startVirtualCam";
   auto volume=doc["chains"][2]["actions"][0];
   for(const char* invalid:{"null","true","\"0\"","-100.01","26.01","1e100"}){
     JsonDocument v;deserializeJson(v,invalid);volume["volumeDb"]=v.as<JsonVariantConst>();assert(!decodeConfig(doc.as<JsonVariantConst>(),decoded,error));

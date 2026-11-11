@@ -16,7 +16,7 @@ const Presets = (() => {
       const volume=a.operation==='setInputVolume';
       const named=item||media||volume||['setCurrentProgramScene','setInputMute','toggleInputMute'].includes(a.operation);
       const mute=a.operation==='setInputMute';
-      if (!['setCurrentProgramScene','startStream','stopStream','startRecord','stopRecord','setInputMute','toggleInputMute','setSceneItemVisibility','triggerMediaInputAction','setInputVolume'].includes(a.operation) || a.delayMs!==0 ||
+      if (!['setCurrentProgramScene','startStream','stopStream','startRecord','stopRecord','setInputMute','toggleInputMute','setSceneItemVisibility','triggerMediaInputAction','setInputVolume','startVirtualCam','stopVirtualCam','toggleVirtualCam','startReplayBuffer','stopReplayBuffer','toggleReplayBuffer','saveReplayBuffer'].includes(a.operation) || a.delayMs!==0 ||
           Object.keys(a).length!==3+Number(named)+Number(mute)+Number(media)+(volume?2:0)+(item?3:0)) fail('OBS Actionが不正です。');
       if(volume&&(!['absolute','relative'].includes(a.volumeMode)||!Number.isFinite(a.volumeDb)||a.volumeDb<(a.volumeMode==='relative'?-126:-100)||a.volumeDb>(a.volumeMode==='relative'?126:26)))fail('OBS音量の調整方法・dB値が不正です。');
       if(named){
