@@ -13,6 +13,20 @@ function oscTextControl(label,value,onchange,limit){
   input.oninput=()=>{update();onchange(input.value);changed();};
   update();return wrap;
 }
+function oscAddressControl(a){
+  const wrap=document.createElement('div');wrap.className='osc-address-control';
+  const field=oscTextControl('Address',a.address,v=>{a.address=v;showHint();},192);
+  const input=field.querySelector('input');input.classList.add('osc-address-input');
+  const pick=document.createElement('button');pick.type='button';pick.className='osc-address-picker-button';pick.textContent='一覧から選択';
+  pick.onclick=()=>OscAddresses.open(entry=>{
+    OscAddresses.apply(a,entry);changed();renderActions();
+    const editor=document.getElementById(`action-details-${editingAction}`);
+    editor?.querySelector('.osc-address-picker-button')?.focus();
+  },pick);
+  const hint=document.createElement('small');hint.className='hint osc-address-hint';
+  function showHint(){const entry=OscAddresses.find(a.address);hint.textContent=entry?entry.note:'';hint.hidden=!entry;}
+  wrap.append(field,pick,hint);showHint();return wrap;
+}
 function actionSlots(){
   if(selected>=26)return {used:current().length,limit:8,label:'このEvent'};
   const base=selected-selected%2;

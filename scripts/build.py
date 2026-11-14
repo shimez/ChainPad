@@ -20,6 +20,7 @@ for filename, symbol in (("index.html", "WEB_UI"), ("wifi.html", "WIFI_UI")):
         html = html.replace('<script src="obs-settings.js"></script>', '<script>\n' + (root / 'web/obs-settings.js').read_text(encoding='utf-8') + '\n</script>')
         html = html.replace('<script src="builtin-config-data.js"></script>', '<script>\n' + (root / 'web/builtin-config-data.js').read_text(encoding='utf-8') + '\n</script>')
         html = html.replace('<script src="rotation-ui.js"></script>', '<script>\n' + (root / "web/rotation-ui.js").read_text(encoding="utf-8") + '\n</script>')
+        html = html.replace('<script src="osc-addresses.js"></script>', '<script>\n' + (root / "web/osc-addresses.js").read_text(encoding="utf-8") + '\n</script>')
         html = html.replace('<script src="action-ui.js"></script>', '<script>\n' + (root / "web/action-ui.js").read_text(encoding="utf-8") + '\n</script>')
         html = html.replace('<script src="presets.js"></script>', '<script>\n' + (root / "web/presets.js").read_text(encoding="utf-8") + '\n</script>')
     asset += f'inline const char {symbol}[] PROGMEM = R"CHIMERA(' + html + ')CHIMERA";\n'

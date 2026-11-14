@@ -245,6 +245,9 @@ Preview Positionのスライダーでエンコーダーのポジション（何�
 ![ChainPad WebUI OSCアクション](./images/chainpad-webui-action-osc.png)
 
 - Address欄には、送信するOSC Addressを指定します。VRChatで指定できるOSCアドレスに関しては[VRChat WikiのOSCの項目](https://wiki.vrchat.com/wiki/OSC)を参照してください。
+- 「一覧から選択」でVRChat向けの候補を操作名・Addressで検索し、カテゴリで絞り込めます。選択するとAddressとTypeを反映します。同じ型ならValueを維持し、型が変わる場合は0／false／空文字に戻します。説明にある範囲に合わせてValueを設定してください。
+- 入力ボタンは、Release側で0に戻す設定も必要です。AFKToggleは1を送信した後、0を送信した時点で切り替わります。カメラのClose／Capture／CaptureDelayedはtrue／falseのどちらでも送信するたびに実行されるため、Pressにtrueを設定し、Release側は空にしてください。カメラの表示設定などはtrue／falseで状態を指定します。
+- 一覧はVRChat Docs・VRChat Wikiを参照した固定候補です。OSCQueryによる自動取得ではありません。アバター固有のAddressは自由入力でき、読み取り専用・複数引数が必要な項目は一覧に含みません。候補の選択だけでは送信されず、「保存・適用」で本体へ反映します。
 - Typeでは、値の型を指定します。
 - Value欄には送信する値を入力します。
 
