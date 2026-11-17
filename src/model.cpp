@@ -1,4 +1,5 @@
 #include "model.h"
+#include "chain_loop.h"
 #include <IPAddress.h>
 #include <cmath>
 #include <memory>
@@ -54,6 +55,8 @@ bool integer(JsonVariantConst v, int64_t low, int64_t high) {
   return v.is<int64_t>() && v.as<int64_t>() >= low && v.as<int64_t>() <= high;
 }
 bool parseAction(JsonVariantConst j, Action& a) {
+  const auto loop = loops::parse(j, a);
+  if (loop != loops::ParseResult::NotLoop) return loop == loops::ParseResult::Valid;
   if (!j.is<JsonObjectConst>()) return false;
   String p = j["protocol"] | "";
   if (p == "obs") {
@@ -220,8 +223,8 @@ bool decodeChain(JsonVariantConst j, uint8_t id, Chain& out, String& error) {
       if (!parseAction(action, a)) return false;
       out.actions[out.count++] = a;
     }
-  error = "";
-  return true;
+  loops::Layout layout;
+  return loops::analyze(out, layout, error, eventActionLimit(id));
 }
 void encodeCapabilities(JsonDocument& doc) {
   doc.clear();
@@ -230,6 +233,7 @@ void encodeCapabilities(JsonDocument& doc) {
   doc["usbKeyboard"] = HAS_USB_KEYBOARD;
   doc["defaultMidiTransport"] = HAS_USB_MIDI ? "both" : "ble";
   doc["maxWaitMs"] = MAX_WAIT_MS;
+  doc["maxLoopCount"] = loops::MAX_COUNT;
   doc["schemaVersion"] = 2;
   doc["wifiPasswordUpdate"] = "omit-preserves";
   doc["obsWebSocket"] = bool(CHAINPAD_HAS_OBS);
@@ -278,6 +282,8 @@ bool encodeNetworkPublic(const NetworkSettings& source, JsonDocument& doc, bool 
   return !doc.overflowed() && n.size() == (wifiOnly ? 2 : 4);
 }
 template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocument& doc) {
+    loops::Layout layout; String error;
+    if (id >= INPUT_COUNT || !loops::analyze(source, layout, error, eventActionLimit(id))) return false;
     doc.clear(); auto c = doc.to<JsonObject>(); c["input"] = id;
     if (c.isNull()) return false;
     auto actions = c["actions"].to<JsonArray>();
@@ -285,6 +291,10 @@ template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocum
     for (uint8_t k = 0; k < source.count; ++k) {
       const auto& a = source.actions[k]; auto j = actions.add<JsonObject>();
       if (j.isNull()) return false;
+      if (loops::marker(a)) {
+        if (!loops::encode(a, j)) return false;
+        continue;
+      }
       j["delayMs"] = a.protocol == Protocol::Wait ? a.delayMs : 0;
       if (a.protocol == Protocol::Obs) {
         if (a.obsOperation == obs::Operation::GetSceneList) return false;

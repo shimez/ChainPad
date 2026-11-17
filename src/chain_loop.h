@@ -71,10 +71,11 @@ bool analyze(const ChainLike& chain, Layout& out, String& error, uint8_t limit =
   for (uint8_t index = 0; index < chain.count; ++index) {
     const auto& action = chain.actions[index];
     if (!marker(action)) continue;
-    error = "Invalid Loop marker at Action " + String(index + 1);
-    if (action.delayMs) return false;
+    if (action.delayMs) { error = "Invalid Loop marker at Action " + String(index + 1); return false; }
     if (action.protocol == Protocol::LoopStart) {
-      if (action.loopCount < 1 || action.loopCount > MAX_COUNT || depth == MAX_DEPTH) return false;
+      if (action.loopCount < 1 || action.loopCount > MAX_COUNT || depth == MAX_DEPTH) {
+        error = "Invalid Loop marker at Action " + String(index + 1); return false;
+      }
       stack[depth++] = index;
       if (depth > next.maxDepth) next.maxDepth = depth;
       ++next.count;

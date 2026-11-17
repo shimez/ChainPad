@@ -349,6 +349,7 @@ void setup() {
   });
 }
 void loop() {
+  engine.beginCycle();
   static uint32_t observedOverflows = 0;
 #if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
   obsControl.observeLoop(micros());

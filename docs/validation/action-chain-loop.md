@@ -117,4 +117,75 @@
 - `git diff --check`：成功（LF→CRLFの通知のみ）。
 - 途中でPowerShellの起動エラーが再発したが、上記JavaScript・Git確認はその後実行できた。
 - 全機種Firmwareビルド・イメージ検査・実機確認は後続Phaseで実施する。
-- コミット：レビュー・承認待ち。
+- コミット：レビュー承認後、`74dd329`に確定。
+
+## Phase 2 実装・検証（レビュー待ち）
+
+### 実行制御
+
+- `decodeChain`／`encodeChain`へLoop Codecと構造検証を接続。
+  Config全体・Event単位API・LittleFSのstaging／scan／loadが同じ検証を利用する。
+- `maxLoopCount: 999`をCapabilitiesへ追加。形式バージョンは維持。
+- Invocationごとに最大8段の固定長フレーム（残り回数と先頭位置）を持つ。
+  共有設定へカウンタを置かず、再入力を独立実行する。
+- Loop入りInvocationは1回の再開につき最大16命令、
+  全体でメインループ1回につき最大256命令。Header／Footer、Wait 0、Stopも消費する。
+- `beginCycle()`はHTTP処理より前に1回だけ呼ぶ。trigger・tick・Stop継続では予算をリセットしない。
+- tickでは残り予算を後続Invocationにも配分する。LoopなしChainは従来の同期実行と
+  安定した再開順序を維持し、この追加のLoop予算では遅延させない。
+- 満杯時、Loop Header／Wait（0も含む）／ペア送信より前のStopだけを受付例外とする。
+  この有限の直線prefixは予算切れでもStopまで実行し、他Invocationを解放する。
+  prefix分を残り予算から差し引き（最低0）、Loop本体は予算がなければ次cycleへ送る。
+  したがって256はLoop実行の予算であり、既存の直線Chainとこの受付prefixを含む
+  メインループ全体の命令数上限ではない。
+- 制御マーカーはBackendへ送らず、accepted／skippedの送信統計にも加えない。
+  内部の通常Action・Wait・Stopは従来どおり計数する。
+- 時間ではなく命令数で区切る。単独のBackend呼出し時間や実機通信遅延の上限は保証しない。
+
+### 重点検証
+
+- 32枠満杯でHeader前の出力が漏れないこと、Loop内Stopでは受付を救済しないこと。
+- 予算切れで満杯の場合も直線prefixのStopで受付し、本体は次cycleまで待つこと。
+- ネストごとの回数初期化、Release逆向きスロット、Wait最終周回・時刻折返し。
+- 最大回数・最大ネスト・32独立Invocation、連続Stopでの予算迂回防止。
+- ペア送信の各周回完了待ち、Backend unavailableのスキップ継続。
+- 全EventのConfig／LittleFS往復、不正構造のstaging拒否と既存設定の保持。
+
+### 検証進捗
+
+- 初回`tests/run_host.ps1`：通常版・HID trace版のLoop/既存回帰、
+  trace単体、C3／C6／C5 capabilityを含め全成功。
+- 追加した「予算切れ状態でもLoopなしChainを同期実行」
+  「Loop中Panic後のHID解除と再入力」を含む最終`tests/run_host.ps1`：全成功。
+  ホスト環境のEngineサイズは1440 bytes。Action=352、Chain=5636、Config=82992 bytesを維持。
+- PowerShell起動エラーが途中で再発したが、ホスト検証終了後は起動できた。
+- `pio run`：S3／C3／C6／C5の全4機種成功。
+- `tests/check_image.py --env xiao_esp32s3 xiao_esp32c3 xiao_esp32c6 xiao_esp32c5`：
+  全機種成功（partition／image配置／Flash header／機種識別／USB descriptor）。
+- `git diff --check`：成功（LF→CRLF通知のみ）。
+- Phase 2は未コミット。レビュー・コミット承認待ち。
+
+| 機種 | 静的RAM（bytes） | Application（bytes） |
+|---|---:|---:|
+| S3 | 139708 | 1680310 |
+| C3 | 137524 | 1518199 |
+| C6 | 181004 | 1917372 |
+| C5 | 105168 | 1971565 |
+
+検証した`firmware.bin`のSHA256：
+
+```text
+S3 7bf4d3e55fdca00a9f5b191a4398efe79f9dd6a085b27bf6745563778e8d898c
+C3 1dcd1f7a9dc9c99cd98c4b88d09343490bfc43732a5409b32799b0291987f7fe
+C6 2bdacc8d74adb767a128bbfc074bda825e284c2aa025968dde5739c7920a145c
+C5 5828a2c0fbbd330c7f7717238915e8060f89dae0618320ec0740ca1973cbac67
+```
+
+### 後続の確認事項
+
+- 実機への書込み・実機負荷計測は未実施。16／256命令という区切りの
+  動作はホストテストで確認したが、実機の最大応答遅延は未測定。
+- Phase 3統合後に、WaitなしLoop実行中のHTTP／入力／Panic応答と、
+  All Notes等の重いAction、USB／BLE／OBS併用時の応答性を実機確認する。
+- Configurator／PresetはPhase 3で接続する。本Phaseの成果はFirmware側の
+  実装・自動検証単位であり、Loop機能全体の公開準備完了を意味しない。

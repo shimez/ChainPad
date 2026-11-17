@@ -1007,6 +1007,7 @@ void stopOtherChainsTests() {
 #include "loop_tests.h"
 int main() {
   loopFoundationTests();
+  loopEngineTests();
   obsActionTests();
   rotationTests();
   configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests(); sharedSlotsTests();

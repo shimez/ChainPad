@@ -1,6 +1,7 @@
 #pragma once
 #include "model.h"
 #include "backends.h"
+#include "chain_loop.h"
 
 namespace chimera {
 // Logical event IDs are independent of matrix rows, columns and GPIOs.
@@ -14,18 +15,29 @@ struct EngineStats {
 };
 class Engine {
   public:
-   static constexpr uint8_t MAX_RUNNING = 32;
+    static constexpr uint8_t MAX_RUNNING = 32;
+    static constexpr uint16_t LOOP_CYCLE_BUDGET = 256;
+    static constexpr uint8_t LOOP_SLICE_BUDGET = 16;
+    // Call once before HTTP/input dispatch and tick, never from Stop continuation.
+    void beginCycle() { loopBudget = LOOP_CYCLE_BUDGET; }
    bool trigger(const InputEvent& event);
    void tick(uint32_t now);
    void cancelAll();
    uint8_t activeCount() const { return running; }
    EngineStats stats;
  private:
-    struct Invocation { uint8_t input = 0, next = 0; bool pairPending = false; uint32_t wakeAt = 0; } jobs[MAX_RUNNING];
+     struct Invocation {
+       struct Frame { uint16_t remaining; uint8_t start; };
+       uint8_t input = 0, next = 0, depth = 0;
+       bool pairPending = false, looping = false;
+       uint32_t wakeAt = 0;
+       Frame stack[loops::MAX_DEPTH]{};
+     } jobs[MAX_RUNNING];
+    uint16_t loopBudget = LOOP_CYCLE_BUDGET;
    uint8_t running = 0;
     enum class AdvanceResult { Complete, Waiting, StopOthers };
-    AdvanceResult advance(Invocation& job, uint32_t now);
-    void continueAfterStop(Invocation& job, uint32_t now, uint8_t others);
+     AdvanceResult advance(Invocation& job, uint32_t now, uint8_t& slice);
+     void continueAfterStop(Invocation& job, uint32_t now, uint8_t others, uint8_t& slice);
 };
 extern Engine engine;
 }
