@@ -1004,7 +1004,9 @@ void stopOtherChainsTests() {
   std::cout << "PASS Stop Other Chains: self preservation, array positions, retriggers, repeated Stops, full capacity, statistics, paired output, FIFO/rotation preservation, explicit recovery and panic\n";
 }
 #include "obs_action_tests.h"
+#include "loop_tests.h"
 int main() {
+  loopFoundationTests();
   obsActionTests();
   rotationTests();
   configTests(); wifiSaveTests(); transactionTests(); settingsScaleTests(); oscTests(); midiTests(); keyboardTests(); midiBothTests(); engineTests(); waitTests(); allNotesTests(); sharedSlotsTests();

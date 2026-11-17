@@ -14,7 +14,7 @@ constexpr size_t MAX_OSC_STRING_BYTES = 128;
 constexpr uint8_t eventActionLimit(uint8_t id) { return id < 26 ? MAX_ACTIONS : 8; }
 constexpr size_t MAX_RECORD_BYTES = 24576; // 16 maximum OSC Actions, including JSON escaping.
 constexpr uint32_t MAX_WAIT_MS = 86400000; // 24 hours; safely below half the millis() range.
-enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait, StopOtherChains, Obs };
+enum class Protocol : uint8_t { Osc, Midi, Keyboard, Wait, StopOtherChains, Obs, LoopStart, LoopEnd };
 enum class OscType : uint8_t { Int, Float, Bool, String };
 enum class MidiMessage : uint8_t { NoteOn, NoteOff, CC, AllNotesOn, AllNotesOff, NoteOnOff, AllNotesOnOff };
 inline bool allNotes(MidiMessage m) { return m == MidiMessage::AllNotesOn || m == MidiMessage::AllNotesOff || m == MidiMessage::AllNotesOnOff; }
@@ -32,7 +32,8 @@ struct Action {
   OscType oscType = OscType::Int;
   // OBS and OSC are mutually exclusive; target names do not enlarge every slot.
   union { char address[MAX_OSC_ADDRESS_BYTES + 1] = "/avatar/parameters/Costume"; char obsTarget[obs::TARGET_LIMIT + 1]; };
-  int32_t intValue = 2;
+  // OSC integer values and Loop repeat counts are mutually exclusive.
+  union { int32_t intValue = 2; uint32_t loopCount; };
   float floatValue = 0;
   bool boolValue = false;
   union { char stringValue[MAX_OSC_STRING_BYTES + 1] = ""; obs::ItemSettings obsItem; obs::MediaAction obsMediaAction; obs::VolumeSettings obsVolume; };

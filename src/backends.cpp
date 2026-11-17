@@ -22,6 +22,8 @@ SendResult dispatch(const Action& a, uint32_t) {
     case Protocol::Obs: return obsActionDispatch(a);
     case Protocol::Wait: return SendResult::Failed; // Owned by the Chain scheduler.
     case Protocol::StopOtherChains: return SendResult::Failed; // Owned by the Chain scheduler.
+    case Protocol::LoopStart:
+    case Protocol::LoopEnd: return SendResult::Failed; // Control markers are never backend output.
   }
   return SendResult::Failed;
 }
