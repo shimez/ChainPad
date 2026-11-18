@@ -67,7 +67,7 @@ async function saveError(failedPath){
   const get=id=>nodes[id]??={value:original.network[id],disabled:false};
   const ctx=vm.createContext({config:original,capabilities:{},dirty:true,saving:false,$:get,
     RotationPreview:{clone:structuredClone,stringify:JSON.stringify},Presets:{full:c=>c,read:c=>({config:c})},
-    cancelActionDrag(){},rotationSummary(){},message:text=>messages.push(text),document:{querySelectorAll:()=>[get('save')]},
+    cancelActionDrag(){},LoopEditor:{cancel(){}},rotationSummary(){},message:text=>messages.push(text),document:{querySelectorAll:()=>[get('save')]},
     fetch:async(path)=>{calls.push(path);const failed=path.startsWith('/api/'+failedPath);
       return new Response(JSON.stringify(failed?{ok:false,message:'Settings saved to storage, but runtime apply failed. Do not resave; Restart required.'}:{token:42,message:'Staged'}),{status:failed?400:200});}
   });

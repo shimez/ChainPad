@@ -22,6 +22,8 @@ for filename, symbol in (("index.html", "WEB_UI"), ("wifi.html", "WIFI_UI")):
         html = html.replace('<script src="rotation-ui.js"></script>', '<script>\n' + (root / "web/rotation-ui.js").read_text(encoding="utf-8") + '\n</script>')
         html = html.replace('<script src="osc-addresses.js"></script>', '<script>\n' + (root / "web/osc-addresses.js").read_text(encoding="utf-8") + '\n</script>')
         html = html.replace('<script src="action-ui.js"></script>', '<script>\n' + (root / "web/action-ui.js").read_text(encoding="utf-8") + '\n</script>')
+        for name in ("loop-model", "loop-editor"):
+            html = html.replace(f'<script src="{name}.js"></script>', '<script>\n' + (root / f"web/{name}.js").read_text(encoding="utf-8") + '\n</script>')
         html = html.replace('<script src="presets.js"></script>', '<script>\n' + (root / "web/presets.js").read_text(encoding="utf-8") + '\n</script>')
     asset += f'inline const char {symbol}[] PROGMEM = R"CHIMERA(' + html + ')CHIMERA";\n'
 target = root / "src/web_assets.h"

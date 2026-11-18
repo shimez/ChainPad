@@ -56,6 +56,8 @@ function hidFields(fields,a){
   }
 }
 function actionSummary(a) {
+  if(a.protocol==='loopStart')return `Loop · ${a.count}回`;
+  if(a.protocol==='loopEnd')return '';
   if(a.protocol==='obs'&&a.operation==='setInputVolume')return `音量調整 · ${a.inputName} · ${a.volumeMode==='relative'?`${a.volumeDb>=0?'+':''}${a.volumeDb} dB`:`${a.volumeDb} dBに設定`}`;
   if(a.protocol==='obs'&&a.operation==='triggerMediaInputAction'){const names={restart:'先頭から再生',stop:'停止',pause:'一時停止',play:'再生再開',next:'次へ',previous:'前へ'};return `メディア制御 · ${a.inputName} · ${names[a.mediaAction]||a.mediaAction}`;}
   if(a.protocol==='obs'){const names={startVirtualCam:'仮想カメラ · Start（開始）',stopVirtualCam:'仮想カメラ · Stop（停止）',toggleVirtualCam:'仮想カメラ · Toggle（切り替え）',startReplayBuffer:'リプレイバッファ · Start（開始）',stopReplayBuffer:'リプレイバッファ · Stop（停止）',toggleReplayBuffer:'リプレイバッファ · Toggle（切り替え）',saveReplayBuffer:'リプレイバッファ · Save（保存）',setCurrentProgramScene:'シーン切り替え',startStream:'配信開始',stopStream:'配信停止',startRecord:'録画開始',stopRecord:'録画停止',setInputMute:'ミュート設定',toggleInputMute:'ミュート設定',setSceneItemVisibility:a.containerType==='group'?'グループ内アイテム表示制御':'シーン内アイテム表示制御'};return `${names[a.operation]||a.operation}${a.sceneName!==undefined?' · '+a.sceneName:a.inputName!==undefined?' · '+a.inputName:''}${a.operation==='setInputMute'?(a.inputMuted?' · Enable（ミュート）':' · Disable（ミュート解除）'):a.operation==='toggleInputMute'?' · Toggle（切り替え）':''}${a.operation==='setSceneItemVisibility'?' · ID: '+(a.sceneItemId??'未選択')+' · '+a.visibility:''}`;}
@@ -78,58 +80,3 @@ function actionSummary(a) {
 }
 
 let editingAction=-1, cancelActionDrag=()=>{};
-function moveAction(from,to){
-  if(saving||from===to)return;
-  const actions=current(), edited=actions[editingAction];
-  const [action]=actions.splice(from,1);actions.splice(to,0,action);
-  editingAction=actions.indexOf(edited);changed();renderActions();
-  $('actions').children[to]?.querySelector('.drag-handle')?.focus();
-}
-function actionDrag(handle,card,index){
-  handle.title='ドラッグで並べ替え（キーボード: ↑ / ↓）';
-  handle.setAttribute('aria-label',`Action ${index+1}を並べ替え`);
-  handle.onkeydown=e=>{
-    if(e.key!=='ArrowUp'&&e.key!=='ArrowDown')return;
-    e.preventDefault();const to=index+(e.key==='ArrowUp'?-1:1);
-    if(to>=0&&to<current().length)moveAction(index,to);
-  };
-  handle.onpointerdown=e=>{
-    if(saving||e.button!==0||!e.isPrimary)return;
-    e.preventDefault();cancelActionDrag();handle.focus();
-    const cards=[...$('actions').children],startY=e.clientY;
-    let y=startY,to=index,dragging=false,frame;
-    handle.setPointerCapture(e.pointerId);
-    function mark(){
-      cards.forEach(c=>c.classList.remove('drop-before','drop-after'));
-      const others=cards.filter(c=>c!==card);
-      to=others.findIndex(c=>y<c.getBoundingClientRect().top+c.getBoundingClientRect().height/2);
-      if(to<0)to=others.length;
-      if(others.length){if(to<others.length)others[to].classList.add('drop-before');else others.at(-1).classList.add('drop-after');}
-    }
-    function scroll(){
-      if(dragging){const speed=y<70?-12:y>innerHeight-70?12:0;if(speed)window.scrollBy(0,speed);mark();}
-      frame=requestAnimationFrame(scroll);
-    }
-    function move(event){
-      if(event.pointerId!==e.pointerId)return;y=event.clientY;
-      if(!dragging&&Math.abs(y-startY)>5){dragging=true;card.classList.add('dragging');document.body.classList.add('action-dragging');}
-      if(dragging)mark();
-    }
-    function cleanup(){
-      cancelAnimationFrame(frame);cards.forEach(c=>c.classList.remove('drop-before','drop-after','dragging'));
-      document.body.classList.remove('action-dragging');
-      handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',end);
-      handle.removeEventListener('pointercancel',cancel);handle.removeEventListener('lostpointercapture',cancel);
-      window.removeEventListener('keydown',escape);window.removeEventListener('blur',cancel);
-      if(handle.hasPointerCapture(e.pointerId))handle.releasePointerCapture(e.pointerId);
-      cancelActionDrag=()=>{};
-    }
-    function cancel(){cleanup();}
-    function escape(event){if(event.key==='Escape'){event.preventDefault();cancel();}}
-    function end(event){if(event.pointerId!==e.pointerId)return;const apply=dragging;cleanup();if(apply)moveAction(index,to);}
-    cancelActionDrag=cancel;
-    handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',end);
-    handle.addEventListener('pointercancel',cancel);handle.addEventListener('lostpointercapture',cancel);
-    window.addEventListener('keydown',escape);window.addEventListener('blur',cancel);frame=requestAnimationFrame(scroll);
-  };
-}

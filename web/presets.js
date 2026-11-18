@@ -10,6 +10,12 @@ const Presets = (() => {
   function action(raw, capabilities, changes) {
     if (!object(raw)) fail('Actionが不正です。');
     const a = clone(raw);
+    if (a.protocol === 'loopStart' || a.protocol === 'loopEnd') {
+      const start = a.protocol === 'loopStart';
+      if (a.delayMs !== 0 || Object.keys(a).length !== (start ? 3 : 2) ||
+          (start && !int(a.count, 1, 999))) fail('Loopの回数・属性が不正です（回数は1〜999）。');
+      return start ? {protocol:'loopStart',delayMs:0,count:a.count} : {protocol:'loopEnd',delayMs:0};
+    }
     if (a.protocol === 'obs') {
       const item=a.operation==='setSceneItemVisibility';
       const media=a.operation==='triggerMediaInputAction';
@@ -67,7 +73,14 @@ const Presets = (() => {
     const result = raw.map(c => {
       if (!object(c) || !int(c.input,0,count-1) || seen.has(c.input) || !Array.isArray(c.actions) || c.actions.length>(c.input<26?16:8)) fail('ChainのID・重複・Action数が不正です。');
       seen.add(c.input);
-      return {input:c.input, actions:c.actions.map(a=>action(a,capabilities,changes))};
+      const actions=c.actions.map(a=>action(a,capabilities,changes));
+      let depth=0;
+      for(const a of actions){
+        if(a.protocol==='loopStart')++depth;
+        if(a.protocol==='loopEnd'&&--depth<0)fail('Loop Footerに対応するHeaderがありません。');
+      }
+      if(depth)fail('Loop Headerに対応するFooterがありません。');
+      return {input:c.input, actions};
     });
     // Only locate Event IDs; the order of Actions is never altered.
     const ordered=Array.from({length:count},(_,input)=>result.find(c=>c.input===input));

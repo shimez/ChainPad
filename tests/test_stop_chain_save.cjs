@@ -11,7 +11,7 @@ async function check(usb){
   const caps={usbMidi:usb,usbKeyboard:usb},calls=[],staged={chains:[]};let stored;
   const ctx=vm.createContext({TextEncoder,config,capabilities:caps,selected:0,dirty:true,saving:false,$:get,
      RotationPreview:{clone:structuredClone,stringify:JSON.stringify},obsScenes:{init(){}},
-    cancelActionDrag(){},rotationSummary(){},selectInput(){},message(){},
+    cancelActionDrag(){},LoopEditor:{cancel(){}},rotationSummary(){},selectInput(){},message(){},
     document:{querySelectorAll:()=>[get('save')]},
     fetch:async(path,options)=>{
       calls.push([path,options.method]);let result={message:'OK'};

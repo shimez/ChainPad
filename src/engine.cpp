@@ -4,6 +4,21 @@
 
 namespace chimera {
 Engine engine;
+// Tickets only exist while an invocation waits at an OSC Action. Cancelled
+// jobs disappear from the scan, so Stop/Panic cannot leave a hole in the FIFO.
+// At most 32 tickets coexist; signed differences also order counter wrap.
+bool Engine::admitLoopOsc(Invocation& job, uint32_t now) {
+  if (!job.oscPending) {
+    job.oscTicket = nextOscTicket++;
+    job.oscPending = true;
+  }
+  for (uint8_t i = 0; i < running; ++i)
+    if (jobs[i].oscPending && static_cast<int32_t>(jobs[i].oscTicket - job.oscTicket) < 0)
+      return false;
+  if (loopOscClockValid && uint32_t(now - lastLoopOscAt) < LOOP_OSC_INTERVAL_MS) return false;
+  lastLoopOscAt = now; loopOscClockValid = true; job.oscPending = false;
+  return true;
+}
 Engine::AdvanceResult Engine::advance(Invocation& job, uint32_t now, uint8_t& slice) {
   const auto& chain = activeConfig().chains[job.input];
   if (job.pairPending) {
@@ -13,6 +28,12 @@ Engine::AdvanceResult Engine::advance(Invocation& job, uint32_t now, uint8_t& sl
   while (job.next < chain.count) {
     if (job.looping) {
       if (!slice || !loopBudget) { job.wakeAt = now; return AdvanceResult::Waiting; }
+      if (chain.actions[job.next].protocol == Protocol::Osc && !admitLoopOsc(job, millis())) {
+        // Keep next, counters and send statistics unchanged. Do not reserve an
+        // output packet or spin here: another main-loop cycle will retry admission.
+        job.wakeAt = now;
+        return AdvanceResult::Waiting;
+      }
       --slice; --loopBudget;
     }
     const uint8_t index = job.next++;

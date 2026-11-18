@@ -1,8 +1,8 @@
-// Exercise the production renderActions/control handlers with a minimal DOM adapter.
+// Exercise production leaf editor/control handlers. Tree headers are browser-tested.
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const html=fs.readFileSync('web/index.html','utf8');
 class Element{
-  constructor(tag){this.tag=tag;this.children=[];this.textContent='';this.className='';this.style={};this.classList={add:()=>{},remove:()=>{}};}
+  constructor(tag){this.tag=tag;this.children=[];this.textContent='';this.className='';this.style={};this.dataset={};this.classList={add:()=>{},remove:()=>{}};}
   append(...items){this.children.push(...items);}
   replaceChildren(...items){this.children=items;}
   get lastChild(){return this.children.at(-1);}
@@ -17,7 +17,8 @@ for(const chain of config.chains)chain.actions=[];
 const ctx=vm.createContext({TextEncoder,config,selected:0,saving:false,keyboardLayout:'jis',
   usageNames:{104:'F13',30:'1'},capabilities:{usbKeyboard:true,usbMidi:true,keyboardTransports:['usb','ble']},
   document:{createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text,children:[]})},
-  $:id=>nodes[id]??=(new Element('div')),waitWarning(){},changed(){},RotationEditor:{refresh(){}}});
+  $:id=>nodes[id]??=(new Element('div')),waitWarning(){},changed(){},RotationEditor:{refresh(){}},
+  LoopEditor:{render:renderFields=>renderFields()}});
 let sceneCache={state:'unavailable',complete:false,scenes:[]},sceneListener;
 ctx.obsScenes={select(){sceneCache={state:'unavailable',complete:false,scenes:[]};},clear(){sceneListener=null;},snapshot:()=>sceneCache,busy:()=>false,subscribe(fn){sceneListener=fn;},refresh(){}};
 const line=prefix=>html.split('\n').find(l=>l.startsWith(prefix));
@@ -88,9 +89,9 @@ for(let input=0;input<28;input++){
   assert.equal(all().filter(n=>n.tag==='label').length,1); // No Transport, wait, usage or target.
   assert(all().some(n=>String(n.textContent).includes('実行済みのMIDI・HID・OSC操作は取り消されません')));
   assert(ctx.actionSummary(expected).includes('このChainは継続'));
-  all().find(n=>n.className==='edit-action').onclick();
+  vm.runInContext('editingAction=-1;renderActions();',ctx);
   assert(!field('Action'));
-  all().find(n=>n.className==='edit-action').onclick();
+  vm.runInContext('editingAction=0;renderActions();',ctx);
   assert.equal(field('Action').value,'stopOtherChains');
   const restored=P.read(P.full(config),'full',ctx.capabilities).config;
   show(plain(restored.chains[input].actions[0]),input);
@@ -102,7 +103,7 @@ for(const operation of ['setCurrentProgramScene','startStream','stopStream','sta
   const a={protocol:'obs',delayMs:0,operation,...(operation==='setCurrentProgramScene'?{sceneName:'画面'}:operation.includes('InputMute')?{inputName:'マイク'}:{}),...(operation==='setInputMute'?{inputMuted:true}:{})};
   const before=JSON.stringify(a);show(a);
   assert.equal(JSON.stringify(a),before);assert(field('Action'));
-  assert.equal(all().find(n=>n.className==='action-kind').textContent,'🎬 OBS（非対応）');
+  assert.equal(ctx.capabilities.obsActions,undefined); // Unsupported OBS payload remains editable.
   assert(ctx.actionSummary(a).length>0);
   assert.deepEqual(plain(P.read(P.full(config),'full',ctx.capabilities).config.chains[0].actions[0]),a);
 }

@@ -173,7 +173,7 @@ void loopEngineTests() {
     fresh(); Engine e;
     chain(input, {start, osc, start, osc, end, end});
     assert(e.trigger({uint8_t(input), 0}));
-    for (unsigned i = 0; i < 20 && e.activeCount(); ++i) cycle(e, i);
+    for (unsigned i = 0; i < 100 && e.activeCount(); ++i) cycle(e, i);
     assert(!e.activeCount() && fake::packets.size() == 12);
     assert(e.stats.accepted == 12 && e.stats.skipped == 0);
   }
@@ -181,13 +181,13 @@ void loopEngineTests() {
   for (uint32_t origin : {0u, 0xfffffff8u}) {
     fresh(); Engine e; hostMillis = origin;
     chain(0, {start, osc, wait, end, osc});
-    assert(e.trigger({0, 0}) && e.trigger({0, 0}));
-    assert(fake::packets.size() == 2);
+    assert(e.trigger({0, 0}));
+    assert(fake::packets.size() == 1);
     for (unsigned step = 1; step <= 3; ++step) {
       cycle(e, origin + step * 10 - 1);
-      assert(fake::packets.size() == step * 2);
+      assert(fake::packets.size() == step);
       cycle(e, origin + step * 10);
-      assert(fake::packets.size() == (step + 1) * 2);
+      assert(fake::packets.size() == step + 1);
     }
     assert(e.activeCount() == 0);
   }
@@ -195,7 +195,9 @@ void loopEngineTests() {
   {
     Engine e; Action zero = wait; zero.delayMs = 0;
     chain(0, {start, zero, osc, end});
-    assert(e.trigger({0,0}) && !e.activeCount() && fake::packets.size() == 3);
+    assert(e.trigger({0,0}) && fake::packets.size() == 1);
+    for (unsigned i = 1; i <= 8; ++i) cycle(e, i);
+    assert(!e.activeCount() && fake::packets.size() == 3);
   }
   // Full queue rejection is atomic, including an output before the Header.
   // Stop is an exception only in the non-yielding prefix before that Header.
@@ -208,9 +210,13 @@ void loopEngineTests() {
     if (variant == 3) { auto zero = wait; zero.delayMs = 0; chain(2, {zero, stop, start, osc, end}); }
     if (variant == 4) chain(2, {osc, stop, start, osc, end});
     assert(e.trigger({2,0}) == (variant == 4));
-    assert(fake::packets.size() == (variant == 4 ? 4u : 0u));
-    assert(e.activeCount() == (variant == 4 ? 0 : 32));
+    assert(fake::packets.size() == (variant == 4 ? 2u : 0u));
+    assert(e.activeCount() == (variant == 4 ? 1 : 32));
     assert(e.stats.cancelledChains == (variant == 4 ? 32u : 0u));
+    if (variant == 4) {
+      for (unsigned i = 1; i <= 8; ++i) cycle(e, i);
+      assert(!e.activeCount() && fake::packets.size() == 4);
+    }
   }
   // Empty/maximal nesting cannot spin. 32 invocations all make progress.
   fresh();
@@ -222,7 +228,7 @@ void loopEngineTests() {
     const auto before = e.stats.accepted;
     e.tick(0); // No budget reset through tick or new trigger.
     assert(e.stats.accepted == before);
-    for (unsigned i = 0; i < 400; ++i) cycle(e, i);
+    for (unsigned i = 0; i < 33000 && e.activeCount(); ++i) cycle(e, i * Engine::LOOP_OSC_INTERVAL_MS);
     assert(!e.activeCount() && fake::packets.size() == 32u * 999);
     chain(0, {many, many, many, many, many, many, many, many,
               end, end, end, end, end, end, end, end});
@@ -242,11 +248,11 @@ void loopEngineTests() {
     assert(e.stats.accepted <= Engine::LOOP_SLICE_BUDGET);
     for (unsigned i = 0; i < 10; ++i) {
       assert(e.trigger({2,0}));
-      cycle(e, i);
+      cycle(e, (i + 1) * Engine::LOOP_OSC_INTERVAL_MS);
       assert(e.activeCount() == 1);
     }
     assert(e.stats.cancelledChains == 10);
-    for (unsigned i = 0; i < 250 && e.activeCount(); ++i) cycle(e, i + 10);
+    for (unsigned i = 0; i < 1000 && e.activeCount(); ++i) cycle(e, (i + 11) * Engine::LOOP_OSC_INTERVAL_MS);
     assert(!e.activeCount() && fake::packets.size() == 999);
   }
   // Exhaust budget, then fill all slots: prefix Stop still frees a slot without
@@ -266,6 +272,7 @@ void loopEngineTests() {
   {
     Engine e; fake::wifi = false; chain(0, {start, osc, end});
     assert(e.trigger({0,0}));
+    for (unsigned i = 1; i <= 8; ++i) cycle(e, i);
     assert(!e.activeCount() && e.stats.skipped == 3 && fake::packets.empty());
   }
   // Exhausted Loop budget must not delay or reject an existing straight Chain,
@@ -279,6 +286,36 @@ void loopEngineTests() {
     assert(e.trigger({4,0}) && fake::packets.size() == 2 && e.activeCount() == 32);
     assert(e.trigger({2,0}) && fake::packets.size() == 4 && !e.activeCount());
     assert(e.stats.cancelledChains == 32);
+  }
+  // Shared OSC pacing: later jobs cannot overtake waiting Actions.
+  fresh();
+  {
+    Engine e; auto a = osc, b = osc, c = osc;
+    strcpy(a.address, "/a"); strcpy(b.address, "/b"); strcpy(c.address, "/c");
+    chain(0, {start, a, end}); chain(2, {start, b, end}); chain(4, {start, c, end});
+    assert(e.trigger({0,0}) && e.trigger({2,0}) && e.trigger({4,0}));
+    assert(e.stats.accepted == 1 && fake::packets.size() == 1);
+    for (unsigned i = 0; i < 4; ++i) cycle(e, i);
+    assert(e.stats.accepted == 1 && e.stats.skipped == 0);
+    cycle(e, 4); cycle(e, 8); cycle(e, 12);
+    assert(fake::packets.size() == 4);
+    assert(fake::packets[1][1] == 'a' && fake::packets[2][1] == 'b' && fake::packets[3][1] == 'c');
+    // Ordinary single-shot sends immediately even while the Loop rate is capped.
+    chain(6, {osc}); assert(e.trigger({6,12}) && fake::packets.size() == 5);
+    chain(8, {stop}); assert(e.trigger({8,12}) && !e.activeCount());
+    assert(e.trigger({2,12}) && e.activeCount() == 1);
+    cycle(e, 16); assert(fake::packets.back()[1] == 'b');
+    e.cancelAll(); cycle(e, 100); assert(!e.activeCount());
+  }
+  fresh();
+  {
+    Engine e; hostMillis = 0xfffffffeu; fake::udpWritable = false;
+    chain(0, {start, osc, end}); assert(e.trigger({0,0}));
+    assert(e.stats.skipped == 1 && e.stats.accepted == 0);
+    cycle(e, 1); assert(e.stats.skipped == 1); // Three ms across rollover.
+    fake::udpWritable = true;
+    cycle(e, 2); assert(e.stats.accepted == 1 && e.stats.skipped == 1);
+    cycle(e, 6); assert(!e.activeCount() && e.stats.accepted == 2 && fake::packets.size() == 2);
   }
   // Loop Stop preserves queued/held output. Panic explicitly discards it and
   // cancels the stack, so a subsequent trigger starts from the first iteration.

@@ -62,6 +62,32 @@ main>section{min-width:0}
  #firmwareUpdate{margin-top:16px;line-height:1.6;overflow-wrap:anywhere}#firmwareUpdate a{color:var(--accent)}.firmware-history{margin-top:12px}.firmware-history details{padding:12px;background:var(--field)}.firmware-history summary{margin:0}.firmware-history details[open]>summary{margin-bottom:12px}.firmware-release{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}.firmware-release h3{font-size:16px;margin:0 0 8px}.firmware-release h4{font-size:13px;color:var(--muted);margin:8px 0 4px}.firmware-release ul{margin:0;padding-left:22px}.firmware-release p{margin:8px 0}.firmware-more{margin-top:12px}.firmware-history summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 </style>
 <style>
+.loop-card{border:2px solid var(--accent,#5793d6);border-radius:10px;margin:8px 0;padding:0;background:var(--panel)}
+.loop-editor-head{display:flex;flex-wrap:wrap;padding:10px;gap:8px}
+.loop-editor-head .buttons{margin-left:auto;flex-wrap:wrap}
+.loop-count{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.loop-count input{width:80px;min-width:0}
+.loop-toggle,.node-handle{touch-action:none}
+.loop-body{margin:0 10px 0 14px;border-left:1px solid var(--line);padding-left:10px;min-width:0}
+.loop-body[hidden]{display:none}
+.loop-add-row{padding:8px 0}
+.loop-drop-zone{height:24px;display:flex;align-items:center;padding:0 9px;border:1px dashed transparent;border-radius:5px;font-size:12px;color:var(--muted);position:relative;margin:2px 0;min-width:0;overflow-wrap:anywhere}
+.loop-drop-zone .drop-label{visibility:hidden}.loop-drop-zone.boundary{height:30px}
+.loop-drop-zone.inside{color:var(--accent)}
+body.loop-dragging .loop-drop-zone{border-color:var(--line);background:var(--field)}
+body.loop-dragging .loop-drop-zone .drop-label{visibility:visible}
+body.loop-dragging .loop-drop-zone.invalid{opacity:.25}
+.loop-drop-zone.loop-drop-active{border:2px solid var(--accent)!important;background:color-mix(in srgb,var(--accent) 20%,var(--panel))!important;color:var(--text);font-weight:700}
+.loop-drag-source{opacity:.45}
+.loop-editor-head .action-summary{flex:1 1 160px;min-width:0}
+.tree-node{min-width:0}.tree-node.action-card::after{display:none}
+.chain-editing{grid-column:1/-1;display:grid;grid-template-columns:225px minmax(0,1fr);gap:18px}
+.chain-editing>nav{position:sticky;top:12px;align-self:start;max-height:calc(100vh - 24px);overflow:auto}
+@media(max-width:700px){.chain-editing{grid-template-columns:minmax(0,1fr)}.chain-editing>nav{position:static;max-height:none}}
+@media(max-width:700px){.loop-body{margin:0 4px 0 4px;padding-left:5px}.loop-drop-zone{font-size:11px}}
+@media(max-width:650px){.loop-editor-head .buttons{width:100%}}
+</style>
+<style>
 .osc-address-control{min-width:0;display:grid;gap:6px;align-content:start}.osc-address-control input{height:42px;min-width:0}.osc-address-picker-button{justify-self:start;font-size:13px}.osc-address-hint{line-height:1.6;overflow-wrap:anywhere}
 .osc-picker{color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;width:min(740px,calc(100% - 28px));max-height:85vh;overflow:auto}.osc-picker::backdrop{background:#0009}.osc-picker-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line)}.osc-picker-heading h2{margin:0}.osc-picker-body{padding:18px 22px}.osc-picker-filters{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.osc-picker-filters button{font-size:13px}.osc-picker-filters [aria-pressed=true]{border-color:var(--accent);color:var(--accent)}.osc-picker-results{max-height:34vh;overflow:auto;border-top:1px solid var(--line)}.osc-picker-result{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:14px 8px}.osc-picker-result:hover{background:var(--field)}.osc-picker-result code{grid-column:1/-1;color:var(--accent);overflow-wrap:anywhere}.osc-picker-result small{grid-column:1/-1;line-height:1.6}.osc-picker-foot{padding:12px 22px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.6}.osc-picker-foot p{margin:5px 0}.osc-picker a{color:var(--accent)}.osc-picker button:focus-visible,.osc-picker input:focus-visible,.osc-address-picker-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}@media(max-width:700px){.osc-picker-heading,.osc-picker-body,.osc-picker-foot{padding:14px}.osc-picker-heading h2{font-size:18px}}
 </style>
@@ -85,9 +111,9 @@ try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme
 <p id="obsDiagnostics" class="hint"></p><p id="obsStorage" class="hint"></p>
 <p id="obsMessage" role="status"></p><div class="buttons obs-buttons"><button id="obsSave" class="primary" type="button" disabled>Save OBS</button><button id="obsReconnect" type="button" disabled>Reconnect</button></div>
 <p class="hint">OBS専用の保存です。保存・反映受付と接続成功は別です。Reconnectは編集中の値ではなく、本体に保存済みの設定を使用します。</p></details>
-<nav class="panel"><h2>Input</h2><div id="inputs"></div></nav>
+<div class="chain-editing"><nav class="panel"><h2>Input</h2><div id="inputs"></div></nav>
 <section><div class="panel"><div class="input-heading"><h2 id="title">Action Chain</h2><details id="keyPresetMenu" class="preset-menu" hidden><summary aria-label="Key Preset操作">…</summary><div class="preset-menu-items"><button id="exportKey">Preset Export</button><button id="importKey">Preset Import</button></div></details></div><label>Input Event<select id="event"></select></label><p class="hint">Actionは登録順に実行されます。WaitはこのChainだけを待機させ、他のChainには影響を与えません。</p><p id="actionSlots" class="hint" role="status"></p><p id="waitWarning" class="danger" role="status" hidden></p></div><div id="actions"></div><button id="add">+ Add Action</button></section>
-<div class="toolbar"><button class="primary" id="save">保存・適用</button><span id="dirty" class="hint"></span></div>
+</div><div class="toolbar"><button class="primary" id="save">保存・適用</button><span id="dirty" class="hint"></span></div>
 <div id="message" role="status"></div>
 <section class="network panel"><h2>設定ファイル Import / Export</h2><div class="buttons"><button id="exportFull">全体設定 Export</button><button id="importFull">全体設定 Import</button></div><p class="hint">Exportは未保存の編集も含みます。Wi-Fi設定（SSID・パスワード）は含めず、Import時も現在のWi-Fi設定を保持します。Importは編集画面へ反映され、「保存・適用」で本体に保存します。</p><h3>組み込みConfig</h3><div class="buttons"><button id="loadDefault">Defaultを読み込む</button><button id="loadEmpty">Emptyを読み込む</button></div><p class="hint">KEY・Encoderの編集内容を置き換えます。DefaultはBLEキーボードの入力確認用、Emptyは白紙の設定です。Wi-Fi・OSC送信先は保持し、「保存・適用」までは本体へ反映しません。</p></section>
 <input id="presetFile" type="file" accept=".json,application/json" hidden>
@@ -112,6 +138,8 @@ try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme
 <script src="builtin-config-data.js"></script>
 <script src="osc-addresses.js"></script>
 <script src="action-ui.js"></script>
+<script src="loop-model.js"></script>
+<script src="loop-editor.js"></script>
 <script src="rotation-ui.js"></script>
 <script src="obs-settings.js"></script>
 <script src="obs-actions.js"></script>
@@ -161,7 +189,7 @@ $('keyboardLayout').onchange=()=>{
   if(config)renderActions();
 };
 function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);}
-function changed(){dirty=true;$('dirty').textContent='未保存の変更あり';waitWarning();if(config)document.querySelectorAll('.action-summary').forEach((el,i)=>{if(current()[i])el.textContent=actionSummary(current()[i]);});RotationEditor.refresh();}
+function changed(){dirty=true;$('dirty').textContent='未保存の変更あり';waitWarning();if(config)document.querySelectorAll('.action-summary[data-action-index]').forEach(el=>{const a=current()[Number(el.dataset.actionIndex)];if(a)el.textContent=actionSummary(a);});RotationEditor.refresh();}
 function waitWarning(){if(!config)return;const base=Math.floor(selected/2)*2;const pair=config.chains.filter(c=>c.input===base||c.input===base+1);const waits=pair.some(c=>c.actions.some(a=>a.protocol==='wait'&&a.delayMs>0));$('waitWarning').hidden=!waits;$('waitWarning').textContent=waits?'Wait中もRelease・別キー・同じキーの再入力は独立して実行されます。Releaseが先に実行され、待機後のNote On / KeyDownが後から届く場合があります。':'';}
 async function api(path,method='GET',body){const request=async()=>{const r=await fetch('/api/'+path,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?RotationPreview.stringify(body):undefined});const data=await r.json();if(!r.ok)throw Error(data.message||r.statusText);return data;};if(path!=='status'||method!=='GET')return request();if(api.statusPending)return api.statusPending;api.statusPending=request();try{return await api.statusPending;}finally{api.statusPending=null;}}
 function control(label,value,options,onchange,type='text',min,max){const wrap=document.createElement('label');wrap.textContent=label;const el=document.createElement(options?'select':'input');if(options){for(const [v,name]of options){const o=document.createElement('option');o.value=v;o.textContent=name;el.append(o);}}else{el.type=type;if(min!==undefined)el.min=min;if(max!==undefined)el.max=max;}el.value=value;el.onchange=()=>{onchange(type==='number'?Number(el.value):el.value);changed();};wrap.append(el);return wrap;}
@@ -169,9 +197,10 @@ function defaults(protocol){if(protocol==='obs')return ObsActionsUI.defaults();i
 function current(){return config.chains.find(c=>c.input===selected).actions;}
 function button(text,fn,disabled=false){const b=document.createElement('button');b.textContent=text;b.onclick=fn;b.disabled=disabled;return b;}
 const actionLabels={osc:'🛜OSC',midi:'🎹MIDI',keyboard:'⌨HID',obs:'🎬 OBS',wait:'⏱Wait',stopOtherChains:'他のChainを中断'};
-function renderActions(){cancelActionDrag();obsScenes.clear();waitWarning();$('exportKey').disabled=$('importKey').disabled=selected>=26;const list=$('actions');list.replaceChildren();const actions=current();actions.forEach((a,i)=>{const card=document.createElement('article');card.className='action-card';const head=document.createElement('div');head.className='action-head';const handle=button('≡',()=>{});handle.className='drag-handle';actionDrag(handle,card,i);const number=document.createElement('span');number.className='action-number';number.textContent=i+1;const title=document.createElement('strong');title.className='action-kind';title.textContent=actionLabels[a.protocol]+(a.protocol==='obs'&&!capabilities.obsActions?'（非対応）':'');const summary=document.createElement('span');summary.className='action-summary';summary.textContent=actionSummary(a);const ops=document.createElement('div');ops.className='buttons';const toggle=button(editingAction===i?'完了':'編集',()=>{editingAction=editingAction===i?-1:i;renderActions();$('actions').children[i].querySelector('.edit-action').focus();});toggle.className='edit-action';toggle.setAttribute('aria-expanded',String(editingAction===i));toggle.setAttribute('aria-controls',`action-details-${i}`);ops.append(toggle,button('削除',()=>{actions.splice(i,1);if(editingAction===i)editingAction=-1;else if(editingAction>i)--editingAction;changed();renderActions();}));head.append(handle,number,title,summary,ops);card.append(head);list.append(card);if(editingAction!==i)return;const detail=document.createElement('div');detail.id=`action-details-${i}`;detail.className='action-details';card.append(detail);const hint=document.createElement('p');hint.className='hint';hint.textContent='完了は編集を閉じます。本体への保存は「保存・適用」で行います。';detail.append(hint);const fields=document.createElement('div');fields.className='fields';if(a.protocol!=='obs')fields.append(control('Action',a.protocol,Object.entries(actionLabels),v=>{actions[i]=defaults(v);renderActions();}));
+function renderActions(){LoopEditor.render(renderFlatActions);}
+function renderFlatActions(){cancelActionDrag();obsScenes.clear();waitWarning();$('exportKey').disabled=$('importKey').disabled=selected>=26;const list=$('actions');list.replaceChildren();const actions=current();actions.forEach((a,i)=>{if(a.protocol==='loopStart'||a.protocol==='loopEnd')return;const card=document.createElement('article');card.className='action-card';card.dataset.actionIndex=i;const head=document.createElement('div');head.className='action-head';card.append(head);list.append(card);if(editingAction!==i)return;const detail=document.createElement('div');detail.id=`action-details-${i}`;detail.className='action-details';card.append(detail);const hint=document.createElement('p');hint.className='hint';hint.textContent='完了は編集を閉じます。本体への保存は「保存・適用」で行います。';detail.append(hint);const fields=document.createElement('div');fields.className='fields';if(a.protocol!=='obs')fields.append(control('Action',a.protocol,Object.entries(actionLabels),v=>{actions[i]=defaults(v);renderActions();}));
 if(a.protocol==='wait')fields.append(control('待機時間 (ms)',a.delayMs,null,v=>a.delayMs=v,'number',0,86400000));
-if(a.protocol==='obs'){fields.append(control('Action',a.protocol,Object.entries(actionLabels),v=>{actions[i]=defaults(v);renderActions();}));ObsActionsUI.render(a,fields,control,changed,renderActions,capabilities,obsScenes);if(!capabilities.obsActions)title.textContent='🎬 OBS（非対応）';}
+if(a.protocol==='obs'){fields.append(control('Action',a.protocol,Object.entries(actionLabels),v=>{actions[i]=defaults(v);renderActions();}));ObsActionsUI.render(a,fields,control,changed,renderActions,capabilities,obsScenes);}
 if(a.protocol==='stopOtherChains'){const hint=document.createElement('p');hint.className='hint action-note';hint.textContent='実行中の他のAction Chainを中断します。実行済みのMIDI・HID・OSC操作は取り消されません。';fields.append(hint);}
 if((a.protocol==='midi'&&!['allNotesOn','allNotesOff','allNotesOnOff'].includes(a.message))||a.protocol==='keyboard'){
   if(a.protocol==='midi')fields.classList.add('midi');
@@ -203,7 +232,7 @@ const firmwareUpdate=FirmwareUpdate.create($('firmwareUpdate'));
 async function status(){clearTimeout(statusTimer);if(document.hidden||status.paused||status.running)return;status.running=true;const epoch=obsEditor.epoch();try{const s=await api('status');if(epoch===obsEditor.epoch()){obsEditor.updateStatus(s.obs);obsScenes.tick(s.obs);}$('connections').replaceChildren();for(const [key,label]of [['wifi','Wi-Fi'],['usbMidi','USB MIDI'],['usbKeyboard','USB HID'],['bleMidi','BLE MIDI'],['bleKeyboard','BLE HID']]){const unsupported=(key==='usbMidi'&&s.usbMidiSupported===false)||(key==='usbKeyboard'&&s.usbKeyboardSupported===false);const tag=document.createElement('span');tag.className='tag'+(!unsupported&&s[key]?' on':'');tag.textContent=`${label}: ${unsupported?'非対応':s[key]?'接続':'未接続'}`;$('connections').append(tag);}$('systemName').textContent=s.name||'ChainPad';$('systemHardware').textContent=(s.hardware||'—').replace(/\s*\/\s*ChainOSCPad PCB$/,'');$('systemVersion').textContent=s.version||'—';$('systemIp').textContent=s.wifi&&s.ip&&s.ip!=='0.0.0.0'?s.ip:s.apIp||'—';void firmwareUpdate.check(s);}catch(e){if(epoch===obsEditor.epoch()){obsEditor.statusFailed();obsScenes.failed();}$('connections').textContent='デバイスに接続できません: '+e.message;}finally{status.running=false;if(!document.hidden&&!status.paused)statusTimer=setTimeout(status,3000);}}
 function run(fn){return async()=>{try{await fn();}catch(e){message(e.message,true);}};}
 $('event').onchange=()=>{editingAction=-1;selected=Number($('event').value);renderActions();};
-$('add').onclick=()=>{const s=actionSlots();if(s.used>=s.limit||saving)return;current().push(defaults('osc'));editingAction=current().length-1;changed();renderActions();};
+$('add').onclick=()=>LoopEditor.add();
 async function saveConfig(replaceUnsupported=false){
   if(typeof obsEditor!=='undefined'&&obsEditor.busy())throw Error('OBS操作の完了を待ってください。');
   if(!config)return;
@@ -214,7 +243,7 @@ async function saveConfig(replaceUnsupported=false){
   const normalized=Presets.read(Presets.full(snapshot),'full',capabilities);
   snapshot.encoderRotation=normalized.config.encoderRotation;
   saving=true;
-  cancelActionDrag();
+  LoopEditor.cancel();
   const controls=[...document.querySelectorAll('button,input,select')].map(el=>[el,el.disabled]);
   controls.forEach(([el])=>el.disabled=true);
   try{

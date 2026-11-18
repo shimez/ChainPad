@@ -22,7 +22,8 @@ def shared_assets():
     js = between(source, "const usageNames=", "const jisUsageNames=")
     js += between(source, "function control(", "function current()")
     js += between(source, "function button(", "function selectInput(")
-    js = js.replace("function renderActions(){", "function renderOriginalActions(){")
+    js = js.replace("function renderActions(){LoopEditor.render(renderFlatActions);}\n", "")
+    js = js.replace("function renderFlatActions(){", "function renderOriginalActions(){")
     return css, js
 
 
