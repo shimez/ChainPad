@@ -1,5 +1,9 @@
 # Action Chain Loop：実装計画・検証記録
 
+0.13.0のバージョン更新・文書・CIの準備状況は
+[リリース準備記録](action-chain-loop-release-0.13.0.md)を参照。
+以下の実装・実機試験時点の版やSHAは履歴として維持する。
+
 ## 起点とレビュー単位
 
 - 起点：`0db11eb`（`docs: add interactive Loop Configurator mockup`）。

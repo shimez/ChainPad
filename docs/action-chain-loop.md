@@ -1,6 +1,6 @@
 # Action Chain Loop
 
-Loopは、内部のActionを指定回数だけ繰り返す機能です。
+Loopは、v0.13.0以降で内部のActionを指定回数だけ繰り返す機能です。
 回数は**合計実行回数**で、1〜999を指定します。Loopの中にLoopを置くこともできます。
 
 ## Configuratorでの操作
@@ -41,6 +41,8 @@ LoopのHeader／Footerはそれぞれ1枠、合わせて2枠を使います。
   「他のChainを中断」がある場合は、その直線部分で枠を解放して開始できます。
   Loopの中にあるStopでは、この受付例外にはなりません。
 - 「実行中止・HID解除」（Panic）はLoopを含む実行と未処理出力を破棄します。
+  HID解除を要求しますが、MIDIメッセージは送信せず、予約中のNote Offも破棄します。
+  必要に応じて別途All Notes OffなどでMIDIを解除してください。
 - Backendの受付失敗時は従来どおり次のActionへ進み、成功するまで再試行しません。
 
 ## 設定・Preset

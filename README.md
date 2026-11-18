@@ -27,6 +27,7 @@ ChainPadは、複数の操作を組み合わせて実行できる、12キー＋�
 - **操作を組み合わせる**：OSC・MIDI・HID・OBSを1つのAction Chainに登録できます。
 - **押す／離すを個別に設定**：キーとEncoder PushのPress／Releaseに、それぞれ動作を設定できます。
 - **操作の間にWaitを挟む**：Chainの途中に待機時間を設定できます。
+- **操作を繰り返す（v0.13.0以降）**：Loopで内部のActionを1〜999回繰り返せます。入れ子・Wait・Preset保存にも対応します（[Loopの設定方法](docs/action-chain-loop.md)）。
 - **ブラウザで編集・本体に保存**：専用設定アプリのインストールは不要です。
 - **設定を再利用**：キー単位・全体設定のImport／Exportに対応しています。
 
@@ -50,6 +51,9 @@ ChainPadは、複数の操作を組み合わせて実行できる、12キー＋�
 Press／Releaseは独立した設定です。Note OffやKeyUpは自動追加されないため、必要な解除操作も登録します。
 
 キーとEncoder Pushは、Press／Release合計で最大16 Actions。Encoder回転は、時計回り・反時計回りに各8 Actionsを設定できます。
+
+v0.13.0以降はLoopも配置できます。Loopの開始・終了で合計2枠を使用し、内部のActionも通常どおり枠を消費します。
+既存のLoopなし設定は引き続き使用できますが、Loop入り設定を旧Firmwareへ戻すことはできません。旧版へ戻す場合はLoop導入前のバックアップを使用してください。
 
 ## 対応ハードウェア
 
