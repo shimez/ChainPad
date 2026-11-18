@@ -1,0 +1,31 @@
+﻿time,delta_ms,protocol_transport,source,event
+2026-11-18T11:37:31.829,+0.000,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:37:31.835,+6.745,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:37:31.880,+43.415,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:37:32.194,+314.524,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:37:32.232,+37.624,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:37:32.283,+52.843,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:37:32.578,+293.544,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:37:32.599,+21.415,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:37:32.704,+105.045,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:37:32.979,+275.002,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:37:33.004,+24.886,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:37:33.094,+90.167,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:37:33.385,+290.947,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:37:33.425,+38.936,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:37:33.500,+75.253,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:37:33.788,+287.760,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:37:33.829,+42.357,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:37:33.904,+74.606,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:37:34.191,+286.190,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:37:34.234,+43.724,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:37:34.324,+90.137,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:37:34.594,+269.217,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:37:34.639,+45.175,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:37:34.729,+90.499,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:37:35.008,+278.376,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:37:35.029,+21.695,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:37:35.135,+105.113,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:37:35.407,+271.663,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:37:35.449,+43.273,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:37:35.540,+89.918,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0

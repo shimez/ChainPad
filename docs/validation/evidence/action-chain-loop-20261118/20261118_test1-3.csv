@@ -1,0 +1,17 @@
+﻿time,delta_ms,protocol_transport,source,event
+2026-11-18T11:29:11.938,—,INFO,ChainPad IN 0,Opened as USB MIDI
+2026-11-18T11:30:47.531,+0.000,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/probe/press int 1
+2026-11-18T11:30:48.347,+816.141,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/probe/release int 1
+2026-11-18T11:31:01.036,+12688.739,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/nested/begin int 1
+2026-11-18T11:31:01.037,+0.107,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/nested/tick int 1
+2026-11-18T11:31:01.239,+201.833,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/nested/tick int 1
+2026-11-18T11:31:01.454,+215.486,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/nested/tick int 1
+2026-11-18T11:31:01.650,+195.343,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/nested/tick int 1
+2026-11-18T11:31:01.853,+203.444,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/nested/tick int 1
+2026-11-18T11:31:02.070,+216.275,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/nested/tick int 1
+2026-11-18T11:31:02.265,+196.235,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/nested/end int 1
+2026-11-18T11:31:21.951,+19683.808,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/wait/begin int 1
+2026-11-18T11:31:21.955,+4.345,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/wait/tick int 1
+2026-11-18T11:31:22.956,+1001.041,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/wait/tick int 1
+2026-11-18T11:31:23.973,+1016.688,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/wait/tick int 1
+2026-11-18T11:31:24.998,+1024.411,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/wait/end int 1

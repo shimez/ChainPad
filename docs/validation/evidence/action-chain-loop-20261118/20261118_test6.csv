@@ -1,0 +1,108 @@
+﻿time,delta_ms,protocol_transport,source,event
+2026-11-18T11:39:42.699,+0.000,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/midi-pair/begin int 1
+2026-11-18T11:39:42.749,+49.586,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:39:44.676,+1927.695,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/midi-pair/end int 1
+2026-11-18T11:39:44.697,+20.742,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:39:45.178,+480.066,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/midi-pair/begin int 1
+2026-11-18T11:39:45.222,+44.869,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:39:47.187,+1964.939,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:39:47.204,+17.463,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/midi-pair/end int 1
+2026-11-18T11:39:47.682,+477.599,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:39:47.717,+34.498,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/midi-pair/begin int 1
+2026-11-18T11:39:49.683,+1965.693,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/midi-pair/end int 1
+2026-11-18T11:39:49.784,+101.094,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:39:59.596,+9811.635,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/hid-pair/begin int 1
+2026-11-18T11:39:59.656,+60.195,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.165,+508.209,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.216,+51.399,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.248,+31.831,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.281,+33.738,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.320,+38.234,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.360,+40.869,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.402,+40.793,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.442,+39.629,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.482,+41.287,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.524,+41.592,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.569,+44.776,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.613,+43.977,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.659,+46.761,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.709,+49.265,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.765,+55.861,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.814,+49.291,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.871,+57.468,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.927,+56.103,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:00.985,+57.226,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.041,+56.437,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.098,+56.282,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.154,+56.306,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.208,+54.474,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.264,+54.980,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.323,+58.956,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.382,+60.345,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.438,+55.014,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.493,+55.151,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.548,+55.340,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.604,+56.821,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:01.604,+0.334,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:40:01.645,+39.103,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/hid-pair/end int 1
+2026-11-18T11:40:02.089,+444.457,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/hid-pair/begin int 1
+2026-11-18T11:40:02.146,+57.366,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:02.617,+471.027,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:02.687,+69.466,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:02.753,+65.830,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:02.813,+59.766,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:02.876,+63.171,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:02.941,+65.793,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.006,+66.018,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.072,+65.198,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.141,+68.710,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.241,+99.549,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.303,+62.411,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.371,+68.370,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.438,+66.396,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.503,+64.173,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.566,+63.394,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.636,+70.247,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.701,+64.937,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.771,+69.790,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.837,+65.873,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.902,+65.148,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:03.967,+65.255,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:04.037,+69.773,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:04.102,+65.503,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/hid-pair/end int 1
+2026-11-18T11:40:04.108,+5.969,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:04.109,+0.693,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:40:04.605,+496.107,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:04.614,+9.188,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/hid-pair/begin int 1
+2026-11-18T11:40:05.120,+506.017,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.188,+67.434,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.243,+55.005,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.299,+55.818,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.359,+59.764,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.418,+60.310,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.475,+56.313,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.529,+53.376,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.583,+54.738,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.637,+53.415,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.690,+52.974,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.745,+55.146,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.797,+52.585,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.852,+54.562,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.906,+53.862,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:05.960,+53.863,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.013,+53.824,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.068,+54.959,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.124,+55.289,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.179,+55.456,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.232,+53.347,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.286,+54.208,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.344,+57.020,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.399,+55.944,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.455,+55.197,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.515,+60.016,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.577,+61.243,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.592,+16.116,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.595,+2.780,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/hid-pair/end int 1
+2026-11-18T11:40:06.662,+67.239,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.717,+54.500,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:40:06.717,+0.347,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124

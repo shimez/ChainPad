@@ -1,0 +1,14 @@
+{
+  "panicResponse": {
+    "ok": true,
+    "message": "実行中のChainと未処理の入力・出力を破棄し、HID解除を要求しました。MIDIメッセージは送信しません。"
+  },
+  "panicRttMs": 104.08710000046995,
+  "responseAfterDetectedMs": 104.34520000126213,
+  "releaseObservedByMs": 114.90749999938998,
+  "windowsF13Released": true,
+  "f13ReappearedWithin5Seconds": false,
+  "runningChainsAfter": 0,
+  "bleKeyboard": true,
+  "note": "PC F13 detection to release observation, not physical input latency. Release may precede HTTP response."
+}

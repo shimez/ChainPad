@@ -1,0 +1,9 @@
+﻿time,delta_ms,protocol_transport,source,event
+2026-11-18T11:42:50.412,+0.000,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/midi-pair/begin int 1
+2026-11-18T11:42:50.470,+58.012,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:42:55.328,+4857.249,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/probe/press int 1
+2026-11-18T11:42:55.839,+511.793,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/probe/release int 1
+2026-11-18T11:43:02.507,+6666.880,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/hid-pair/begin int 1
+2026-11-18T11:43:02.592,+85.339,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:43:09.256,+6662.682,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/probe/press int 1
+2026-11-18T11:43:09.684,+428.955,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/probe/release int 1

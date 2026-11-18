@@ -1,0 +1,4 @@
+﻿time,delta_ms,protocol_transport,source,event
+2026-11-18T11:48:54.773,+0.000,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/hid-pair/begin int 1
+2026-11-18T11:48:54.793,+19.445,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:48:54.911,+117.066,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124

@@ -195,6 +195,11 @@ C5 5828a2c0fbbd330c7f7717238915e8060f89dae0618320ec0740ca1973cbac67
 ## Phase 3（レビュー承認済み）
 
 利用者のWebUIレビュー・修正確認後、Phase 3のコミット承認を取得。
+Phase 3コミットは`97494cc`。
+その後の利用者手動試験1〜8と再試験CSVは
+[2026-11-18実機試験記録](evidence/action-chain-loop-20261118/README.md)に保存。
+以下のPhase 3最終確認はコミット時点の範囲であり、後続試験でBLE混合・HID解除・
+All Notes基本動作などを追加確認した。利用者判断で基本試験を一区切りとした。
 
 - `web/loop-model.js`／`web/loop-editor.js`で正式Configuratorのツリー編集を実装。
   通常Actionの編集欄を再利用し、Header／Footerは保存配列にのみ現れる。

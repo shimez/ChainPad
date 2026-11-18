@@ -1,0 +1,10 @@
+﻿time,delta_ms,protocol_transport,source,event
+2026-11-18T16:05:39.517,+0.000,OSC / Wi-Fi,192.168.0.15:50886,/loop-manual/all-notes/tick int 1
+2026-11-18T16:05:39.546,+29.323,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T16:05:39.785,+237.982,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T16:05:40.274,+489.553,OSC / Wi-Fi,192.168.0.15:50886,/loop-manual/all-notes/tick int 1
+2026-11-18T16:05:40.294,+20.420,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T16:05:40.579,+284.997,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T16:05:41.074,+495.156,OSC / Wi-Fi,192.168.0.15:50886,/loop-manual/all-notes/tick int 1
+2026-11-18T16:05:41.104,+29.905,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T16:05:41.389,+285.012,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0

@@ -64,6 +64,7 @@ main>section{min-width:0}
 <style>
 .loop-card{border:2px solid var(--accent,#5793d6);border-radius:10px;margin:8px 0;padding:0;background:var(--panel)}
 .loop-editor-head{display:flex;flex-wrap:wrap;padding:10px;gap:8px}
+.tree-node.action-card>.loop-editor-head{padding:0}
 .loop-editor-head .buttons{margin-left:auto;flex-wrap:wrap}
 .loop-count{display:flex;align-items:center;gap:6px;white-space:nowrap}
 .loop-count input{width:80px;min-width:0}
@@ -84,7 +85,7 @@ body.loop-dragging .loop-drop-zone.invalid{opacity:.25}
 .chain-editing{grid-column:1/-1;display:grid;grid-template-columns:225px minmax(0,1fr);gap:18px}
 .chain-editing>nav{position:sticky;top:12px;align-self:start;max-height:calc(100vh - 24px);overflow:auto}
 @media(max-width:700px){.chain-editing{grid-template-columns:minmax(0,1fr)}.chain-editing>nav{position:static;max-height:none}}
-@media(max-width:700px){.loop-body{margin:0 4px 0 4px;padding-left:5px}.loop-drop-zone{font-size:11px}}
+@media(max-width:700px){.loop-card>.loop-editor-head{padding:8px}.loop-body{margin:0 4px 0 4px;padding-left:5px}.loop-drop-zone{font-size:11px}}
 @media(max-width:650px){.loop-editor-head .buttons{width:100%}}
 </style>
 <style>

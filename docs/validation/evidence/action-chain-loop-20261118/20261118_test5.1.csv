@@ -1,0 +1,51 @@
+﻿time,delta_ms,protocol_transport,source,event
+2026-11-18T11:38:39.207,+0.000,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:38:39.236,+29.660,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:38:39.278,+42.228,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:38:39.281,+2.571,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:38:39.385,+103.803,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:38:39.579,+194.211,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:38:39.617,+38.514,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:38:39.683,+66.003,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:38:39.685,+1.860,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:38:39.790,+104.213,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:38:39.983,+193.699,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:38:40.036,+53.253,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:38:40.088,+51.767,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:38:40.090,+1.720,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:38:40.195,+104.621,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:38:40.388,+193.865,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:38:40.437,+48.000,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:38:40.493,+56.721,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:38:40.495,+1.653,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:38:40.601,+105.219,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:38:40.794,+193.421,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:38:40.847,+53.929,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:38:40.899,+50.808,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:38:40.906,+6.997,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:38:40.990,+84.228,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:38:41.187,+196.738,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:38:41.213,+27.060,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:38:41.319,+105.100,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:38:41.321,+1.984,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:38:41.395,+74.224,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:38:41.592,+197.409,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:38:41.618,+26.279,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:38:41.709,+89.887,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:38:41.730,+21.745,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:38:41.800,+69.875,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:38:41.996,+196.192,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:38:42.024,+27.261,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:38:42.113,+89.964,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:38:42.116,+2.076,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:38:42.206,+90.209,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:38:42.399,+193.593,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:38:42.444,+44.156,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:38:42.519,+75.006,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:38:42.537,+18.529,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:38:42.611,+73.520,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
+2026-11-18T11:38:42.803,+191.933,OSC / Wi-Fi,192.168.0.15:55915,/loop-manual/mixed/tick int 1
+2026-11-18T11:38:42.834,+31.123,BLE MIDI,ChainPad IN 0,Note On Ch1 Note 60 Velocity 100
+2026-11-18T11:38:42.923,+89.856,BLE MIDI,ChainPad IN 0,Note Off Ch1 Note 60 Velocity 0
+2026-11-18T11:38:42.938,+14.337,Keyboard (focused),OS / transport unknown,KeyDown F13 code=124
+2026-11-18T11:38:43.029,+92.387,Keyboard (focused),OS / transport unknown,KeyUp F13 code=124
