@@ -1,0 +1,2 @@
+BLE ready MIDI/HID True True
+OSC ticks 10 MIDI note60 on/off 10 10 Windows F13 down/up 10 10 running 0

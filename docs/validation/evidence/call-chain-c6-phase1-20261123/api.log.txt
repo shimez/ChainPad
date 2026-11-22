@@ -1,0 +1,4 @@
+PASS existing configuration after Edge save / reload / reboot
+cycle 400 Call cycle: encoder.press#1 -> encoder.ccw#1 -> encoder.press active unchanged; running=1; cancelled delta=0
+unsupported 400 Call Chain is unsupported by this firmware active unchanged; running=1; cancelled delta=0
+invalid 400 Invalid Call targetInput at encoder.press#1 active unchanged; running=1; cancelled delta=0

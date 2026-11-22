@@ -1,0 +1,9 @@
+OSC receiver nested begin/6 ticks/end PASS
+active bytes unchanged vs initial: True
+AP trigger 409 Settings unavailable; outputs disabled
+AP config/begin 400 Boot settings read failed; reload or restart before saving
+PASS AP status corrupt output=false running=0
+PASS cycle file retained byte-for-byte
+OSC receiver nested begin/6 ticks/end PASS
+PASS recovery on candidate with intact original settings
+RESTORED original app and settings

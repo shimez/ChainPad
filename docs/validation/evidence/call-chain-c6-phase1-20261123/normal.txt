@@ -1,0 +1,38 @@
+inputsReady=1
+Boot: Loaded LittleFS settings
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=17993 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=94864 minFree=70412 largest=64500 allocated=136012 loopStackMin=5088
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Disconnected generation=5 workerStackMin=6012 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=5987
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+Memory records: startup=11 failures=0 recordBytes=368
+MEM entry free=208200 min=208056 largest=192500
+MEM config/loaded free=204952 min=192168 largest=184308
+MEM ble/host-ready free=175568 min=170580 largest=155636
+MEM ble/services-ready free=171164 min=170580 largest=155636
+MEM ble/advertising-ready free=169416 min=169416 largest=151540
+MEM backends/ready free=169392 min=167888 largest=151540
+MEM wifi/mode-ready free=117080 min=116796 largest=100340
+MEM wifi/STA-requested free=116828 min=116788 largest=100340
+MEM mdns/ready free=112096 min=111964 largest=96244
+MEM web/ready free=108816 min=108560 largest=92148
+MEM inputs/ready free=103864 min=103864 largest=88052
+STACK loopTask lowWaterBytes=5088
+STACK input-scan lowWaterBytes=2652
+STACK nimble_host lowWaterBytes=4064
+STACK wifi lowWaterBytes=4276
+STACK tiT lowWaterBytes=3712
+STACK esp_timer lowWaterBytes=8224
+STACK IDLE lowWaterBytes=2068
+STACK chainpad-obs lowWaterBytes=6012
