@@ -4,9 +4,9 @@
 namespace chimera::calls {
 // Runtime admission is separate from the wire format and graph validity.
 constexpr bool ENGINE_SUPPORTS_CALL = false;
-inline bool executable(const Chain& chain) {
+inline bool executable(const Chain& chain, bool supportsCall = ENGINE_SUPPORTS_CALL) {
   for (uint8_t i = 0; i < chain.count; ++i)
-    if (chain.actions[i].protocol == Protocol::CallChain && !ENGINE_SUPPORTS_CALL) return false;
+    if (chain.actions[i].protocol == Protocol::CallChain && !supportsCall) return false;
   return true;
 }
 
@@ -34,6 +34,7 @@ enum class Error { None, InvalidInput, Duplicate, Missing, Slots, InvalidCall, C
 class Graph {
   static_assert(INPUT_COUNT < 32, "seen mask");
   uint32_t seen = 0;
+  bool containsCall = false;
   uint8_t counts[INPUT_COUNT]{};
   uint8_t targets[INPUT_COUNT][MAX_ACTIONS]{}; // target + 1, or zero for ordinary Action
 public:
@@ -49,12 +50,16 @@ public:
     }
     counts[id] = chain.count; seen |= bit;
     for (uint8_t i = 0; i < chain.count; ++i)
-      if (chain.actions[i].protocol == Protocol::CallChain) targets[id][i] = chain.actions[i].targetInput + 1;
+      if (chain.actions[i].protocol == Protocol::CallChain) {
+        targets[id][i] = chain.actions[i].targetInput + 1;
+        containsCall = true;
+      }
     return Error::None;
   }
   Error validate(Cycle& cycle) const {
     cycle.count = 0;
     if (seen != (uint32_t(1) << INPUT_COUNT) - 1) return Error::Missing;
+    if (!containsCall) return Error::None;
     uint8_t color[INPUT_COUNT]{}; // 0 unvisited, 1 on path, 2 complete
     struct Cursor { uint8_t id, next; } path[INPUT_COUNT];
     for (uint8_t root = 0; root < INPUT_COUNT; ++root) {
@@ -77,6 +82,27 @@ public:
       }
     }
     return Error::None;
+  }
+  enum class Admission { Valid, Invalid, Unsupported };
+  Admission finish(bool engineSupportsCall, String& error) const {
+    Cycle cycle;
+    switch (validate(cycle)) {
+      case Error::None: break;
+      case Error::Cycle:
+        error = "Call cycle: ";
+        for (uint8_t i = 0; i < cycle.count; ++i) {
+          const auto& e = cycle.edges[i];
+          error = error + inputName(e.input) + "#" + String(e.index + 1) + " -> ";
+        }
+        error = error + inputName(cycle.edges[0].input);
+        return Admission::Invalid;
+      default:
+        error = "Incomplete Call graph"; return Admission::Invalid;
+    }
+    if (containsCall && !engineSupportsCall) {
+      error = "Call Chain is unsupported by this firmware"; return Admission::Unsupported;
+    }
+    error = ""; return Admission::Valid;
   }
 };
 }

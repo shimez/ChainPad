@@ -116,7 +116,7 @@ void encodeCapabilities(JsonDocument& doc);
 bool decodeConfig(JsonVariantConst root, Config& out, String& error);
 bool loadConfig(String& message);
 bool configStorageMounted();
-enum class ConfigStorageState : uint8_t { Missing, Ready, UnsupportedVersion, Corrupt, IoError };
+enum class ConfigStorageState : uint8_t { Missing, Ready, UnsupportedVersion, Corrupt, IoError, UnsupportedFeature };
 ConfigStorageState configStorageState();
 const char* configStorageStateName();
 bool configOutputsAllowed();

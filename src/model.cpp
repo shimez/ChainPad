@@ -194,13 +194,14 @@ bool decodeConfig(JsonVariantConst root, Config& out, String& error) {
   }
   std::unique_ptr<Chain> chain(new (std::nothrow) Chain);
   if (!chain) { error = "Not enough RAM for chain decode"; return false; }
+  calls::Graph graph;
   for (auto j : chains) {
     uint8_t id = j["input"];
-    if (!decodeChain(j, id, *chain, error)) return false;
+    if (!decodeModelChain(j, id, *chain, error)) return false;
+    if (graph.add(id, *chain) != calls::Error::None) { error = "Invalid Call graph"; return false; }
     out.chains[id].assign(*chain);
   }
-  error = "";
-  return true;
+  return graph.finish(calls::ENGINE_SUPPORTS_CALL, error) == calls::Graph::Admission::Valid;
 }
 bool decodeNetwork(JsonVariantConst n, NetworkSettings& out, String& error) {
   error = "Invalid network settings";
@@ -227,7 +228,13 @@ bool decodeModelChain(JsonVariantConst j, uint8_t id, Chain& out, String& error)
     for (auto action : actions) {
       Action a;
       error = "Invalid action " + String(out.count + 1) + " at " + inputName(id);
-      if (!parseAction(action, a)) return false;
+      if (!parseAction(action, a)) {
+        if (action["protocol"] == "callChain")
+          error = String(action["targetInput"].is<uint8_t>() && action["targetInput"].as<uint8_t>() < INPUT_COUNT
+                         ? "Invalid Call Action" : "Invalid Call targetInput") +
+                  " at " + inputName(id) + "#" + String(out.count + 1);
+        return false;
+      }
       out.actions[out.count++] = a;
     }
   loops::Layout layout;

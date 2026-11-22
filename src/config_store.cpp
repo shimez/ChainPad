@@ -1,4 +1,5 @@
 #include "model.h"
+#include "chain_call.h"
 #include "save_mem.h"
 #include "json_wire.h"
 #include "rotation_runtime.h"
@@ -63,7 +64,11 @@ bool readRecord(File& file, JsonDocument& doc) {
   RecordReader reader{file};
   return !deserializeJson(doc, reader, DeserializationOption::NestingLimit(8)) && file.read() == '\n';
 }
-bool scan(const char* path, bool apply, String& error) {
+// A graph is supplied only on the preflight pass. The apply pass reads the
+// same validated records (rename doesn't rewrite them) and retains local checks.
+bool scan(const char* path, calls::Graph* graph, bool supportsCall, String& error,
+          ConfigStorageState* failureState = nullptr) {
+  const bool apply = !graph;
   auto& config = activeConfig();
   error = "Invalid LittleFS settings records";
   auto file = LittleFS.open(path, "r");
@@ -78,13 +83,17 @@ bool scan(const char* path, bool apply, String& error) {
   auto& chain = *scratch; uint8_t pressCount = 0;
   for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
     if (!readRecord(file, doc)) { error = "Invalid LittleFS chain record"; return false; }
-    if (!decodeChain(doc.as<JsonVariantConst>(), i, chain, error)) return false;
+    if (!decodeModelChain(doc.as<JsonVariantConst>(), i, chain, error)) return false;
+    if (apply && !calls::executable(chain, supportsCall)) {
+      error = "Call Chain is unsupported by this firmware"; return false;
+    }
     if (apply) { SAVE_SAMPLE(ApplyChain, i); } else { SAVE_SAMPLE(ValidateChain, i); }
     if (i < 26) {
       if (!(i % 2)) pressCount = chain.count;
       else if (pressCount + chain.count > MAX_KEY_ACTIONS) { error = "Press / Release total exceeds 16 Actions"; return false; }
     }
     if (apply) config.chains[i].assign(chain);
+    else if (graph->add(i, chain) != calls::Error::None) { error = "Invalid Call graph"; return false; }
   }
   scratch.reset(); // Chain and Rotation scratch buffers never overlap.
   std::unique_ptr<EncoderRotationSettings> rotation(new (std::nothrow) EncoderRotationSettings);
@@ -93,6 +102,12 @@ bool scan(const char* path, bool apply, String& error) {
   if (apply) { SAVE_SAMPLE(ApplyRotation, INPUT_COUNT); } else { SAVE_SAMPLE(ValidateRotation, INPUT_COUNT); }
   if (apply) config.encoderRotation = *rotation;
   if (file.read() != -1) { error = "Trailing settings data"; return false; }
+  if (graph) {
+    const auto admission = graph->finish(supportsCall, error);
+    if (failureState && admission == calls::Graph::Admission::Unsupported)
+      *failureState = ConfigStorageState::UnsupportedFeature;
+    return admission == calls::Graph::Admission::Valid;
+  }
   error = ""; return true;
 }
 void defaults() {
@@ -149,7 +164,7 @@ bool configStorageMounted() { return mounted; }
 bool configCommittedApplyFailed() { return committedApplyFailed; }
 ConfigStorageState configStorageState() { return storageState; }
 const char* configStorageStateName() {
-  const char* names[] = {"missing", "ready", "unsupportedVersion", "corrupt", "ioError"};
+  const char* names[] = {"missing", "ready", "unsupportedVersion", "corrupt", "ioError", "unsupportedFeature"};
   return names[unsigned(storageState)];
 }
 bool configOutputsAllowed() { return !committedApplyFailed && (storageState == ConfigStorageState::Ready || storageState == ConfigStorageState::Missing); }
@@ -191,7 +206,7 @@ bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& er
   if (!scratch) { error = "Not enough RAM for chain stage"; transaction = 0; return false; }
   auto& chain = *scratch;
   if (deserializeJson(doc, json)) { error = "Invalid chain JSON"; transaction = 0; return false; }
-  if (!decodeChain(doc.as<JsonVariantConst>(), id, chain, error)) { transaction = 0; return false; }
+  if (!decodeModelChain(doc.as<JsonVariantConst>(), id, chain, error)) { transaction = 0; return false; }
   SAVE_SAMPLE(StageDecoded, id);
   if (id < 26) {
     if (!(id % 2)) stagedPressCount = chain.count;
@@ -204,16 +219,17 @@ bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& er
   if (!writeRecord(doc, "a", error)) { transaction = 0; return false; }
   ++nextChain; error = ""; return true;
 }
-bool commitConfigSave(uint32_t token, String& error) {
+static bool commitWithCapability(uint32_t token, String& error, bool supportsCall) {
   auto& config = activeConfig();
   if (saveLocked(error)) { transaction = 0; return false; }
   error = "Incomplete or expired configuration transaction";
   if (!transaction || token != transaction || nextChain != INPUT_COUNT || !rotationStaged) return false;
   transaction = 0;
-  if (!scan(STAGED, false, error)) return false;
+  calls::Graph graph;
+  if (!scan(STAGED, &graph, supportsCall, error)) return false;
   // LittleFS rename-over-existing is atomic, including across power loss.
   if (!LittleFS.rename(STAGED, ACTIVE)) { error = "LittleFS commit failed"; return false; }
-  if (!scan(ACTIVE, true, error)) {
+  if (!scan(ACTIVE, nullptr, supportsCall, error)) {
     committedApplyFailed = true;
     defaults(); storageState = ConfigStorageState::IoError;
     rotationRuntime.apply(config.encoderRotation, false);
@@ -223,7 +239,7 @@ bool commitConfigSave(uint32_t token, String& error) {
   rotationRuntime.apply(config.encoderRotation);
   error = ""; return true;
 }
-bool loadConfig(String& message) {
+static bool loadWithCapability(String& message, bool supportsCall) {
   auto& config = activeConfig();
   transaction = 0;
   defaults();
@@ -243,12 +259,23 @@ bool loadConfig(String& message) {
     if (storageState != ConfigStorageState::UnsupportedVersion) bootReadLocked = true;
     return false;
   }
-  if (!scan(ACTIVE, false, message) || !scan(ACTIVE, true, message)) { defaults(); storageState = ConfigStorageState::Corrupt; bootReadLocked = true; return false; }
+  calls::Graph graph;
+  auto failure = ConfigStorageState::Corrupt;
+  if (!scan(ACTIVE, &graph, supportsCall, message, &failure) || !scan(ACTIVE, nullptr, supportsCall, message)) {
+    defaults(); storageState = failure; bootReadLocked = true; return false;
+  }
   bootReadLocked = false;
   committedApplyFailed = false;
   rotationRuntime.restart(config.encoderRotation);
   message = "Loaded LittleFS settings"; return true;
 }
+bool commitConfigSave(uint32_t token, String& error) { return commitWithCapability(token, error, calls::ENGINE_SUPPORTS_CALL); }
+bool loadConfig(String& message) { return loadWithCapability(message, calls::ENGINE_SUPPORTS_CALL); }
+#if defined(CHAINPAD_HOST_TEST)
+// Host storage tests only: exercise real disk roundtrips without dispatch.
+bool commitCallModelForTest(uint32_t token, String& error) { return commitWithCapability(token, error, true); }
+bool loadCallModelForTest(String& message) { return loadWithCapability(message, true); }
+#endif
 bool saveWifiConfig(const String& json, String& error) {
   auto& config = activeConfig();
   if (saveLocked(error)) return false;

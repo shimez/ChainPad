@@ -1006,8 +1006,10 @@ void stopOtherChainsTests() {
 #include "obs_action_tests.h"
 #include "loop_tests.h"
 #include "call_tests.h"
+#include "call_storage_tests.h"
 int main() {
   callModelTests();
+  callStorageTests();
   loopFoundationTests();
   loopEngineTests();
   obsActionTests();
