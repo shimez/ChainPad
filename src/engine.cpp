@@ -4,6 +4,9 @@
 
 namespace chimera {
 Engine engine;
+Engine::Engine() {
+  for (uint8_t i = 0; i < MAX_RUNNING; ++i) order[i] = i;
+}
 // Tickets only exist while an invocation waits at an OSC Action. Cancelled
 // jobs disappear from the scan, so Stop/Panic cannot leave a hole in the FIFO.
 // At most 32 tickets coexist; signed differences also order counter wrap.
@@ -13,7 +16,7 @@ bool Engine::admitLoopOsc(Invocation& job, uint32_t now) {
     job.oscPending = true;
   }
   for (uint8_t i = 0; i < running; ++i)
-    if (jobs[i].oscPending && static_cast<int32_t>(jobs[i].oscTicket - job.oscTicket) < 0)
+    if (jobs[order[i]].oscPending && static_cast<int32_t>(jobs[order[i]].oscTicket - job.oscTicket) < 0)
       return false;
   if (loopOscClockValid && uint32_t(now - lastLoopOscAt) < LOOP_OSC_INTERVAL_MS) return false;
   lastLoopOscAt = now; loopOscClockValid = true; job.oscPending = false;
@@ -48,13 +51,9 @@ Engine::AdvanceResult Engine::advance(Invocation& job, uint32_t now, uint8_t& sl
       else --job.depth;
       continue;
     }
-    if (action.protocol == Protocol::Keyboard && action.keyMessage == KeyMessage::Consumer)
-      hidtrace::record(hidtrace::Dispatch, action.transport == Transport::Usb ? 0 : 1, action.usage, job.input, 0, index);
     const bool wait = action.protocol == Protocol::Wait;
     const bool stop = action.protocol == Protocol::StopOtherChains;
-    auto result = (wait || stop) ? SendResult::Accepted : dispatch(action, now);
-    stats.lastInput = job.input; stats.lastAction = index; stats.lastResult = result;
-    if (result == SendResult::Accepted) ++stats.accepted; else ++stats.skipped;
+    auto result = runAction(action, job.input, index, now);
     if (stop) return AdvanceResult::StopOthers;
     if (wait && action.delayMs) { job.wakeAt = now + action.delayMs; return AdvanceResult::Waiting; }
     if (pairedAction(action) && result == SendResult::Accepted && pairedActionPending(action)) {
@@ -63,14 +62,33 @@ Engine::AdvanceResult Engine::advance(Invocation& job, uint32_t now, uint8_t& sl
   }
   return AdvanceResult::Complete;
 }
-// Called only after advance() has returned and the caller owns a local job.
-// No backend queues, held outputs, rotation state or input events are touched.
-void Engine::continueAfterStop(Invocation& job, uint32_t now, uint8_t others, uint8_t& slice) {
-  stats.cancelledChains += others;
-  running = 0;
-  AdvanceResult result;
-  do { result = advance(job, now, slice); } while (result == AdvanceResult::StopOthers);
-  if (result == AdvanceResult::Waiting) jobs[running++] = job;
+SendResult Engine::runAction(const Action& action, uint8_t input, uint8_t index, uint32_t now) {
+  if (action.protocol == Protocol::Keyboard && action.keyMessage == KeyMessage::Consumer)
+    hidtrace::record(hidtrace::Dispatch, action.transport == Transport::Usb ? 0 : 1, action.usage, input, 0, index);
+  auto result = (action.protocol == Protocol::Wait || action.protocol == Protocol::StopOtherChains)
+    ? SendResult::Accepted : dispatch(action, now);
+  stats.lastInput = input; stats.lastAction = index; stats.lastResult = result;
+  if (result == SendResult::Accepted) ++stats.accepted; else ++stats.skipped;
+  return result;
+}
+Engine::AdvanceResult Engine::resume(uint8_t pos, uint32_t now, uint8_t slice) {
+  const uint8_t id = order[pos];
+  const auto result = advance(jobs[id], now, slice);
+  if (result == AdvanceResult::StopOthers) {
+    stats.cancelledChains += running - 1;
+    order[pos] = order[0]; order[0] = id;
+    running = 1;
+    AdvanceResult tail;
+    do { tail = advance(jobs[id], now, slice); } while (tail == AdvanceResult::StopOthers);
+    if (tail == AdvanceResult::Complete) running = 0;
+    return result; // Old queue positions are invalid even if self completed.
+  }
+  if (result == AdvanceResult::Complete) {
+    --running;
+    for (uint8_t j = pos; j < running; ++j) order[j] = order[j + 1];
+    order[running] = id;
+  }
+  return result;
 }
 bool Engine::trigger(const InputEvent& event) {
   if (event.input >= INPUT_COUNT) return false;
@@ -94,52 +112,53 @@ bool Engine::trigger(const InputEvent& event) {
     ++stats.rejectedChains; stats.lastInput = event.input;
     stats.lastAction = 0; stats.lastResult = SendResult::Busy; return false;
   }
-  Invocation job; job.input = event.input;
-  job.looping = layout.count != 0;
   // Wait duration starts at execution, not at a possibly queued physical edge.
   const uint32_t now = millis();
   // A full scheduler's straight-line Stop prefix must execute atomically even
   // when the cycle budget is exhausted. It is bounded by MAX_ACTIONS; charge
   // its work as budget debt (no budget reset), then yield at the first Header.
-  if (job.looping && running == MAX_RUNNING && stopBeforeWait) {
-    job.looping = false;
-    uint8_t prefix = LOOP_SLICE_BUDGET;
-    const auto result = advance(job, now, prefix);
-    if (result == AdvanceResult::StopOthers) {
-      const uint8_t used = job.next;
-      loopBudget = loopBudget > used ? loopBudget - used : 0;
-      job.looping = true;
-      uint8_t slice = used < LOOP_SLICE_BUDGET ? LOOP_SLICE_BUDGET - used : 0;
-      continueAfterStop(job, now, running, slice);
+  uint8_t next = 0, slice = LOOP_SLICE_BUDGET;
+  if (running == MAX_RUNNING) {
+    // Admission above guarantees no suspending Action before the first Stop
+    // (or end). Execute just that prefix without a 33rd Invocation.
+    while (next < chain.count) {
+      const uint8_t index = next++;
+      const auto& a = chain.actions[index];
+      runAction(a, event.input, index, now);
+      if (a.protocol == Protocol::StopOtherChains) {
+        cancelAll();
+        if (layout.count) {
+          loopBudget = loopBudget > next ? loopBudget - next : 0;
+          slice = slice > next ? slice - next : 0;
+        }
+        break;
+      }
     }
-    return true;
+    if (next == chain.count) return true;
   }
-  uint8_t slice = LOOP_SLICE_BUDGET;
-  const auto result = advance(job, now, slice);
-  if (result == AdvanceResult::StopOthers) continueAfterStop(job, now, running, slice);
-  else if (result == AdvanceResult::Waiting) jobs[running++] = job;
+  const uint8_t pos = running++;
+  auto& job = jobs[order[pos]];
+  job.input = event.input; job.next = next; job.depth = 0;
+  job.looping = layout.count != 0; job.pairPending = false; job.oscPending = false;
+  // Stack entries and ticket are written before use. No stale wake deadline.
+  job.wakeAt = now;
+  resume(pos, now, slice);
   return true;
 }
 void Engine::tick(uint32_t now) {
   for (uint8_t i = 0; i < running;) {
-    if (static_cast<int32_t>(now - jobs[i].wakeAt) < 0) { ++i; continue; }
+    const auto& job = jobs[order[i]];
+    if (static_cast<int32_t>(now - job.wakeAt) < 0) { ++i; continue; }
     // Share the remaining cycle work with later jobs rather than allowing the
     // first long-running loops to starve the tail of the stable queue.
     uint8_t slice = LOOP_SLICE_BUDGET;
-    if (jobs[i].looping) {
+    if (job.looping) {
       const uint16_t share = loopBudget / (running - i);
       if (share < slice) slice = uint8_t(share);
     }
-    const auto result = advance(jobs[i], now, slice);
-    if (result == AdvanceResult::StopOthers) {
-      Invocation job = jobs[i]; // Preserve self before invalidating the array.
-      continueAfterStop(job, now, running - 1, slice);
-      return; // All old indices are invalid; self has already continued once.
-    }
-    if (result == AdvanceResult::Waiting) { ++i; continue; }
-    // Stable order for simultaneous resumptions; retriggers are independent.
-    --running;
-    for (uint8_t j = i; j < running; ++j) jobs[j] = jobs[j + 1];
+    const auto result = resume(i, now, slice);
+    if (result == AdvanceResult::StopOthers) return;
+    if (result == AdvanceResult::Waiting) ++i;
   }
 }
 void Engine::cancelAll() { stats.cancelledChains += running; running = 0; }

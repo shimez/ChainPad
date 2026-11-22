@@ -1,0 +1,79 @@
+{
+  "candidateSHA256": "5ce45e038f8c3e2f95cc6b2a0b0db1d731ca9a145554f5d84f45a2adc0b80d2b",
+  "originalAppSHA256": "a64b6d8f53f6bf4d75555f2edad3b0daab4cc6a544346fd1dce10ea60078044e",
+  "appAndSettingsVerified": true,
+  "steps": [
+    {
+      "step": "stop-start",
+      "runningChains": 0,
+      "cancelledChains": 0,
+      "rejectedChains": 0,
+      "accepted": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0
+    },
+    {
+      "step": "stop-full",
+      "runningChains": 32,
+      "cancelledChains": 0,
+      "rejectedChains": 0,
+      "accepted": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0
+    },
+    {
+      "step": "stop-after-reject-and-sync",
+      "runningChains": 32,
+      "cancelledChains": 0,
+      "rejectedChains": 1,
+      "accepted": 1,
+      "inputOverflows": 0,
+      "transportOverflows": 0
+    },
+    {
+      "step": "stop-end",
+      "runningChains": 0,
+      "cancelledChains": 32,
+      "rejectedChains": 1,
+      "accepted": 3,
+      "inputOverflows": 0,
+      "transportOverflows": 0
+    },
+    {
+      "step": "panic-start",
+      "runningChains": 0,
+      "cancelledChains": 32,
+      "rejectedChains": 1,
+      "accepted": 3,
+      "inputOverflows": 0,
+      "transportOverflows": 0
+    },
+    {
+      "step": "panic-full",
+      "runningChains": 32,
+      "cancelledChains": 32,
+      "rejectedChains": 1,
+      "accepted": 3,
+      "inputOverflows": 0,
+      "transportOverflows": 0
+    },
+    {
+      "step": "panic-after-reject-and-sync",
+      "runningChains": 32,
+      "cancelledChains": 32,
+      "rejectedChains": 2,
+      "accepted": 4,
+      "inputOverflows": 0,
+      "transportOverflows": 0
+    },
+    {
+      "step": "panic-end",
+      "runningChains": 0,
+      "cancelledChains": 64,
+      "rejectedChains": 2,
+      "accepted": 4,
+      "inputOverflows": 0,
+      "transportOverflows": 0
+    }
+  ]
+}

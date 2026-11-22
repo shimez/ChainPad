@@ -16,6 +16,7 @@ struct EngineStats {
 class Engine {
   public:
     static constexpr uint8_t MAX_RUNNING = 32;
+    Engine();
     // Keep aggregate traffic bounded even when all 32 slots contain OSC Loops.
     static constexpr uint16_t LOOP_CYCLE_BUDGET = 64;
     static constexpr uint8_t LOOP_SLICE_BUDGET = 16;
@@ -35,6 +36,8 @@ class Engine {
        uint32_t wakeAt = 0, oscTicket = 0;
        Frame stack[loops::MAX_DEPTH]{};
      } jobs[MAX_RUNNING];
+    // Permutation: [0,running) is the FIFO; [running,MAX_RUNNING) is free.
+    uint8_t order[MAX_RUNNING];
     uint16_t loopBudget = LOOP_CYCLE_BUDGET;
     uint32_t nextOscTicket = 0, lastLoopOscAt = 0;
     bool loopOscClockValid = false;
@@ -42,7 +45,8 @@ class Engine {
     enum class AdvanceResult { Complete, Waiting, StopOthers };
      AdvanceResult advance(Invocation& job, uint32_t now, uint8_t& slice);
      bool admitLoopOsc(Invocation& job, uint32_t now);
-     void continueAfterStop(Invocation& job, uint32_t now, uint8_t others, uint8_t& slice);
+     SendResult runAction(const Action&, uint8_t input, uint8_t index, uint32_t now);
+     AdvanceResult resume(uint8_t pos, uint32_t now, uint8_t slice);
 };
 extern Engine engine;
 }

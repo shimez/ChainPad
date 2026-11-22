@@ -871,6 +871,18 @@ void stopOtherChainsTests() {
     auto& c = config.chains[input]; c.count = 0;
     for (const auto& a : actions) c.actions[c.count++] = a;
   };
+  // Slot zero completes first. Its replacement is newer than the two
+  // surviving slots: it must not Stop them before their simultaneous wake.
+  fresh();
+  {
+    Engine e; Action shortWait = wait; shortWait.delayMs = 1;
+    chain(0, {shortWait}); chain(2, {wait, osc});
+    e.trigger({0,0}); e.trigger({2,0}); e.trigger({2,0});
+    hostMillis=1; e.tick(1); assert(e.activeCount()==2);
+    Action align = wait; align.delayMs=99; chain(4, {align, stop, osc});
+    e.trigger({4,1}); hostMillis=100; e.tick(100); e.tick(100);
+    assert(e.activeCount()==0 && fake::packets.size()==3 && e.stats.cancelledChains==0);
+  }
   // Immediate Stop preserves output state/FIFOs and continues after repeated Stops.
   fresh();
   {
