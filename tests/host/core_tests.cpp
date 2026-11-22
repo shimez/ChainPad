@@ -1005,7 +1005,9 @@ void stopOtherChainsTests() {
 }
 #include "obs_action_tests.h"
 #include "loop_tests.h"
+#include "call_tests.h"
 int main() {
+  callModelTests();
   loopFoundationTests();
   loopEngineTests();
   obsActionTests();

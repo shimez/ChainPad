@@ -1,0 +1,26 @@
+{
+  "wire": [
+    ["{\"protocol\":\"callChain\",\"delayMs\":0,\"targetInput\":1}",1],
+    ["{\"target\\u0049nput\":-0,\"protocol\":\"callChain\",\"delayMs\":0}",0],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0,\"targetInput\":27}",27],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0,\"targetInput\":1.0}",null],
+    ["{\"target\\u0049nput\":1e0,\"delayMs\":0,\"protocol\":\"callChain\"}",null],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0.0,\"targetInput\":1}",null],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0,\"targetInput\":0.5}",null],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0,\"targetInput\":28}",null],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0,\"targetInput\":-1}",null],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0,\"targetInput\":\"1\"}",null],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0,\"targetInput\":true}",null],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0,\"targetInput\":null}",null],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0}",null],
+    ["{\"protocol\":\"callChain\",\"delayMs\":1,\"targetInput\":1}",null],
+    ["{\"protocol\":\"callChain\",\"delayMs\":0,\"targetInput\":1,\"extra\":1}",null]
+  ],
+  "graphs": [
+    {"edges":[],"cycle":[]},
+    {"edges":[[0,1],[0,1],[0,2],[1,3],[2,3]],"cycle":[]},
+    {"edges":[[27,27]],"cycle":[[27,0,27]]},
+    {"edges":[[0,1],[1,0]],"cycle":[[0,0,1],[1,0,0]]},
+    {"edges":[[0,2],[2,4],[2,3],[3,26],[26,2]],"cycle":[[2,1,3],[3,0,26],[26,0,2]]}
+  ]
+}

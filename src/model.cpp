@@ -1,5 +1,6 @@
 #include "model.h"
 #include "chain_loop.h"
+#include "chain_call.h"
 #include <IPAddress.h>
 #include <cmath>
 #include <memory>
@@ -59,6 +60,7 @@ bool parseAction(JsonVariantConst j, Action& a) {
   if (loop != loops::ParseResult::NotLoop) return loop == loops::ParseResult::Valid;
   if (!j.is<JsonObjectConst>()) return false;
   String p = j["protocol"] | "";
+  if (p == "callChain") return calls::decode(j, a);
   if (p == "obs") {
     if (j["protocol"].as<JsonString>().size() != 3) return false;
     if (!integer(j["delayMs"], 0, 0) || !j["operation"].is<const char*>()) return false;
@@ -211,8 +213,13 @@ bool decodeNetwork(JsonVariantConst n, NetworkSettings& out, String& error) {
   return true;
 }
 bool decodeChain(JsonVariantConst j, uint8_t id, Chain& out, String& error) {
+    if (!decodeModelChain(j, id, out, error)) return false;
+    if (!calls::executable(out)) { error = "Call Chain is unsupported by this firmware"; return false; }
+    return true;
+}
+bool decodeModelChain(JsonVariantConst j, uint8_t id, Chain& out, String& error) {
     error = "Invalid chain ID";
-    if (!integer(j["input"], id, id)) return false;
+    if (id >= INPUT_COUNT || !integer(j["input"], id, id)) return false;
     auto actions = j["actions"].as<JsonArrayConst>();
     error = "Invalid action list at " + inputName(id);
     if (!j["actions"].is<JsonArrayConst>() || actions.size() > eventActionLimit(id)) return false;
@@ -291,6 +298,10 @@ template<typename T> bool encodeChainImpl(const T& source, uint8_t id, JsonDocum
     for (uint8_t k = 0; k < source.count; ++k) {
       const auto& a = source.actions[k]; auto j = actions.add<JsonObject>();
       if (j.isNull()) return false;
+      if (a.protocol == Protocol::CallChain) {
+        if (!calls::encode(a, j)) return false;
+        continue;
+      }
       if (loops::marker(a)) {
         if (!loops::encode(a, j)) return false;
         continue;
