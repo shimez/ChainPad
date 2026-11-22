@@ -135,6 +135,7 @@ try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme
 </main>
 <script src="maintenance.js"></script>
 <script src="wifi-password.js"></script>
+<script src="call-model.js"></script>
 <script src="presets.js"></script>
 <script src="builtin-config-data.js"></script>
 <script src="osc-addresses.js"></script>
@@ -237,9 +238,9 @@ $('add').onclick=()=>LoopEditor.add();
 async function saveConfig(replaceUnsupported=false){
   if(typeof obsEditor!=='undefined'&&obsEditor.busy())throw Error('OBS操作の完了を待ってください。');
   if(!config)return;
-  for(const id of ['ssid','oscHost','oscPort'])config.network[id]=id==='oscPort'?Number($(id).value):$(id).value;
   // Snapshot in the browser; the device receives just one chain per request.
   const snapshot=RotationPreview.clone(config);
+  for(const id of ['ssid','oscHost','oscPort'])snapshot.network[id]=id==='oscPort'?Number($(id).value):$(id).value;
   snapshot.network=passwordEditor.update(snapshot.network);
   const normalized=Presets.read(Presets.full(snapshot),'full',capabilities);
   snapshot.encoderRotation=normalized.config.encoderRotation;
@@ -253,6 +254,7 @@ async function saveConfig(replaceUnsupported=false){
     await api(`config/rotation?token=${token}`,'PUT',snapshot.encoderRotation);
     const r=await api(`config/commit?token=${token}`,'POST');
     config.encoderRotation=snapshot.encoderRotation;
+    for(const id of ['ssid','oscHost','oscPort'])config.network[id]=snapshot.network[id];
     config.network.passwordConfigured=passwordEditor.saved(snapshot.network);
     delete config.network.password;
     dirty=false;$('dirty').textContent='保存済み';$('storageRecovery').hidden=true;message(r.message);
@@ -286,8 +288,8 @@ function loadBuiltin(name){
 }
 $('loadDefault').onclick=run(async()=>loadBuiltin('Default'));
 $('loadEmpty').onclick=run(async()=>loadBuiltin('Empty'));
-function applyImport(raw,target){if(saving)throw Error('保存完了後にImportしてください。');if(target.kind==='key'&&target.group>=13)throw Error('Encoder回転は全体設定を使用してください。');const parsed=Presets.read(raw,target.kind,capabilities);if(target.kind==='key'){for(const c of parsed.chains)config.chains.find(v=>v.input===target.group*2+c.input).actions=c.actions;selectInput(target.group);}else{parsed.config.network={ssid:$('ssid').value,passwordConfigured:config.network.passwordConfigured,...parsed.config.network};config=parsed.config;for(const id of ['oscHost','oscPort'])$(id).value=config.network[id];selectInput(Math.floor(selected/2));}changed();renderActions();rotationSummary();message(`${target.kind==='key'?names[target.group]+'のPress / Release':'全体設定'}を編集画面へImportしました。「保存・適用」で確定してください。${parsed.converted?'\nこの機種はUSB非対応のため、'+parsed.converted+'個のAction / OutputのTransportをBLEに変更しました。':''}`);}
-$('presetFile').onchange=run(async()=>{const file=$('presetFile').files[0];const target=importTarget;if(!file||!target)return;if(file.size>1024*1024)throw Error('Importファイルは1 MiB以下にしてください。');const raw=JSON.parse(await file.text());applyImport(raw,target);});
+function applyImport(raw,target){if(saving)throw Error('保存完了後にImportしてください。');if(target.kind==='key'&&target.group>=13)throw Error('Encoder回転は全体設定を使用してください。');const parsed=Presets.read(raw,target.kind,capabilities,target.kind==='key'?target.group*2:0);if(target.kind==='key'){config.chains=Presets.pasteKey(config.chains,target.group,parsed.chains,capabilities);selectInput(target.group);}else{parsed.config.network={ssid:$('ssid').value,passwordConfigured:config.network.passwordConfigured,...parsed.config.network};config=parsed.config;for(const id of ['oscHost','oscPort'])$(id).value=config.network[id];selectInput(Math.floor(selected/2));}changed();renderActions();rotationSummary();message(`${target.kind==='key'?names[target.group]+'のPress / Release':'全体設定'}を編集画面へImportしました。「保存・適用」で確定してください。${parsed.converted?'\nこの機種はUSB非対応のため、'+parsed.converted+'個のAction / OutputのTransportをBLEに変更しました。':''}`);}
+$('presetFile').onchange=run(async()=>{const file=$('presetFile').files[0];const target=importTarget;if(!file||!target)return;if(file.size>1024*1024)throw Error('Importファイルは1 MiB以下にしてください。');const raw=CallModel.parseFile(await file.text(),target.kind==='key'?target.group*2:0);applyImport(raw,target);});
 names.forEach((name,i)=>$('inputs').append(button(name,()=>{if(config)selectInput(i);})));window.addEventListener('beforeunload',e=>{if(dirty||obsEditor.dirty()){e.preventDefault();e.returnValue='';}});
 document.addEventListener('visibilitychange',()=>{clearTimeout(statusTimer);if(!document.hidden)status();});
 window.addEventListener('pagehide',()=>{status.paused=true;clearTimeout(statusTimer);});

@@ -248,6 +248,7 @@ void encodeCapabilities(JsonDocument& doc) {
   doc["defaultMidiTransport"] = HAS_USB_MIDI ? "both" : "ble";
   doc["maxWaitMs"] = MAX_WAIT_MS;
   doc["maxLoopCount"] = loops::MAX_COUNT;
+  doc["callChainSupported"] = calls::ENGINE_SUPPORTS_CALL;
   doc["schemaVersion"] = 2;
   doc["wifiPasswordUpdate"] = "omit-preserves";
   doc["obsWebSocket"] = bool(CHAINPAD_HAS_OBS);

@@ -7,9 +7,13 @@ const Presets = (() => {
   const object = v => v && typeof v === 'object' && !Array.isArray(v);
   const int = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
   const text = (v, max) => typeof v === 'string' && !v.includes('\0') && new TextEncoder().encode(v).length <= max;
-  function action(raw, capabilities, changes) {
+  function action(raw, capabilities, changes, input, index) {
     if (!object(raw)) fail('Actionが不正です。');
     const a = clone(raw);
+    if (a.protocol === 'callChain') {
+      CallModel.validateAction(a,input,index);
+      return {protocol:'callChain',delayMs:0,targetInput:a.targetInput};
+    }
     if (a.protocol === 'loopStart' || a.protocol === 'loopEnd') {
       const start = a.protocol === 'loopStart';
       if (a.delayMs !== 0 || Object.keys(a).length !== (start ? 3 : 2) ||
@@ -67,13 +71,13 @@ const Presets = (() => {
     } else fail('未対応のActionです。');
     return a;
   }
-  function chains(raw, count, capabilities, changes) {
+  function chains(raw, count, capabilities, changes, offset=0) {
     if (!Array.isArray(raw) || raw.length !== count) fail(`Chainは${count}個必要です。`);
     const seen = new Set();
     const result = raw.map(c => {
       if (!object(c) || !int(c.input,0,count-1) || seen.has(c.input) || !Array.isArray(c.actions) || c.actions.length>(c.input<26?16:8)) fail('ChainのID・重複・Action数が不正です。');
       seen.add(c.input);
-      const actions=c.actions.map(a=>action(a,capabilities,changes));
+      const actions=c.actions.map((a,i)=>action(a,capabilities,changes,offset+c.input,i));
       let depth=0;
       for(const a of actions){
         if(a.protocol==='loopStart')++depth;
@@ -123,14 +127,19 @@ const Presets = (() => {
     }
     return [...duplicates];
   }
-  function read(raw, kind, capabilities) {
+  function checkCalls(rows, capabilities) {
+    if (rows.some(c=>c.actions.some(a=>a.protocol==='callChain')))
+      CallModel.checkAdmission(rows,capabilities.callChainSupported===true);
+  }
+  function read(raw, kind, capabilities, offset=0) {
     const format = kind==='key' ? 'chainpad-key-preset' : 'chainpad-configuration';
     if (!object(raw) || raw.format!==format) fail('ファイル種別が一致しません。');
     if(raw.version!==(kind==='key'?1:2)) fail('Unsupported Version: このPresetバージョンは非対応です。');
     const changes={count:0};
-    if (kind==='key') return {chains:chains(raw.chains,2,capabilities,changes), converted:changes.count};
+    if (kind==='key') return {chains:chains(raw.chains,2,capabilities,changes,offset), converted:changes.count};
     if (raw.schemaVersion!==2) fail('Unsupported schemaVersion: expected 2');
     const result={schemaVersion:2,network:network(raw.network),chains:chains(raw.chains,28,capabilities,changes),encoderRotation:rotation(raw.encoderRotation,capabilities,changes)};
+    checkCalls(result.chains,capabilities);
     return {config:result,converted:changes.count,duplicates:duplicateDestinations(result.encoderRotation)};
   }
   function full(config) {
@@ -147,5 +156,14 @@ const Presets = (() => {
     const parsed=read({...raw,network:{oscHost:'0.0.0.0',oscPort:9000}},'full',capabilities);
     return {chains:parsed.config.chains,encoderRotation:parsed.config.encoderRotation};
   }
-  return {read,full,key,duplicateDestinations,readBuiltin,consumerNames};
+  function pasteKey(existing, group, imported, capabilities) {
+    if (!int(group,0,12)) fail('Key Presetの貼り付け先が不正です。');
+    const rows=existing.map(c=>{
+      const local=c.input-group*2;
+      return local===0||local===1 ? {...c,actions:imported[local].actions} : c;
+    });
+    checkCalls(rows,capabilities);
+    return rows;
+  }
+  return {read,full,key,pasteKey,duplicateDestinations,readBuiltin,consumerNames};
 })();

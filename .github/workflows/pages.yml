@@ -120,6 +120,10 @@ jobs:
         run: node tests/test_rotation_preview.cjs
       - name: Validate Loop model and preset structure
         run: node tests/test_loop_model.cjs
+      - name: Validate Call model and preset import
+        run: |
+          node tests/test_call_model.cjs
+          node tests/test_call_preset_ui.cjs
       - name: Validate firmware update notification
         run: node --test tests/test_firmware_update.cjs
       - name: Validate Installer metadata and release history

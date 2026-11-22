@@ -37,7 +37,7 @@ class Handler(BaseHTTPRequestHandler):
             network = {k: v for k, v in CONFIG["network"].items() if k != "password"}
             network["passwordConfigured"] = bool(CONFIG["network"]["password"])
             self.reply({**CONFIG, "network": network})
-        elif self.path in ("/presets.js", "/action-ui.js", "/rotation-ui.js", "/wifi-password.js"):
+        elif self.path in ("/call-model.js", "/presets.js", "/action-ui.js", "/rotation-ui.js", "/wifi-password.js"):
             payload = (ROOT / "web" / self.path.lstrip("/")).read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/javascript; charset=utf-8")
