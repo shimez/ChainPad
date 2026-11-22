@@ -1,0 +1,18 @@
+inputsReady=1
+Boot: Loaded LittleFS settings
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=52942246 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=97636 minFree=77184 largest=79860 allocated=133368 loopStackMin=5792
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Disconnected generation=1713 workerStackMin=5916 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0

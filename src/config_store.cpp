@@ -1,4 +1,5 @@
 #include "model.h"
+#include "save_mem.h"
 #include "json_wire.h"
 #include "rotation_runtime.h"
 #include "storage_probe.h"
@@ -46,6 +47,7 @@ bool writeRecord(JsonDocument& doc, const char* mode, String& error) {
   if (!file) return false;
   const auto expected = measureSettingsJson(doc);
   bool ok = serializeSettingsJson(doc, file) == expected && file.write(uint8_t('\n')) == 1;
+  SAVE_SAMPLE(FileWritten, mode[0] == 'w' ? 255 : nextChain);
   file.flush(); file.close();
   return ok;
 }
@@ -77,6 +79,7 @@ bool scan(const char* path, bool apply, String& error) {
   for (uint8_t i = 0; i < INPUT_COUNT; ++i) {
     if (!readRecord(file, doc)) { error = "Invalid LittleFS chain record"; return false; }
     if (!decodeChain(doc.as<JsonVariantConst>(), i, chain, error)) return false;
+    if (apply) { SAVE_SAMPLE(ApplyChain, i); } else { SAVE_SAMPLE(ValidateChain, i); }
     if (i < 26) {
       if (!(i % 2)) pressCount = chain.count;
       else if (pressCount + chain.count > MAX_KEY_ACTIONS) { error = "Press / Release total exceeds 16 Actions"; return false; }
@@ -87,6 +90,7 @@ bool scan(const char* path, bool apply, String& error) {
   std::unique_ptr<EncoderRotationSettings> rotation(new (std::nothrow) EncoderRotationSettings);
   if (!rotation) { error = "Not enough RAM for rotation read"; return false; }
   if (!readRecord(file, doc) || !decodeRotation(doc.as<JsonVariantConst>(), *rotation, error)) return false;
+  if (apply) { SAVE_SAMPLE(ApplyRotation, INPUT_COUNT); } else { SAVE_SAMPLE(ValidateRotation, INPUT_COUNT); }
   if (apply) config.encoderRotation = *rotation;
   if (file.read() != -1) { error = "Trailing settings data"; return false; }
   error = ""; return true;
@@ -188,6 +192,7 @@ bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& er
   auto& chain = *scratch;
   if (deserializeJson(doc, json)) { error = "Invalid chain JSON"; transaction = 0; return false; }
   if (!decodeChain(doc.as<JsonVariantConst>(), id, chain, error)) { transaction = 0; return false; }
+  SAVE_SAMPLE(StageDecoded, id);
   if (id < 26) {
     if (!(id % 2)) stagedPressCount = chain.count;
     else if (stagedPressCount + chain.count > MAX_KEY_ACTIONS) {
@@ -195,6 +200,7 @@ bool stageConfigChain(uint32_t token, uint8_t id, const String& json, String& er
     }
   }
   if (!encodeChain(chain, id, doc)) { error = "Chain encode failed"; transaction = 0; return false; }
+  SAVE_SAMPLE(StageEncoded, id);
   if (!writeRecord(doc, "a", error)) { transaction = 0; return false; }
   ++nextChain; error = ""; return true;
 }
@@ -286,6 +292,7 @@ bool stageConfigRotation(uint32_t token, const String& json, String& error) {
   if (!rotation) { transaction = 0; error = "Not enough RAM for rotation stage"; return false; }
   if (deserializeJson(doc, json) || !decodeRotation(doc.as<JsonVariantConst>(), *rotation, error)) { transaction = 0; return false; }
   if (!encodeRotation(*rotation, doc, true)) { error = "Rotation encode failed"; transaction = 0; return false; }
+  SAVE_SAMPLE(RotationEncoded, INPUT_COUNT);
   if (!writeRecord(doc, "a", error)) { transaction = 0; return false; }
   rotationStaged = true; error = ""; return true;
 }

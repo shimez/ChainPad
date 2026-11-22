@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "save_mem.h"
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -374,6 +375,11 @@ void loop() {
     if (hidtrace::command(command) || hidtrace::active()) {
       // Recording controls are silent. Suppress diagnostic console output while active.
     } else
+#endif
+#if CHAINPAD_SAVE_MEM
+    if (command == 'v') { savemem::arm(); console.println("SAVE armed"); }
+    else if (command == 'V') { serialReport(console, 1024, [&](Print& out) { savemem::print(out); }); }
+    else
 #endif
     if (command == 'm') {
       serialReport(console, 2560, [&](Print& out) {

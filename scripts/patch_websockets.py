@@ -50,6 +50,7 @@ if __name__ == '__main__':
 elif 'Import' in globals():
     Import('env')
     if env.subst('$PIOENV') not in ('xiao_esp32s3', 'xiao_esp32s3_obs_test', 'xiao_esp32s3_obs_trace',
-                                   'xiao_esp32c5', 'xiao_esp32c6', 'xiao_esp32c6_hid_trace'):
+                                   'xiao_esp32c5', 'xiao_esp32c6', 'xiao_esp32c6_hid_trace',
+                                   'xiao_esp32c6_save_mem', 'xiao_esp32c6_save_mem_reserve'):
         raise RuntimeError('OBS patch must run only in an explicit OBS environment')
     patch(Path(env.subst('$PROJECT_LIBDEPS_DIR')) / env.subst('$PIOENV') / 'WebSockets' / 'src')

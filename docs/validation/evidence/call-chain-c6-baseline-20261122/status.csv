@@ -1,0 +1,17 @@
+phase,uptimeMs,runningChains,cancelledChains,rejectedChains,inputOverflows,transportOverflows,OBS
+status,52891997,0,0,0,0,0,Disconnected
+cold-status,12406,0,0,0,0,0,Ready
+max-first-status,32968,0,0,0,0,0,Ready
+max-second-status,45151,0,0,0,0,0,Ready
+full-stop-status,51394,32,0,0,0,0,Ready
+after-stop-status,53156,0,32,0,0,0,Ready
+full-panic-status,54496,32,32,0,0,0,Ready
+after-panic-status,56425,0,64,0,0,0,Disconnected
+restored-status,61873,0,64,0,0,0,Ready
+repeat-start-status,13626,0,0,0,0,0,Ready
+repeat-reloaded-status,10331,0,0,0,0,0,Disconnected
+repeat-restored-status,5199,0,0,0,0,0,Disconnected
+repeat-ready-status,24345,0,0,0,0,0,Ready
+repeat-max-off-status,48102,0,0,0,0,0,Ready
+final-restored-status,54458,0,0,0,0,0,Ready
+browser-done-status,77589,0,0,0,0,0,Ready

@@ -1,0 +1,2405 @@
+
+@@ cold-ready 23:52:19
+inputsReady=1
+Boot: Loaded LittleFS settings
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=12483 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=95956 minFree=82740 largest=77812 allocated=134888 loopStackMin=5920
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+Memory records: startup=11 failures=0 recordBytes=368
+MEM entry free=208200 min=208056 largest=192500
+MEM config/loaded free=204952 min=192168 largest=184308
+MEM ble/host-ready free=175568 min=170580 largest=155636
+MEM ble/services-ready free=171164 min=170580 largest=155636
+MEM ble/advertising-ready free=169416 min=169416 largest=151540
+MEM backends/ready free=169392 min=167888 largest=151540
+MEM wifi/mode-ready free=117080 min=116796 largest=100340
+MEM wifi/STA-requested free=116828 min=116788 largest=100340
+MEM mdns/ready free=112096 min=111964 largest=96244
+MEM web/ready free=108816 min=108560 largest=92148
+MEM inputs/ready free=103864 min=103864 largest=88052
+STACK loopTask lowWaterBytes=5920
+STACK input-scan lowWaterBytes=2668
+STACK nimble_host lowWaterBytes=4064
+STACK wifi lowWaterBytes=4196
+STACK tiT lowWaterBytes=3712
+STACK esp_timer lowWaterBytes=8224
+STACK IDLE lowWaterBytes=2068
+STACK chainpad-obs lowWaterBytes=3660
+
+@@ webui 23:52:28
+inputsReady=1
+Boot: Loaded LittleFS settings
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=14532 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=95560 minFree=73492 largest=77812 allocated=135236 loopStackMin=5920
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+@@ obs-scenes 23:52:30
+OBS MEM armed: manually refresh scenes, then O=read
+OBS MEM armed=0 active=0 request=1 generation=4 mask=7 (bytes)
+OBS MEM before t=15876 workerStackMin=3660
+ internal free=92840 minFree=73492 largest=75764
+ PSRAM free=0 minFree=0 largest=0
+OBS MEM json-alive t=15894 workerStackMin=3660
+ internal free=90968 minFree=73492 largest=73716
+ PSRAM free=0 minFree=0 largest=0
+OBS MEM after t=15896 workerStackMin=3660
+ internal free=94872 minFree=73492 largest=77812
+ PSRAM free=0 minFree=0 largest=0
+inputsReady=1
+Boot: Loaded LittleFS settings
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=16706 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92716 minFree=73492 largest=73716 allocated=137888 loopStackMin=5920
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+@@ normal-save 23:52:32
+Diagnostics ON
+
+[diag] t=17406 reason=enabled board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=94860 minFree=73492 largest=77812 allocated=135904 loopStackMin=5920
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=18041 reason=save-begin board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92540 minFree=73492 largest=75764 allocated=138048 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=122
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=18173 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=91612 minFree=73492 largest=73716 allocated=138976 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=965
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=18267 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92392 minFree=73492 largest=71668 allocated=138196 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=1101
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=18462 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=91944 minFree=73492 largest=69620 allocated=138644 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=1653
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=18562 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90464 minFree=73492 largest=71668 allocated=139996 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=1678
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=18670 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90172 minFree=73492 largest=71668 allocated=140288 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=1973
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=18766 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90324 minFree=73492 largest=71668 allocated=140120 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=1998
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=18877 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92056 minFree=73492 largest=73716 allocated=138532 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=2463
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=18979 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92552 minFree=73492 largest=69620 allocated=138036 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=2488
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=19085 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92040 minFree=73492 largest=73716 allocated=138548 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=2974
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=19181 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92540 minFree=73492 largest=73716 allocated=138048 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=2999
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=19296 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92016 minFree=73492 largest=73716 allocated=138572 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=3488
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=19397 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92544 minFree=73492 largest=73716 allocated=138044 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=3514
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=19530 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=89716 minFree=73492 largest=71668 allocated=140680 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=3995
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=19697 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92392 minFree=73492 largest=73716 allocated=138164 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=20480 free=831488 active=6640 pending=4021
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=19833 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=89976 minFree=73492 largest=65524 allocated=140372 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=4192
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=19994 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92388 minFree=73492 largest=73716 allocated=138168 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=4218
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=20121 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92092 minFree=73492 largest=69620 allocated=138464 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=4516
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=20360 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92384 minFree=73492 largest=71668 allocated=138172 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=4542
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=20425 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=89572 minFree=73492 largest=64500 allocated=140856 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=5239
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=20504 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90228 minFree=73492 largest=64500 allocated=140168 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=5265
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=20611 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=89844 minFree=73492 largest=64500 allocated=140536 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=5602
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=20710 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90288 minFree=73492 largest=64500 allocated=140140 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=5628
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=20852 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=89596 minFree=73492 largest=64500 allocated=140784 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=5961
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=20942 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92416 minFree=73492 largest=73716 allocated=138140 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=5987
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=21036 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92288 minFree=73492 largest=69620 allocated=138268 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=6124
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=21134 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92288 minFree=73492 largest=73716 allocated=138268 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=6263
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=21232 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92280 minFree=73492 largest=73716 allocated=138276 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=6397
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=21354 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92424 minFree=73492 largest=69620 allocated=138164 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=6532
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=21417 reason=rotation-stage-before board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92556 minFree=73492 largest=73716 allocated=138048 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=6532
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=21503 reason=rotation-stage-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92492 minFree=73492 largest=73716 allocated=138096 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=6640
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=21600 reason=save-commit-before board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90376 minFree=73492 largest=71668 allocated=140036 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=6640
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=21841 reason=save-commit-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92620 minFree=73492 largest=71668 allocated=137984 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=4 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=22538 reason=config-get-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=87348 minFree=69376 largest=67572 allocated=143208 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Disconnected generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+inputsReady=1
+Boot: v2 settings saved and applied
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=22572 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=96256 minFree=69376 largest=73716 allocated=134620 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Disconnected generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=22607 reason=periodic board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=94716 minFree=69376 largest=73716 allocated=136048 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Disconnected generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+@@ max-first 23:52:38
+
+[diag] t=23362 reason=save-begin board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92524 minFree=69376 largest=73716 allocated=138064 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=122
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=23669 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84752 minFree=62732 largest=63476 allocated=145836 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=7730
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=23733 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92520 minFree=62732 largest=71668 allocated=138068 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=24576 free=827392 active=6640 pending=7755
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=24031 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=82452 minFree=60736 largest=63476 allocated=147928 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=32768 free=819200 active=6640 pending=15363
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=24107 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92364 minFree=60736 largest=64500 allocated=138192 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=32768 free=819200 active=6640 pending=15388
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=24335 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=82284 minFree=60196 largest=44020 allocated=148064 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=40960 free=811008 active=6640 pending=22996
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=24419 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92340 minFree=60196 largest=73716 allocated=138216 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=40960 free=811008 active=6640 pending=23021
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=24658 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84584 minFree=60196 largest=44020 allocated=145972 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=49152 free=802816 active=6640 pending=30629
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=24743 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=89928 minFree=60196 largest=61428 allocated=140436 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=49152 free=802816 active=6640 pending=30654
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=25028 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84620 minFree=60196 largest=65524 allocated=145936 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=57344 free=794624 active=6640 pending=38262
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=25122 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92396 minFree=60196 largest=64500 allocated=138160 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=57344 free=794624 active=6640 pending=38287
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=25362 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84632 minFree=60196 largest=65524 allocated=145924 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=65536 free=786432 active=6640 pending=45896
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=25527 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92360 minFree=60196 largest=62452 allocated=138196 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=65536 free=786432 active=6640 pending=45922
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=25780 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=82364 minFree=60196 largest=45044 allocated=148016 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=73728 free=778240 active=6640 pending=53531
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=25934 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92516 minFree=60196 largest=65524 allocated=138072 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=73728 free=778240 active=6640 pending=53557
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=26160 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84732 minFree=60196 largest=65524 allocated=145856 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=77824 free=774144 active=6640 pending=61166
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=26363 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92356 minFree=60196 largest=64500 allocated=138200 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=77824 free=774144 active=6640 pending=61192
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=26569 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84612 minFree=60196 largest=65524 allocated=145944 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=86016 free=765952 active=6640 pending=68801
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=26655 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90044 minFree=60196 largest=64500 allocated=140304 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=86016 free=765952 active=6640 pending=68827
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=26905 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84564 minFree=60196 largest=64500 allocated=145992 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=94208 free=757760 active=6640 pending=76436
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=26990 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92356 minFree=60196 largest=63476 allocated=138200 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=94208 free=757760 active=6640 pending=76462
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=27223 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84580 minFree=60196 largest=65524 allocated=145976 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=102400 free=749568 active=6640 pending=84071
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=27372 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90104 minFree=60196 largest=64500 allocated=140276 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=102400 free=749568 active=6640 pending=84097
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=27633 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84544 minFree=60196 largest=65524 allocated=146012 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=110592 free=741376 active=6640 pending=91706
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=27675 reason=periodic board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=82656 minFree=60196 largest=62452 allocated=147916 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=110592 free=741376 active=6640 pending=91706
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=27776 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92328 minFree=60196 largest=64500 allocated=138228 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=110592 free=741376 active=6640 pending=91732
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=28104 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84688 minFree=60196 largest=65524 allocated=145900 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=6640 pending=99341
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=28194 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92460 minFree=60196 largest=64500 allocated=138128 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=6640 pending=99367
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=28369 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=88592 minFree=60196 largest=69620 allocated=141996 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=6640 pending=103184
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=28568 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=88576 minFree=60196 largest=67572 allocated=142012 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=126976 free=724992 active=6640 pending=107001
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=28663 reason=rotation-stage-before board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92484 minFree=60196 largest=69620 allocated=138120 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=126976 free=724992 active=6640 pending=107001
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=28754 reason=rotation-stage-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92208 minFree=60196 largest=69620 allocated=138364 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=126976 free=724992 active=6640 pending=107109
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=28863 reason=save-commit-before board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92624 minFree=60196 largest=73716 allocated=137996 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=126976 free=724992 active=6640 pending=107109
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=30592 reason=save-commit-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92576 minFree=60196 largest=59380 allocated=138028 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=5 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=32353 reason=config-get-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=82120 minFree=53492 largest=56308 allocated=148324 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+inputsReady=1
+Boot: v2 settings saved and applied
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=32393 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=94120 minFree=53492 largest=57332 allocated=136548 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=32675 reason=periodic board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=94784 minFree=53492 largest=57332 allocated=135948 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+@@ max-second 23:52:48
+
+[diag] t=33266 reason=save-begin board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92524 minFree=53492 largest=57332 allocated=138064 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=122
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=33503 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=82456 minFree=53492 largest=45044 allocated=147940 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=126976 free=724992 active=107109 pending=7730
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=33623 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92408 minFree=53492 largest=57332 allocated=138148 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=126976 free=724992 active=107109 pending=7755
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=33858 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84608 minFree=53492 largest=57332 allocated=145948 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=135168 free=716800 active=107109 pending=15363
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=33941 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92376 minFree=53492 largest=57332 allocated=138180 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=135168 free=716800 active=107109 pending=15388
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=34184 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84636 minFree=53492 largest=57332 allocated=145920 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=143360 free=708608 active=107109 pending=22996
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=34335 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92432 minFree=53492 largest=57332 allocated=138124 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=143360 free=708608 active=107109 pending=23021
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=34597 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=82524 minFree=53492 largest=45044 allocated=147888 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=151552 free=700416 active=107109 pending=30629
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=34744 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92388 minFree=53492 largest=57332 allocated=138168 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=151552 free=700416 active=107109 pending=30654
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=34996 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=82480 minFree=53492 largest=45044 allocated=147900 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=159744 free=692224 active=107109 pending=38262
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=35148 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92556 minFree=53492 largest=57332 allocated=138032 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=159744 free=692224 active=107109 pending=38287
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=35408 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84784 minFree=53492 largest=57332 allocated=145804 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=167936 free=684032 active=107109 pending=45896
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=35563 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90248 minFree=53492 largest=57332 allocated=140132 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=167936 free=684032 active=107109 pending=45922
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=35828 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84636 minFree=53492 largest=57332 allocated=145920 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=176128 free=675840 active=107109 pending=53531
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=36037 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92416 minFree=53492 largest=57332 allocated=138140 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=176128 free=675840 active=107109 pending=53557
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=36262 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84652 minFree=53492 largest=57332 allocated=145904 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=180224 free=671744 active=107109 pending=61166
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=36385 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92428 minFree=53492 largest=57332 allocated=138128 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=180224 free=671744 active=107109 pending=61192
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=36624 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84640 minFree=53492 largest=57332 allocated=145916 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=188416 free=663552 active=107109 pending=68801
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=36712 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92428 minFree=53492 largest=57332 allocated=138128 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=188416 free=663552 active=107109 pending=68827
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=36943 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84644 minFree=53492 largest=57332 allocated=145912 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=196608 free=655360 active=107109 pending=76436
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=37030 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92036 minFree=53492 largest=57332 allocated=138472 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=196608 free=655360 active=107109 pending=76462
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=37335 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=84080 minFree=53492 largest=57332 allocated=146396 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=204800 free=647168 active=107109 pending=84071
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=37432 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92280 minFree=53492 largest=57332 allocated=138244 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=204800 free=647168 active=107109 pending=84097
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=37753 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=82172 minFree=53492 largest=57332 allocated=148144 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=212992 free=638976 active=107109 pending=91706
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=37806 reason=periodic board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=80112 minFree=53492 largest=57332 allocated=150284 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=212992 free=638976 active=107109 pending=91706
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=39883 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90244 minFree=53492 largest=57332 allocated=140136 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=212992 free=638976 active=107109 pending=91732
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=40139 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=82704 minFree=53492 largest=57332 allocated=147756 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=221184 free=630784 active=107109 pending=99341
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=40276 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90460 minFree=53492 largest=57332 allocated=140000 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=221184 free=630784 active=107109 pending=99367
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=40531 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=88680 minFree=53492 largest=57332 allocated=141908 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=225280 free=626688 active=107109 pending=103184
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=40745 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=88684 minFree=53492 largest=57332 allocated=141904 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=229376 free=622592 active=107109 pending=107001
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=40846 reason=rotation-stage-before board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92568 minFree=53492 largest=57332 allocated=138036 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=229376 free=622592 active=107109 pending=107001
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=41024 reason=rotation-stage-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90212 minFree=53492 largest=57332 allocated=140168 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=229376 free=622592 active=107109 pending=107109
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=41063 reason=save-commit-before board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92724 minFree=53492 largest=57332 allocated=137896 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=229376 free=622592 active=107109 pending=107109
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=42736 reason=save-commit-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92648 minFree=53492 largest=57332 allocated=137956 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=6 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=44543 reason=config-get-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=79788 minFree=53492 largest=46068 allocated=150512 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+inputsReady=1
+Boot: v2 settings saved and applied
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=44558 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92032 minFree=53492 largest=46068 allocated=138508 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=44572 reason=periodic board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92696 minFree=53492 largest=46068 allocated=137908 loopStackMin=5328
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+@@ load-setup 23:53:00
+
+[diag] t=45374 reason=save-begin board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90228 minFree=53492 largest=69620 allocated=140152 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=122
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=45468 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92416 minFree=53492 largest=69620 allocated=138172 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=266
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=45569 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92544 minFree=53492 largest=69620 allocated=138044 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=291
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=45677 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92500 minFree=53492 largest=69620 allocated=138088 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=358
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=45830 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92544 minFree=53492 largest=69620 allocated=138044 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=383
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=45879 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92548 minFree=53492 largest=69620 allocated=138040 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=408
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=45982 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92552 minFree=53492 largest=69620 allocated=138036 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=433
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=46092 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90444 minFree=53492 largest=65524 allocated=140016 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=458
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=46229 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92508 minFree=53492 largest=69620 allocated=138080 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=483
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=46286 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92516 minFree=53492 largest=69620 allocated=138072 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=508
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=46415 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92516 minFree=53492 largest=69620 allocated=138072 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=533
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=46516 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92528 minFree=53492 largest=69620 allocated=138060 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=559
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=46633 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90060 minFree=53492 largest=69620 allocated=140288 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=585
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=46793 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92376 minFree=53492 largest=69620 allocated=138180 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=611
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=46849 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92384 minFree=53492 largest=69620 allocated=138172 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=637
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=46918 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92184 minFree=53492 largest=69620 allocated=138356 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=663
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=47044 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90256 minFree=53492 largest=69620 allocated=140156 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=689
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=47134 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90132 minFree=53492 largest=69620 allocated=140280 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=715
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=47235 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90172 minFree=53492 largest=69620 allocated=140208 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=741
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=47334 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92372 minFree=53492 largest=67572 allocated=138184 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=767
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=47435 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92376 minFree=53492 largest=69620 allocated=138180 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=793
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=47553 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92388 minFree=53492 largest=69620 allocated=138168 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=819
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=47643 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92252 minFree=53492 largest=69620 allocated=138272 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=845
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=47740 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92240 minFree=53492 largest=69620 allocated=138284 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+n/a
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=871
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=47859 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90044 minFree=53492 largest=69620 allocated=140320 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=897
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=47973 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90136 minFree=53492 largest=69620 allocated=140244 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=923
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=48145 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90132 minFree=53492 largest=69620 allocated=140248 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=949
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=48266 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92252 minFree=53492 largest=69620 allocated=138272 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=975
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=48453 reason=save-stage board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92252 minFree=53492 largest=69620 allocated=138272 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=1001
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=48537 reason=rotation-stage-before board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90160 minFree=53492 largest=69620 allocated=140236 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=1001
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=48583 reason=rotation-stage-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90132 minFree=53492 largest=69620 allocated=140264 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=1109
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=48627 reason=save-commit-before board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=90248 minFree=53492 largest=69620 allocated=140148 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=122880 free=729088 active=107109 pending=1109
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=48686 reason=save-commit-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92356 minFree=53492 largest=69620 allocated=138184 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=7 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=4/224 maxKey=3/16 maxEvent=3; running=0 rejected=0
+LittleFS: total=851968 used=12288 free=839680 active=1109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+[diag] t=49261 reason=config-get-after board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=87364 minFree=53492 largest=59380 allocated=143032 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Disconnected generation=8 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=4/224 maxKey=3/16 maxEvent=3; running=0 rejected=0
+LittleFS: total=851968 used=12288 free=839680 active=1109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+Diagnostics OFF
+
+@@ full-stop 23:53:04
+inputsReady=1
+Boot: v2 settings saved and applied
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=51997 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=94208 minFree=53492 largest=75764 allocated=136492 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=8 workerStackMin=3532 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=4/224 maxKey=3/16 maxEvent=3; running=32 rejected=0
+LittleFS: total=851968 used=12288 free=839680 active=1109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+Memory records: startup=11 failures=0 recordBytes=368
+MEM entry free=208200 min=208056 largest=192500
+MEM config/loaded free=204952 min=192168 largest=184308
+MEM ble/host-ready free=175568 min=170580 largest=155636
+MEM ble/services-ready free=171164 min=170580 largest=155636
+MEM ble/advertising-ready free=169416 min=169416 largest=151540
+MEM backends/ready free=169392 min=167888 largest=151540
+MEM wifi/mode-ready free=117080 min=116796 largest=100340
+MEM wifi/STA-requested free=116828 min=116788 largest=100340
+MEM mdns/ready free=112096 min=111964 largest=96244
+MEM web/ready free=108816 min=108560 largest=92148
+MEM inputs/ready free=103864 min=103864 largest=88052
+STACK loopTask lowWaterBytes=5264
+STACK input-scan lowWaterBytes=2652
+STACK nimble_host lowWaterBytes=4064
+STACK wifi lowWaterBytes=4196
+STACK tiT lowWaterBytes=3712
+STACK esp_timer lowWaterBytes=8224
+STACK IDLE lowWaterBytes=2068
+STACK chainpad-obs lowWaterBytes=3532
+
+@@ full-panic 23:53:08
+inputsReady=1
+Boot: v2 settings saved and applied
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=55194 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=94224 minFree=53492 largest=75764 allocated=136428 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=8 workerStackMin=3532 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=4/224 maxKey=3/16 maxEvent=3; running=32 rejected=0
+LittleFS: total=851968 used=12288 free=839680 active=1109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+Memory records: startup=11 failures=0 recordBytes=368
+MEM entry free=208200 min=208056 largest=192500
+MEM config/loaded free=204952 min=192168 largest=184308
+MEM ble/host-ready free=175568 min=170580 largest=155636
+MEM ble/services-ready free=171164 min=170580 largest=155636
+MEM ble/advertising-ready free=169416 min=169416 largest=151540
+MEM backends/ready free=169392 min=167888 largest=151540
+MEM wifi/mode-ready free=117080 min=116796 largest=100340
+MEM wifi/STA-requested free=116828 min=116788 largest=100340
+MEM mdns/ready free=112096 min=111964 largest=96244
+MEM web/ready free=108816 min=108560 largest=92148
+MEM inputs/ready free=103864 min=103864 largest=88052
+STACK loopTask lowWaterBytes=5264
+STACK input-scan lowWaterBytes=2652
+STACK nimble_host lowWaterBytes=4064
+STACK wifi lowWaterBytes=4196
+STACK tiT lowWaterBytes=3712
+STACK esp_timer lowWaterBytes=8224
+STACK IDLE lowWaterBytes=2068
+STACK chainpad-obs lowWaterBytes=3532
+
+@@ restore-before-repeat 23:53:11
+
+@@ restore 23:53:15
+inputsReady=1
+Boot: v2 settings saved and applied
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=61933 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=92396 minFree=53492 largest=69620 allocated=138176 loopStackMin=5264
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=10 workerStackMin=3532 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82648 Engine=1580; recordLimit=24576
+Active Config address: 0x40822630
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=85/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=16384 free=835584 active=6640 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+Memory records: startup=11 failures=0 recordBytes=368
+MEM entry free=208200 min=208056 largest=192500
+MEM config/loaded free=204952 min=192168 largest=184308
+MEM ble/host-ready free=175568 min=170580 largest=155636
+MEM ble/services-ready free=171164 min=170580 largest=155636
+MEM ble/advertising-ready free=169416 min=169416 largest=151540
+MEM backends/ready free=169392 min=167888 largest=151540
+MEM wifi/mode-ready free=117080 min=116796 largest=100340
+MEM wifi/STA-requested free=116828 min=116788 largest=100340
+MEM mdns/ready free=112096 min=111964 largest=96244
+MEM web/ready free=108816 min=108560 largest=92148
+MEM inputs/ready free=103864 min=103864 largest=88052
+STACK loopTask lowWaterBytes=5264
+STACK input-scan lowWaterBytes=2652
+STACK nimble_host lowWaterBytes=4064
+STACK wifi lowWaterBytes=4196
+STACK tiT lowWaterBytes=3712
+STACK esp_timer lowWaterBytes=8224
+STACK IDLE lowWaterBytes=2068
+STACK chainpad-obs lowWaterBytes=3532

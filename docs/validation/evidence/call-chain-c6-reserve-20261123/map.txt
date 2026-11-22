@@ -1,0 +1,4 @@
+sram_seg         0x40800000         0x0006e610         xrw
+.dram0.bss      0x40820450    0x28e20
+ .bss._ZL16callChainReserve
+                0x4083f730     0x1f00 .pio/build/xiao_esp32c6_save_mem_reserve/src/save_mem.cpp.o
