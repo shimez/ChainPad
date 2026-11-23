@@ -1019,7 +1019,9 @@ void stopOtherChainsTests() {
 #include "loop_tests.h"
 #include "call_tests.h"
 #include "call_storage_tests.h"
+#include "call_engine_tests.h"
 int main() {
+  callEngineTests();
   callModelTests();
   callStorageTests();
   loopFoundationTests();

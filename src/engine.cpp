@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "chain_call.h"
 #include "hid_trace.h"
 #include "rotation_runtime.h"
 
@@ -23,15 +24,17 @@ bool Engine::admitLoopOsc(Invocation& job, uint32_t now) {
   return true;
 }
 Engine::AdvanceResult Engine::advance(Invocation& job, uint32_t now, uint8_t& slice) {
-  const auto& chain = activeConfig().chains[job.input];
   if (job.pairPending) {
-    if (pairedActionPending(chain.actions[job.next - 1])) return AdvanceResult::Waiting;
+    if (pairedActionPending(activeConfig().chains[job.current].actions[job.next - 1])) return AdvanceResult::Waiting;
     job.pairPending = false;
   }
-  while (job.next < chain.count) {
-    if (job.looping) {
+  for (;;) {
+    const auto& chain = activeConfig().chains[job.current];
+    const bool atEnd = job.next == chain.count;
+    if (atEnd && !job.frames.depth) return AdvanceResult::Complete;
+    if (job.budgeted) {
       if (!slice || !loopBudget) { job.wakeAt = now; return AdvanceResult::Waiting; }
-      if (chain.actions[job.next].protocol == Protocol::Osc && !admitLoopOsc(job, millis())) {
+      if (!atEnd && job.paceOsc && chain.actions[job.next].protocol == Protocol::Osc && !admitLoopOsc(job, millis())) {
         // Keep next, counters and send statistics unchanged. Do not reserve an
         // output packet or spin here: another main-loop cycle will retry admission.
         job.wakeAt = now;
@@ -39,28 +42,35 @@ Engine::AdvanceResult Engine::advance(Invocation& job, uint32_t now, uint8_t& sl
       }
       --slice; --loopBudget;
     }
+    if (atEnd) {
+      if (!job.frames.restore(job.current, job.next)) return AdvanceResult::Complete;
+      continue;
+    }
     const uint8_t index = job.next++;
     const auto& action = chain.actions[index];
     if (action.protocol == Protocol::LoopStart) {
-      job.stack[job.depth++] = {uint16_t(action.loopCount), job.next};
+      if (!job.frames.enterLoop(action.loopCount, job.next)) return AdvanceResult::Complete;
       continue;
     }
     if (action.protocol == Protocol::LoopEnd) {
-      auto& frame = job.stack[job.depth - 1];
-      if (--frame.remaining) job.next = frame.start;
-      else --job.depth;
+      if (!job.frames.endLoop(job.next)) return AdvanceResult::Complete;
+      continue;
+    }
+    if (action.protocol == Protocol::CallChain) {
+      if (action.targetInput >= INPUT_COUNT || !job.frames.suspend(job.current, job.next))
+        return AdvanceResult::Complete;
+      job.current = action.targetInput; job.next = 0;
       continue;
     }
     const bool wait = action.protocol == Protocol::Wait;
     const bool stop = action.protocol == Protocol::StopOtherChains;
-    auto result = runAction(action, job.input, index, now);
+    auto result = runAction(action, job.current, index, now);
     if (stop) return AdvanceResult::StopOthers;
     if (wait && action.delayMs) { job.wakeAt = now + action.delayMs; return AdvanceResult::Waiting; }
     if (pairedAction(action) && result == SendResult::Accepted && pairedActionPending(action)) {
       job.pairPending = true; job.wakeAt = now; return AdvanceResult::Waiting;
     }
   }
-  return AdvanceResult::Complete;
 }
 SendResult Engine::runAction(const Action& action, uint8_t input, uint8_t index, uint32_t now) {
   if (action.protocol == Protocol::Keyboard && action.keyMessage == KeyMessage::Consumer)
@@ -91,6 +101,9 @@ Engine::AdvanceResult Engine::resume(uint8_t pos, uint32_t now, uint8_t slice) {
   return result;
 }
 bool Engine::trigger(const InputEvent& event) {
+  return triggerImpl(event, calls::ENGINE_SUPPORTS_CALL);
+}
+bool Engine::triggerImpl(const InputEvent& event, bool supportsCall) {
   if (event.input >= INPUT_COUNT) return false;
   ++stats.events;
   if (event.input >= 26 && activeConfig().encoderRotation.mode == RotationMode::RotationValue)
@@ -98,10 +111,14 @@ bool Engine::trigger(const InputEvent& event) {
   const auto& chain = activeConfig().chains[event.input];
   loops::Layout layout; String error;
   if (!loops::analyze(chain, layout, error, eventActionLimit(event.input))) return false;
-  bool needsSlot = false, stopBeforeWait = false;
+  bool needsSlot = false, stopBeforeWait = false, hasCall = false;
   for (uint8_t i = 0; i < chain.count; ++i) {
     const auto& a = chain.actions[i];
     if (!needsSlot && a.protocol == Protocol::StopOtherChains) stopBeforeWait = true;
+    if (a.protocol == Protocol::CallChain) {
+      if (!supportsCall) return false;
+      hasCall = needsSlot = true;
+    }
     if (a.protocol == Protocol::LoopStart ||
         (a.protocol == Protocol::Wait && (a.delayMs || layout.count)) || pairedAction(a)) needsSlot = true;
   }
@@ -127,7 +144,7 @@ bool Engine::trigger(const InputEvent& event) {
       runAction(a, event.input, index, now);
       if (a.protocol == Protocol::StopOtherChains) {
         cancelAll();
-        if (layout.count) {
+        if (layout.count || hasCall) {
           loopBudget = loopBudget > next ? loopBudget - next : 0;
           slice = slice > next ? slice - next : 0;
         }
@@ -138,8 +155,9 @@ bool Engine::trigger(const InputEvent& event) {
   }
   const uint8_t pos = running++;
   auto& job = jobs[order[pos]];
-  job.input = event.input; job.next = next; job.depth = 0;
-  job.looping = layout.count != 0; job.pairPending = false; job.oscPending = false;
+  job.current = job.input = event.input; job.next = next; job.frames.reset();
+  job.paceOsc = layout.count != 0; job.budgeted = job.paceOsc || hasCall;
+  job.pairPending = false; job.oscPending = false;
   // Stack entries and ticket are written before use. No stale wake deadline.
   job.wakeAt = now;
   resume(pos, now, slice);
@@ -152,7 +170,7 @@ void Engine::tick(uint32_t now) {
     // Share the remaining cycle work with later jobs rather than allowing the
     // first long-running loops to starve the tail of the stable queue.
     uint8_t slice = LOOP_SLICE_BUDGET;
-    if (job.looping) {
+    if (job.budgeted) {
       const uint16_t share = loopBudget / (running - i);
       if (share < slice) slice = uint8_t(share);
     }

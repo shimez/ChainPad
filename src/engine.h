@@ -2,6 +2,7 @@
 #include "model.h"
 #include "backends.h"
 #include "chain_loop.h"
+#include "invocation_frames.h"
 
 namespace chimera {
 // Logical event IDs are independent of matrix rows, columns and GPIOs.
@@ -24,17 +25,19 @@ class Engine {
     // Call once before HTTP/input dispatch and tick, never from Stop continuation.
     void beginCycle() { loopBudget = LOOP_CYCLE_BUDGET; }
    bool trigger(const InputEvent& event);
+#if defined(CHAINPAD_HOST_TEST)
+   bool triggerCallModelForTest(const InputEvent& event) { return triggerImpl(event, true); }
+#endif
    void tick(uint32_t now);
    void cancelAll();
    uint8_t activeCount() const { return running; }
    EngineStats stats;
  private:
      struct Invocation {
-       struct Frame { uint16_t remaining; uint8_t start; };
-       uint8_t input = 0, next = 0, depth = 0;
-       bool pairPending = false, looping = false, oscPending = false;
+       InvocationFrames frames{};
+       uint8_t input = 0, current = 0, next = 0;
+       bool pairPending : 1, budgeted : 1, paceOsc : 1, oscPending : 1;
        uint32_t wakeAt = 0, oscTicket = 0;
-       Frame stack[loops::MAX_DEPTH]{};
      } jobs[MAX_RUNNING];
     // Permutation: [0,running) is the FIFO; [running,MAX_RUNNING) is free.
     uint8_t order[MAX_RUNNING];
@@ -43,6 +46,7 @@ class Engine {
     bool loopOscClockValid = false;
    uint8_t running = 0;
     enum class AdvanceResult { Complete, Waiting, StopOthers };
+     bool triggerImpl(const InputEvent& event, bool supportsCall);
      AdvanceResult advance(Invocation& job, uint32_t now, uint8_t& slice);
      bool admitLoopOsc(Invocation& job, uint32_t now);
      SendResult runAction(const Action&, uint8_t input, uint8_t index, uint32_t now);
