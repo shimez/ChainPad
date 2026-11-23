@@ -1,0 +1,67 @@
+TRACE mode=2 start_us=6979310 stop_us=11525300 stored=4 lost=0 bytes=6144 status_ok=0 status_error=0 notify_true=0 notify_false=0 discarded_reports=0
+COUNT input 0
+COUNT input_queued 0
+COUNT input_dropped 0
+COUNT input_consumed 0
+COUNT action_accepted 0
+COUNT action_rejected 0
+COUNT chain_rejected 0
+COUNT push 0
+COUNT pop 0
+COUNT discard 0
+COUNT fifo_overflow 0
+COUNT neutral 0
+COUNT notify_call 0
+COUNT notify_return 0
+COUNT status 0
+COUNT subscribe 0
+COUNT disconnect 0
+COUNT reset 0
+COUNT dispatch 0
+COUNT pair_complete 2
+COUNT call_return 2
+INPUT 0 0
+INPUT 1 0
+INPUT 2 0
+INPUT 3 0
+INPUT 4 0
+INPUT 5 0
+INPUT 6 0
+INPUT 7 0
+INPUT 8 0
+INPUT 9 0
+INPUT 10 0
+INPUT 11 0
+INPUT 12 0
+INPUT 13 0
+INPUT 14 0
+INPUT 15 0
+INPUT 16 0
+INPUT 17 0
+INPUT 18 0
+INPUT 19 0
+INPUT 20 0
+INPUT 21 0
+INPUT 22 0
+INPUT 23 0
+INPUT 24 0
+INPUT 25 0
+INPUT 26 0
+INPUT 27 0
+FIFO transport=0 initial=0 final=0 high=0
+FIFO transport=1 initial=0 final=0 high=0
+PAIR notify_request_pairs=0 mean_us=0 max_us=0 (not receiver hold time)
+USAGE notify_requests usage=0 count=0
+USAGE notify_requests usage=233 count=0
+USAGE notify_requests usage=234 count=0
+USAGE notify_requests usage=226 count=0
+USAGE notify_requests usage=205 count=0
+USAGE notify_requests usage=181 count=0
+USAGE notify_requests usage=182 count=0
+USAGE notify_requests usage=183 count=0
+us,event,transport,usage,report_id,epoch,value
+9208996,pair_complete,255,14,12,1,0
+9209009,call_return,255,12,12,0,1
+10524146,pair_complete,255,18,16,1,0
+10524160,call_return,255,16,16,0,1
+TRACE END

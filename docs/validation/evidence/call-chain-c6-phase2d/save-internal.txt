@@ -1,0 +1,15 @@
+SAVE stage-decoded n=28 free=54968 id=18 largest=32756 id=12
+SAVE stage-encoded n=28 free=58588 id=18 largest=32756 id=12
+SAVE file-written n=30 free=53464 id=20 largest=32756 id=12
+SAVE rotation-encoded n=1 free=77412 id=28 largest=61428 id=28
+SAVE validate-chain n=28 free=65424 id=14 largest=49140 id=6
+SAVE apply-chain n=28 free=65824 id=0 largest=50164 id=0
+SAVE validate-rotation n=1 free=73444 id=28 largest=56308 id=28
+SAVE apply-rotation n=1 free=73448 id=28 largest=56308 id=28
+SAVE stage-decoded n=28 free=55388 id=0 largest=32756 id=2
+SAVE stage-encoded n=28 free=58996 id=0 largest=32756 id=2
+SAVE file-written n=30 free=53756 id=0 largest=32756 id=0
+SAVE rotation-encoded n=1 free=77732 id=28 largest=55284 id=28
+SAVE validate-chain n=28 free=65596 id=6 largest=49140 id=6
+SAVE validate-rotation n=1 free=71060 id=28 largest=49140 id=28
+SAVE apply-rotation n=1 free=73484 id=28 largest=52212 id=28

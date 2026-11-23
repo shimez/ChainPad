@@ -1,0 +1,196 @@
+{
+  "fixtureSHA256": "3fee4807f6b1e761149f66f1a18d9867e16fcc231920935bd5bf3844345f3db0",
+  "summary": [
+    {
+      "trial": 1,
+      "before": 0,
+      "after": 0,
+      "delta": 0,
+      "connectionStart": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ],
+      "connectionEnd": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ]
+    },
+    {
+      "trial": 2,
+      "before": 0,
+      "after": 0,
+      "delta": 0,
+      "connectionStart": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ],
+      "connectionEnd": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ]
+    },
+    {
+      "trial": 3,
+      "before": 0,
+      "after": 0,
+      "delta": 0,
+      "connectionStart": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ],
+      "connectionEnd": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "stage": "trial-1-start",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "begin",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-7",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-15",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-23",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-27",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "rotation",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "commit",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "after-get",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "trial-2-start",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "begin",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-7",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-15",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-23",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-27",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "rotation",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "commit",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "after-get",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "trial-3-start",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "begin",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-7",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-15",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-23",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-27",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "rotation",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "commit",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "after-get",
+      "failures": 0,
+      "details": []
+    }
+  ]
+}

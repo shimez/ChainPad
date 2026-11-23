@@ -1,0 +1,291 @@
+{
+  "fixtureSHA256": "3fee4807f6b1e761149f66f1a18d9867e16fcc231920935bd5bf3844345f3db0",
+  "summary": [
+    {
+      "trial": 1,
+      "before": 0,
+      "after": 14,
+      "delta": 14,
+      "connectionStart": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ],
+      "connectionEnd": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ]
+    },
+    {
+      "trial": 2,
+      "before": 14,
+      "after": 24,
+      "delta": 10,
+      "connectionStart": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ],
+      "connectionEnd": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ]
+    },
+    {
+      "trial": 3,
+      "before": 24,
+      "after": 35,
+      "delta": 11,
+      "connectionStart": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ],
+      "connectionEnd": [
+        true,
+        true,
+        true,
+        "Disconnected"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "stage": "trial-1-start",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "begin",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-7",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-15",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-23",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-through-27",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "rotation",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "commit",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "after-get",
+      "failures": 14,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "trial-2-start",
+      "failures": 14,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "begin",
+      "failures": 14,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "stage-through-7",
+      "failures": 14,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "stage-through-15",
+      "failures": 14,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "stage-through-23",
+      "failures": 14,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "stage-through-27",
+      "failures": 14,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "rotation",
+      "failures": 14,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "commit",
+      "failures": 14,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "after-get",
+      "failures": 24,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "trial-3-start",
+      "failures": 24,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "begin",
+      "failures": 24,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "stage-through-7",
+      "failures": 24,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "stage-through-15",
+      "failures": 24,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "stage-through-23",
+      "failures": 24,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "stage-through-27",
+      "failures": 24,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "rotation",
+      "failures": 24,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "commit",
+      "failures": 24,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    },
+    {
+      "stage": "after-get",
+      "failures": 35,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1678 caps=0x80c free=3036 min=1484 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4612 min=1484 largest=1332",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=2040 min=1484 largest=820",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=1836 min=1484 largest=820"
+      ]
+    }
+  ]
+}

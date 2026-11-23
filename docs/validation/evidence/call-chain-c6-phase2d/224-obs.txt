@@ -1,0 +1,42 @@
+
+@@ 224-reboot-OBS
+inputsReady=1
+Boot: Loaded LittleFS settings
+Wi-Fi mode=1 status=3 AP=[address] STA=[address]
+
+[diag] t=11657 reason=manual board=XIAO ESP32C6 / ChainOSCPad PCB (bytes)
+RAM internal: free=86116 minFree=52960 largest=63476 allocated=136600 loopStackMin=5408
+RAM PSRAM: free=0 minFree=0 largest=0 allocated=0
+OBS: state=Ready generation=3 workerStackMin=3660 lastError=-1
+Static sizes: Action=352 Chain=5636 Config=82652 Engine=9548; recordLimit=24576
+Active Config address: 0x4082455c
+Config external=0 PSRAM total=0 bytes
+Rotation storage: Output=208 Settings=3348 count=0/16 state=ready
+Rotation runtime: bytes=20 active=0 range=20 position=n/a
+Rotation sender: bytes=660 pendingBytes=576 pending=0 budget=4 generation=0 snapshot=0 overwrite=0 discard=0 unavailable=0
+Rotation OSC/USB/BLE accepted=0/0/0 failed=0/0/0
+Actions: total=224/224 maxKey=16/16 maxEvent=16; running=0 rejected=0
+LittleFS: total=851968 used=118784 free=733184 active=107109 pending=-1
+Counters: transportRetries=0 transportOverflows=0 inputOverflows=0
+
+@@ 224-reboot-OBS
+Memory records: startup=11 failures=0 recordBytes=368
+MEM entry free=200216 min=200072 largest=184308
+MEM config/loaded free=196968 min=179736 largest=176116
+MEM ble/host-ready free=167584 min=162596 largest=147444
+MEM ble/services-ready free=163180 min=162596 largest=147444
+MEM ble/advertising-ready free=161432 min=161432 largest=143348
+MEM backends/ready free=161408 min=159904 largest=143348
+MEM wifi/mode-ready free=109096 min=108812 largest=94196
+MEM wifi/STA-requested free=108844 min=108804 largest=92148
+MEM mdns/ready free=104112 min=103980 largest=88052
+MEM web/ready free=100832 min=100576 largest=83956
+MEM inputs/ready free=95880 min=95880 largest=79860
+STACK loopTask lowWaterBytes=5408
+STACK input-scan lowWaterBytes=2668
+STACK nimble_host lowWaterBytes=4028
+STACK wifi lowWaterBytes=4276
+STACK tiT lowWaterBytes=3776
+STACK esp_timer lowWaterBytes=8224
+STACK IDLE lowWaterBytes=2068
+STACK chainpad-obs lowWaterBytes=3660

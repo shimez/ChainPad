@@ -1,0 +1,66 @@
+[
+  {
+    "mode": "single",
+    "before": {
+      "failures": 0,
+      "dma": 42996,
+      "stack": 5240,
+      "workerStack": 5124
+    },
+    "after": {
+      "failures": 0,
+      "dma": 38900,
+      "stack": 5240,
+      "workerStack": 3876
+    },
+    "generation": 1
+  },
+  {
+    "mode": "fragment",
+    "before": {
+      "failures": 0,
+      "dma": 38900,
+      "stack": 5240,
+      "workerStack": 3876
+    },
+    "after": {
+      "failures": 0,
+      "dma": 38900,
+      "stack": 5240,
+      "workerStack": 3876
+    },
+    "generation": 1
+  },
+  {
+    "mode": "cut",
+    "before": {
+      "failures": 0,
+      "dma": 38900,
+      "stack": 5240,
+      "workerStack": 3876
+    },
+    "after": {
+      "failures": 0,
+      "dma": 40948,
+      "stack": 5240,
+      "workerStack": 3876
+    },
+    "generation": 2
+  },
+  {
+    "mode": "recover",
+    "before": {
+      "failures": 0,
+      "dma": 40948,
+      "stack": 5240,
+      "workerStack": 3876
+    },
+    "after": {
+      "failures": 0,
+      "dma": 36852,
+      "stack": 5240,
+      "workerStack": 3828
+    },
+    "generation": 2
+  }
+]

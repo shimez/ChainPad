@@ -1,0 +1,77 @@
+
+@@GET 0
+GETROW 1 n=1 free=31400 largest=28660 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+GETROW 2 n=30 free=31144 largest=28660 jsonI=0 jsonE=1080 partI=240 partE=0 simultaneousI=240 header19=0
+GETROW 3 n=30 free=31144 largest=28660 jsonI=0 jsonE=1080 partI=240 partE=0 simultaneousI=240 header19=0
+GETROW 5 n=30 free=17980 largest=13300 jsonI=0 jsonE=1080 partI=240 partE=0 simultaneousI=240 header19=0
+GETROW 6 n=31 free=17556 largest=13300 jsonI=0 jsonE=1080 partI=240 partE=0 simultaneousI=240 header19=62
+GETROW 7 n=1 free=25492 largest=15860 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+
+@@GET 4
+GETROW 1 n=1 free=29572 largest=27636 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+GETROW 2 n=30 free=29460 largest=27636 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 3 n=30 free=29460 largest=27636 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 4 n=30 free=16248 largest=13812 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 5 n=30 free=16512 largest=15348 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 6 n=31 free=16248 largest=11764 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=62
+GETROW 7 n=1 free=25776 largest=24564 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+
+@@GET 7
+GETROW 1 n=1 free=29568 largest=25588 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+GETROW 2 n=30 free=29456 largest=25588 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 3 n=30 free=29456 largest=25588 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 5 n=30 free=16224 largest=15348 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 6 n=31 free=16224 largest=15348 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=62
+GETROW 7 n=1 free=25756 largest=23540 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+
+@@GET 10
+GETROW 1 n=1 free=29576 largest=26612 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+GETROW 2 n=30 free=29464 largest=26612 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 3 n=30 free=29308 largest=26612 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 4 n=30 free=16528 largest=15348 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 5 n=30 free=16528 largest=15348 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 6 n=31 free=16528 largest=11764 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=62
+GETROW 7 n=1 free=23936 largest=20468 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+
+@@GET 13
+GETROW 1 n=1 free=29564 largest=26612 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+GETROW 2 n=30 free=29452 largest=26612 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 3 n=30 free=29452 largest=26612 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 4 n=30 free=14564 largest=12276 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 5 n=30 free=21320 largest=15860 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 6 n=31 free=15784 largest=12788 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=62
+GETROW 7 n=1 free=23744 largest=18420 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+
+@@GET 15
+GETROW 1 n=1 free=29540 largest=25588 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+GETROW 2 n=30 free=29272 largest=25588 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 3 n=30 free=29272 largest=25588 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 4 n=30 free=16468 largest=13300 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 5 n=30 free=16468 largest=13300 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 6 n=31 free=16372 largest=13300 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=62
+GETROW 7 n=1 free=20192 largest=16372 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+
+@@GET 17
+GETROW 1 n=1 free=29556 largest=26612 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+GETROW 2 n=30 free=29444 largest=26612 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 3 n=30 free=29444 largest=26612 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 4 n=30 free=16476 largest=15860 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 5 n=30 free=18052 largest=17396 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 6 n=31 free=16376 largest=13812 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=62
+GETROW 7 n=1 free=23912 largest=20468 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+
+@@GET 19
+GETROW 1 n=1 free=29392 largest=26612 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+GETROW 2 n=30 free=29392 largest=26612 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 3 n=30 free=29280 largest=26612 jsonI=0 jsonE=2064 partI=96 partE=7616 simultaneousI=96 header19=0
+GETROW 4 n=30 free=17916 largest=12276 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=0
+GETROW 6 n=31 free=17916 largest=12276 jsonI=0 jsonE=2064 partI=0 partE=7616 simultaneousI=0 header19=62
+
+@@GET 20
+GETROW 1 n=1 free=29176 largest=23540 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0
+GETROW 2 n=30 free=28920 largest=23540 jsonI=0 jsonE=1080 partI=240 partE=0 simultaneousI=240 header19=0
+GETROW 3 n=30 free=28920 largest=23540 jsonI=0 jsonE=1080 partI=240 partE=0 simultaneousI=240 header19=0
+GETROW 4 n=30 free=14880 largest=11764 jsonI=0 jsonE=1080 partI=240 partE=0 simultaneousI=240 header19=0
+GETROW 5 n=30 free=14880 largest=11764 jsonI=0 jsonE=1080 partI=240 partE=0 simultaneousI=240 header19=0
+GETROW 6 n=31 free=14880 largest=11764 jsonI=0 jsonE=1080 partI=240 partE=0 simultaneousI=240 header19=62
+GETROW 7 n=1 free=27684 largest=23540 jsonI=0 jsonE=0 partI=0 partE=0 simultaneousI=0 header19=0

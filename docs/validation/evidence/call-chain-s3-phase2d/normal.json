@@ -1,0 +1,42 @@
+{
+  "stop": {
+    "fill32ms": 1229.0750000393018,
+    "statusRTTms": 30.991700012236834,
+    "endMs": 52.88329999893904,
+    "full": {
+      "failures": 0,
+      "dma": 31732,
+      "stack": 4052,
+      "workerStack": 5984
+    },
+    "obsLoopMaxUs": 2107028
+  },
+  "panic": {
+    "fill32ms": 1115.6468000262976,
+    "statusRTTms": 67.71540001500398,
+    "endMs": 90.53770004538819,
+    "full": {
+      "failures": 0,
+      "dma": 31732,
+      "stack": 4052,
+      "workerStack": 5984
+    },
+    "obsLoopMaxUs": 2107028
+  },
+  "execution": {
+    "before": {
+      "failures": 0,
+      "dma": 31732,
+      "stack": 4052,
+      "workerStack": 5984
+    },
+    "after": {
+      "failures": 0,
+      "dma": 31732,
+      "stack": 4052,
+      "workerStack": 5984
+    },
+    "details": "27 returns, nested order, 32->0 x2, shared FIFO alternation passed",
+    "delta": 0
+  }
+}

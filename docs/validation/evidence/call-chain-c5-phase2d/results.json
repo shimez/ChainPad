@@ -1,0 +1,15 @@
+{
+  "224-save-twice-reboot": true,
+  "stop": [
+    32,
+    0
+  ],
+  "panic": [
+    32,
+    0
+  ],
+  "ble": true,
+  "restored": true,
+  "originalVersion": "0.8.0",
+  "candidate": "6f96daecfe93d52e67cecda098a2270ef5965bc35a7310dfaa93819423d5f4e7"
+}

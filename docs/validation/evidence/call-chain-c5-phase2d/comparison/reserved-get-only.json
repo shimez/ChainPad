@@ -1,0 +1,506 @@
+{
+  "fixtureSHA256": "3fee4807f6b1e761149f66f1a18d9867e16fcc231920935bd5bf3844345f3db0",
+  "conditions": [
+    true,
+    true,
+    true,
+    "Disconnected"
+  ],
+  "results": [
+    [
+      "small-config-get",
+      0,
+      0,
+      0,
+      422.0
+    ],
+    [
+      "stage-and-commit-only",
+      0,
+      0,
+      0,
+      6844.0
+    ],
+    [
+      "idle-0",
+      0,
+      0,
+      0,
+      1500.0
+    ],
+    [
+      "status-0",
+      0,
+      0,
+      0,
+      125.0
+    ],
+    [
+      "config-0",
+      0,
+      16,
+      16,
+      984.0
+    ],
+    [
+      "idle-1",
+      16,
+      16,
+      0,
+      1500.0
+    ],
+    [
+      "status-1",
+      16,
+      16,
+      0,
+      125.0
+    ],
+    [
+      "config-1",
+      16,
+      37,
+      21,
+      1156.0
+    ],
+    [
+      "idle-2",
+      37,
+      37,
+      0,
+      1500.0
+    ],
+    [
+      "status-2",
+      37,
+      37,
+      0,
+      109.0
+    ],
+    [
+      "config-2",
+      37,
+      47,
+      10,
+      984.0
+    ],
+    [
+      "idle-3",
+      47,
+      47,
+      0,
+      1500.0
+    ],
+    [
+      "status-3",
+      47,
+      47,
+      0,
+      109.0
+    ],
+    [
+      "config-3",
+      47,
+      63,
+      16,
+      984.0
+    ]
+  ],
+  "rows": [
+    {
+      "stage": "small-config-get-before",
+      "failures": 0,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1"
+      ],
+      "details": []
+    },
+    {
+      "stage": "small-config-get-after",
+      "failures": 0,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1"
+      ],
+      "details": []
+    },
+    {
+      "stage": "stage-and-commit-only-before",
+      "failures": 0,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1"
+      ],
+      "details": []
+    },
+    {
+      "stage": "stage-and-commit-only-after",
+      "failures": 0,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1"
+      ],
+      "details": []
+    },
+    {
+      "stage": "idle-0-before",
+      "failures": 0,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1"
+      ],
+      "details": []
+    },
+    {
+      "stage": "idle-0-after",
+      "failures": 0,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1"
+      ],
+      "details": []
+    },
+    {
+      "stage": "status-0-before",
+      "failures": 0,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1"
+      ],
+      "details": []
+    },
+    {
+      "stage": "status-0-after",
+      "failures": 0,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1"
+      ],
+      "details": []
+    },
+    {
+      "stage": "config-0-before",
+      "failures": 0,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1"
+      ],
+      "details": []
+    },
+    {
+      "stage": "config-0-after",
+      "failures": 16,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "idle-1-before",
+      "failures": 16,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "idle-1-after",
+      "failures": 16,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "status-1-before",
+      "failures": 16,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "status-1-after",
+      "failures": 16,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "config-1-before",
+      "failures": 16,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "config-1-after",
+      "failures": 37,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "idle-2-before",
+      "failures": 37,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "idle-2-after",
+      "failures": 37,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "status-2-before",
+      "failures": 37,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "status-2-after",
+      "failures": 37,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "config-2-before",
+      "failures": 37,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "config-2-after",
+      "failures": 47,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "idle-3-before",
+      "failures": 47,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "idle-3-after",
+      "failures": 47,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "status-3-before",
+      "failures": 47,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "status-3-after",
+      "failures": 47,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "config-3-before",
+      "failures": 47,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    },
+    {
+      "stage": "config-3-after",
+      "failures": 63,
+      "probe": [
+        "PROBE reserve=7968 addr=0x408223d0 internal=1",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1686 task=loopTask",
+        "PROBE caller=0x4000f506 size=1674 task=tiT",
+        "PROBE caller=0x4000f506 size=1680 task=loopTask"
+      ],
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=6332 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=5468 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=7664 min=2796 largest=1524",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1680 caps=0x80c free=4628 min=2796 largest=1524"
+      ]
+    }
+  ]
+}

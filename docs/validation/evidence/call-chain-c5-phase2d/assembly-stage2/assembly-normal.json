@@ -1,0 +1,149 @@
+{
+  "stop": {
+    "fill32ms": 909.9472000380047,
+    "statusRTTms": 21.45639999071136,
+    "endMs": 87.63100003125146,
+    "full": {
+      "failures": 0,
+      "dma": 40948,
+      "stack": 4920,
+      "workerStack": 5892
+    },
+    "obsLoopMaxUs": 403769
+  },
+  "panic": {
+    "fill32ms": 923.5232999781147,
+    "statusRTTms": 66.52360002044588,
+    "endMs": 123.23789997026324,
+    "full": {
+      "failures": 0,
+      "dma": 40948,
+      "stack": 4920,
+      "workerStack": 5892
+    },
+    "obsLoopMaxUs": 403769
+  },
+  "execution": {
+    "before": {
+      "failures": 0,
+      "dma": 40948,
+      "stack": 5368,
+      "workerStack": 5892
+    },
+    "after": {
+      "failures": 0,
+      "dma": 40948,
+      "stack": 4920,
+      "workerStack": 5892
+    },
+    "details": "27 returns, nested order, 32->0 x2, shared FIFO alternation passed",
+    "delta": 0
+  },
+  "BLE": [
+    [
+      522.83,
+      "midi-903c64"
+    ],
+    [
+      762.59,
+      "midi-803c00"
+    ],
+    [
+      770.93,
+      "/p2d/m"
+    ],
+    [
+      1829.93,
+      "down"
+    ],
+    [
+      2069.58,
+      "up"
+    ],
+    [
+      2100.02,
+      "/p2d/h"
+    ]
+  ],
+  "disconnected-overlap": {
+    "before": {
+      "failures": 0,
+      "dma": 42996,
+      "stack": 4920,
+      "workerStack": 5892
+    },
+    "after": {
+      "failures": 0,
+      "dma": 42996,
+      "stack": 4920,
+      "workerStack": 5892
+    },
+    "details": {
+      "count": 208,
+      "expected": 208,
+      "ordered": true,
+      "duplicates": 0,
+      "missing": 0,
+      "duringGET": 1,
+      "content": true,
+      "httpMs": 913.38,
+      "gapMin": 0.0036999699659645557,
+      "gapMedian": 0.07619999814778566,
+      "gapMax": 911.5890999673866
+    },
+    "delta": 0
+  },
+  "OBS-real": {
+    "before": {
+      "failures": 0,
+      "dma": 42996,
+      "stack": 4920,
+      "workerStack": 5892
+    },
+    "after": {
+      "failures": 0,
+      "dma": 38900,
+      "stack": 4920,
+      "workerStack": 3572
+    },
+    "details": {
+      "realScenes": 8,
+      "webUI": "Connected"
+    },
+    "delta": 0
+  },
+  "ready-overlap": {
+    "before": {
+      "failures": 0,
+      "dma": 38900,
+      "stack": 4920,
+      "workerStack": 3572
+    },
+    "after": {
+      "failures": 0,
+      "dma": 38900,
+      "stack": 4920,
+      "workerStack": 3572
+    },
+    "details": {
+      "count": 208,
+      "expected": 208,
+      "ordered": true,
+      "duplicates": 0,
+      "missing": 0,
+      "duringGET": 1,
+      "content": true,
+      "httpMs": 918.99,
+      "gapMin": 0.00400003045797348,
+      "gapMedian": 0.13430003309622407,
+      "gapMax": 917.5852999906056
+    },
+    "delta": 0
+  },
+  "finalState": [
+    true,
+    true,
+    true,
+    "Ready"
+  ]
+}

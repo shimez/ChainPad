@@ -1,0 +1,67 @@
+{
+  "fixtureChainsSHA": "81cf49e9e7d10af900abf7fb5db98322f716f27c9fae0ffd8616f3894a74c7e6",
+  "conditionsReady": [
+    true,
+    true,
+    true,
+    "Disconnected"
+  ],
+  "ready-overlap": {
+    "before": {
+      "failures": 0,
+      "stack": 5000,
+      "workerStack": 3572
+    },
+    "after": {
+      "failures": 0,
+      "stack": 5000,
+      "workerStack": 3572
+    },
+    "details": {
+      "count": 208,
+      "expected": 208,
+      "ordered": true,
+      "duplicates": 0,
+      "missing": 0,
+      "duringGET": 1,
+      "content": true,
+      "httpMs": 930.46,
+      "gapMin": 0.003500026650726795,
+      "gapMedian": 0.2655999851413071,
+      "gapMax": 927.9139999998733
+    },
+    "delta": 0
+  },
+  "conditionsDisconnected": [
+    true,
+    true,
+    true,
+    "Disconnected"
+  ],
+  "disconnected-overlap": {
+    "before": {
+      "failures": 0,
+      "stack": 5000,
+      "workerStack": 3572
+    },
+    "after": {
+      "failures": 0,
+      "stack": 5000,
+      "workerStack": 3572
+    },
+    "details": {
+      "count": 208,
+      "expected": 208,
+      "ordered": true,
+      "duplicates": 0,
+      "missing": 0,
+      "duringGET": 3,
+      "content": true,
+      "httpMs": 843.49,
+      "gapMin": 0.0031999661587178707,
+      "gapMedian": 0.2161000156775117,
+      "gapMax": 890.9216999891214
+    },
+    "delta": 0
+  }
+}

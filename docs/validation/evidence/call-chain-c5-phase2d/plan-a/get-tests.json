@@ -1,0 +1,413 @@
+{
+  "fixtureSHA256": "3fee4807f6b1e761149f66f1a18d9867e16fcc231920935bd5bf3844345f3db0",
+  "conditions": [
+    true,
+    true,
+    true,
+    "Disconnected"
+  ],
+  "results": [
+    [
+      "small-config-get",
+      0,
+      0,
+      0,
+      406.0
+    ],
+    [
+      "stage-and-commit-only",
+      0,
+      0,
+      0,
+      7141.0
+    ],
+    [
+      "idle-0",
+      0,
+      0,
+      0,
+      1500.0
+    ],
+    [
+      "status-0",
+      0,
+      0,
+      0,
+      16.0
+    ],
+    [
+      "config-0",
+      0,
+      0,
+      0,
+      922.0
+    ],
+    [
+      "idle-1",
+      0,
+      0,
+      0,
+      1500.0
+    ],
+    [
+      "status-1",
+      0,
+      0,
+      0,
+      32.0
+    ],
+    [
+      "config-1",
+      0,
+      1,
+      1,
+      1015.0
+    ],
+    [
+      "idle-2",
+      1,
+      1,
+      0,
+      1500.0
+    ],
+    [
+      "status-2",
+      1,
+      1,
+      0,
+      125.0
+    ],
+    [
+      "config-2",
+      1,
+      1,
+      0,
+      938.0
+    ],
+    [
+      "idle-3",
+      1,
+      1,
+      0,
+      1500.0
+    ],
+    [
+      "status-3",
+      1,
+      1,
+      0,
+      125.0
+    ],
+    [
+      "config-3",
+      1,
+      1,
+      0,
+      1000.0
+    ],
+    [
+      "save-0",
+      1,
+      1,
+      0,
+      7125.0
+    ],
+    [
+      "after-save-get-0",
+      1,
+      1,
+      0,
+      937.0
+    ],
+    [
+      "save-1",
+      1,
+      1,
+      0,
+      6735.0
+    ],
+    [
+      "after-save-get-1",
+      1,
+      3,
+      2,
+      938.0
+    ],
+    [
+      "save-2",
+      3,
+      3,
+      0,
+      6922.0
+    ],
+    [
+      "after-save-get-2",
+      3,
+      3,
+      0,
+      937.0
+    ]
+  ],
+  "rows": [
+    {
+      "stage": "small-config-get-before",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "small-config-get-after",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-and-commit-only-before",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "stage-and-commit-only-after",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "idle-0-before",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "idle-0-after",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "status-0-before",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "status-0-after",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "config-0-before",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "config-0-after",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "idle-1-before",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "idle-1-after",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "status-1-before",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "status-1-after",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "config-1-before",
+      "failures": 0,
+      "details": []
+    },
+    {
+      "stage": "config-1-after",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "idle-2-before",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "idle-2-after",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "status-2-before",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "status-2-after",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "config-2-before",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "config-2-after",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "idle-3-before",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "idle-3-after",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "status-3-before",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "status-3-after",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "config-3-before",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "config-3-after",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "save-0-before",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "save-0-after",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "after-save-get-0-before",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "after-save-get-0-after",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "save-1-before",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "save-1-after",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "after-save-get-1-before",
+      "failures": 1,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268"
+      ]
+    },
+    {
+      "stage": "after-save-get-1-after",
+      "failures": 3,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1648 caps=0x80c free=3596 min=932 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=3736 min=932 largest=1204"
+      ]
+    },
+    {
+      "stage": "save-2-before",
+      "failures": 3,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1648 caps=0x80c free=3596 min=932 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=3736 min=932 largest=1204"
+      ]
+    },
+    {
+      "stage": "save-2-after",
+      "failures": 3,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1648 caps=0x80c free=3596 min=932 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=3736 min=932 largest=1204"
+      ]
+    },
+    {
+      "stage": "after-save-get-2-before",
+      "failures": 3,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1648 caps=0x80c free=3596 min=932 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=3736 min=932 largest=1204"
+      ]
+    },
+    {
+      "stage": "after-save-get-2-after",
+      "failures": 3,
+      "details": [
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1674 caps=0x80c free=4232 min=932 largest=1268",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1648 caps=0x80c free=3596 min=932 largest=1012",
+        "ALLOC FAIL phase=loop api=heap_caps_malloc size=1686 caps=0x80c free=3736 min=932 largest=1204"
+      ]
+    }
+  ]
+}
