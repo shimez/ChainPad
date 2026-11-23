@@ -1020,7 +1020,9 @@ void stopOtherChainsTests() {
 #include "call_tests.h"
 #include "call_storage_tests.h"
 #include "call_engine_tests.h"
+#include "call_scheduling_tests.h"
 int main() {
+  callSchedulingTests();
   callEngineTests();
   callModelTests();
   callStorageTests();

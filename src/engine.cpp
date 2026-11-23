@@ -111,6 +111,7 @@ bool Engine::triggerImpl(const InputEvent& event, bool supportsCall) {
   const auto& chain = activeConfig().chains[event.input];
   loops::Layout layout; String error;
   if (!loops::analyze(chain, layout, error, eventActionLimit(event.input))) return false;
+  const bool paced = layout.count || (activeConfig().loopReachable & (uint32_t(1) << event.input));
   bool needsSlot = false, stopBeforeWait = false, hasCall = false;
   for (uint8_t i = 0; i < chain.count; ++i) {
     const auto& a = chain.actions[i];
@@ -120,7 +121,7 @@ bool Engine::triggerImpl(const InputEvent& event, bool supportsCall) {
       hasCall = needsSlot = true;
     }
     if (a.protocol == Protocol::LoopStart ||
-        (a.protocol == Protocol::Wait && (a.delayMs || layout.count)) || pairedAction(a)) needsSlot = true;
+        (a.protocol == Protocol::Wait && (a.delayMs || paced)) || pairedAction(a)) needsSlot = true;
   }
   // Reject the whole new invocation before emitting any prefix Actions.
   // Chains without Wait or paired sends remain executable when slots are full.
@@ -156,7 +157,7 @@ bool Engine::triggerImpl(const InputEvent& event, bool supportsCall) {
   const uint8_t pos = running++;
   auto& job = jobs[order[pos]];
   job.current = job.input = event.input; job.next = next; job.frames.reset();
-  job.paceOsc = layout.count != 0; job.budgeted = job.paceOsc || hasCall;
+  job.paceOsc = paced; job.budgeted = paced || hasCall;
   job.pairPending = false; job.oscPending = false;
   // Stack entries and ticket are written before use. No stale wake deadline.
   job.wakeAt = now;

@@ -81,6 +81,9 @@ struct NetworkSettings {
 struct Config : NetworkSettings {
   ChainView chains[INPUT_COUNT];
   EncoderRotationSettings encoderRotation;
+  // Derived at config validation/apply; never serialized. Bit N includes
+  // Loops reachable through Call, not just markers stored in chain N.
+  uint32_t loopReachable = 0;
   Config() {
     for (uint8_t i = 0; i < 26; ++i)
       chains[i].actions = {slots + (i / 2) * MAX_KEY_ACTIONS + (i % 2 ? MAX_KEY_ACTIONS - 1 : 0), int8_t(i % 2 ? -1 : 1)};
@@ -92,6 +95,7 @@ struct Config : NetworkSettings {
     if (this == &source) return *this;
     static_cast<NetworkSettings&>(*this) = source;
     encoderRotation = source.encoderRotation;
+    loopReachable = source.loopReachable;
     for (size_t i = 0; i < MAX_TOTAL_ACTIONS; ++i) slots[i] = source.slots[i];
     for (uint8_t i = 0; i < INPUT_COUNT; ++i) chains[i].count = source.chains[i].count;
     return *this;

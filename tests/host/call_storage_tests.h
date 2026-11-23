@@ -11,6 +11,9 @@ void callStorageTests() {
   const auto baseline = *fake::files.at("/config.records");
   auto& call = source.chains[1].actions[0];
   source.chains[1].count = 1; call.protocol = Protocol::CallChain; call.targetInput = 27;
+  source.chains[27].count=2;
+  source.chains[27].actions[0].protocol=Protocol::LoopStart; source.chains[27].actions[0].loopCount=1;
+  source.chains[27].actions[1].protocol=Protocol::LoopEnd;
   auto stage = [&]() {
     JsonDocument doc, network; String body;
     assert(encodeNetwork(source,network)); doc["schemaVersion"]=2; doc["network"]=network;
@@ -24,7 +27,7 @@ void callStorageTests() {
   };
   auto unchanged = [&]() {
     assert(*fake::files.at("/config.records")==baseline && encoded(config)==encoded(original));
-    assert(configOutputsAllowed());
+    assert(configOutputsAllowed() && !config.loopReachable);
   };
   auto bootRejected = [&](const std::string& bytes, ConfigStorageState state, const char* detail) {
     *fake::files.at("/config.records") = bytes;
@@ -40,7 +43,10 @@ void callStorageTests() {
   const auto forward=*fake::files.at("/pending.records");
   bootRejected(forward,ConfigStorageState::UnsupportedFeature,"unsupported");
   assert(commitCallModelForTest(stage(),error) && *fake::files.at("/config.records")==forward);
+  const uint32_t paced=(uint32_t(1)<<27)|2;
+  assert(config.loopReachable==paced); config.loopReachable=0;
   assert(loadCallModelForTest(error) && encoded(config)==encoded(source)); // no Engine trigger
+  assert(config.loopReachable==paced);
   assert(saveSource(original,error)); unchanged();
 
   source.chains[27].count=1;

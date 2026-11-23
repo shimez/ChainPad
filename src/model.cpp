@@ -201,7 +201,9 @@ bool decodeConfig(JsonVariantConst root, Config& out, String& error) {
     if (graph.add(id, *chain) != calls::Error::None) { error = "Invalid Call graph"; return false; }
     out.chains[id].assign(*chain);
   }
-  return graph.finish(calls::ENGINE_SUPPORTS_CALL, error) == calls::Graph::Admission::Valid;
+  if (graph.finish(calls::ENGINE_SUPPORTS_CALL, error) != calls::Graph::Admission::Valid) return false;
+  out.loopReachable = graph.loopReachable();
+  return true;
 }
 bool decodeNetwork(JsonVariantConst n, NetworkSettings& out, String& error) {
   error = "Invalid network settings";

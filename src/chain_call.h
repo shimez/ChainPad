@@ -34,6 +34,7 @@ enum class Error { None, InvalidInput, Duplicate, Missing, Slots, InvalidCall, C
 class Graph {
   static_assert(INPUT_COUNT < 32, "seen mask");
   uint32_t seen = 0;
+  uint32_t localLoops = 0;
   bool containsCall = false;
   uint8_t counts[INPUT_COUNT]{};
   uint8_t targets[INPUT_COUNT][MAX_ACTIONS]{}; // target + 1, or zero for ordinary Action
@@ -53,8 +54,26 @@ public:
       if (chain.actions[i].protocol == Protocol::CallChain) {
         targets[id][i] = chain.actions[i].targetInput + 1;
         containsCall = true;
-      }
+      } else if (chain.actions[i].protocol == Protocol::LoopStart) localLoops |= bit;
     return Error::None;
+  }
+  // Called after validation, never from trigger/tick. At most 27 edges on
+  // a path, and each productive pass marks at least one additional chain.
+  uint32_t loopReachable() const {
+    uint32_t mask = localLoops, previous;
+    if (!mask || !containsCall) return mask;
+    do {
+      previous = mask;
+      for (uint8_t id = 0; id < INPUT_COUNT; ++id) {
+        const uint32_t bit = uint32_t(1) << id;
+        if (mask & bit) continue;
+        for (uint8_t i = 0; i < counts[id]; ++i) {
+          const auto ref = targets[id][i];
+          if (ref && (mask & (uint32_t(1) << (ref-1)))) { mask |= bit; break; }
+        }
+      }
+    } while (mask != previous);
+    return mask;
   }
   Error validate(Cycle& cycle) const {
     cycle.count = 0;

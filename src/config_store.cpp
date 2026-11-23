@@ -114,6 +114,7 @@ void defaults() {
   auto& config = activeConfig();
   static_cast<NetworkSettings&>(config) = NetworkSettings{};
   for (auto& chain : config.chains) chain.count = 0;
+  config.loopReachable = 0;
   config.encoderRotation.mode = RotationMode::ActionChain;
   config.encoderRotation.axis = RotationAxis{};
   config.encoderRotation.outputCount = 0;
@@ -134,6 +135,8 @@ bool applyBuiltinDefault(String& error) {
       else if (pressCount + chain->count > MAX_KEY_ACTIONS) return false;
     }
     config.chains[i].assign(*chain);
+    for (uint8_t j = 0; j < chain->count; ++j)
+      if (chain->actions[j].protocol == Protocol::LoopStart) config.loopReachable |= uint32_t(1) << i;
   }
   chain.reset();
   std::unique_ptr<EncoderRotationSettings> rotation(new (std::nothrow) EncoderRotationSettings);
@@ -236,6 +239,7 @@ static bool commitWithCapability(uint32_t token, String& error, bool supportsCal
     error = APPLY_FAILED; return false;
   }
   storageState = ConfigStorageState::Ready;
+  config.loopReachable = graph.loopReachable();
   rotationRuntime.apply(config.encoderRotation);
   error = ""; return true;
 }
@@ -265,6 +269,7 @@ static bool loadWithCapability(String& message, bool supportsCall) {
     defaults(); storageState = failure; bootReadLocked = true; return false;
   }
   bootReadLocked = false;
+  config.loopReachable = graph.loopReachable();
   committedApplyFailed = false;
   rotationRuntime.restart(config.encoderRotation);
   message = "Loaded LittleFS settings"; return true;
