@@ -78,6 +78,6 @@ const CallModel = (() => {
       }
     }
   }
-  return {parseFile, validateAction, validateGraph, checkAdmission};
+  return {parseFile, validateAction, validateGraph, checkAdmission, inputName};
 })();
 if (typeof module !== 'undefined') module.exports = CallModel;

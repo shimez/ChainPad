@@ -47,15 +47,14 @@ void callEngineTests() {
     add(0,mark(1));add(0,call(3));add(0,mark(5));
     add(3,mark(2));add(3,call(26));add(3,call(27));add(3,mark(4));
     add(27,mark(3));
-    assert(!e.trigger({0,0}) && marks().empty()); // Normal firmware entry rejects whole prefix.
-    assert(e.triggerCallModelForTest({0,0}));drain(e);
-    assert(marks()==std::vector<int>({1,2,3,4,5}) && e.stats.events==2);
+    assert(e.trigger({0,0}));drain(e);
+    assert(marks()==std::vector<int>({1,2,3,4,5}) && e.stats.events==1);
   }
   {
     fresh(); Engine e;
     for (uint8_t i=0;i<27;++i) {add(i,call(i+1));add(i,mark(i));}
     add(27,wait);add(27,mark(27));
-    assert(e.triggerCallModelForTest({0,0}));
+    assert(e.trigger({0,0}));
     while (e.stats.accepted==0 && hostMillis<10) {++hostMillis;e.beginCycle();e.tick(hostMillis);}
     assert(e.stats.accepted==1 && e.stats.events==1 && e.activeCount()==1 && marks().empty());
     drain(e);std::vector<int> expected;for(int i=27;i>=0;--i)expected.push_back(i);
@@ -66,22 +65,22 @@ void callEngineTests() {
     for (int i=0;i<7;++i) add(0,start);
     add(0,call(2));add(0,mark(1));for(int i=0;i<7;++i)add(0,end);
     start.loopCount=1;for(int i=0;i<8;++i)add(2,start);for(int i=0;i<8;++i)add(2,end);
-    assert(e.triggerCallModelForTest({0,0}));drain(e);
+    assert(e.trigger({0,0}));drain(e);
     assert(marks()==std::vector<int>(128,1));
   }
   {
     fresh(); Engine e;start.loopCount=2;
     add(0,start);add(0,mark(1));add(0,call(2));add(0,mark(3));add(0,end);
     start.loopCount=3;add(2,start);add(2,mark(2));add(2,end);
-    assert(e.triggerCallModelForTest({0,0}));drain(e);
+    assert(e.trigger({0,0}));drain(e);
     assert(marks()==std::vector<int>({1,2,2,2,3,1,2,2,2,3}));
   }
   {
     fresh(); Engine e;start.loopCount=2;
     add(0,call(4));add(0,mark(10));add(2,call(4));add(2,mark(20));
     add(4,start);add(4,mark(4));add(4,wait);add(4,end);
-    assert(e.triggerCallModelForTest({0,0})); hostMillis=2;
-    assert(e.triggerCallModelForTest({2,2}) && e.activeCount()==2);
+    assert(e.trigger({0,0})); hostMillis=2;
+    assert(e.trigger({2,2}) && e.activeCount()==2);
     drain(e); assert(marks()==std::vector<int>({4,4,4,4,10,20}));
   }
   std::cout<<"PASS Call Engine: frame boundaries, empty child, 27 returns, parent 7 / child 8, independent invocations\n";

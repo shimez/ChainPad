@@ -3,7 +3,7 @@
 
 namespace chimera::calls {
 // Runtime admission is separate from the wire format and graph validity.
-constexpr bool ENGINE_SUPPORTS_CALL = false;
+constexpr bool ENGINE_SUPPORTS_CALL = true;
 inline bool executable(const Chain& chain, bool supportsCall = ENGINE_SUPPORTS_CALL) {
   for (uint8_t i = 0; i < chain.count; ++i)
     if (chain.actions[i].protocol == Protocol::CallChain && !supportsCall) return false;

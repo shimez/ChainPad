@@ -9,6 +9,7 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function nodes(){const all={};return {all,get:id=>all[id]??={value:'',checked:false,disabled:false,textContent:'',classList:{toggle(){}}}};}
 async function configurator(){
   const {all,get}=nodes();let fail=false;const requests=[];
+  let status={};
   const stored=JSON.parse(fs.readFileSync('web/builtin/ChainPad-Configuration-Default.json','utf8'));
   stored.network={ssid:'original',passwordConfigured:true,oscHost:'10.0.0.1',oscPort:9000};
   const ctx=vm.createContext({TextEncoder,selected:0,dirty:false,saving:false,config:undefined,capabilities:{},$:get,
@@ -17,15 +18,23 @@ async function configurator(){
     fetch:async(path,options)=>{
       if(path==='/api/config')return new Response(JSON.stringify(stored));
       if(path==='/api/capabilities')return new Response('{"usbMidi":true,"usbKeyboard":true}');
-      if(path==='/api/status')return new Response('{"storageState":"ready","configOutputsAllowed":true}');
+      if(path==='/api/status')return new Response(JSON.stringify({storageState:'ready',...status}));
       const body=options.body?JSON.parse(options.body):null;requests.push([path,body]);
       if(fail&&path==='/api/config/begin')return new Response('{"message":"write failed"}',{status:400});
       return new Response('{"token":7,"message":"saved"}');
     }});
-  vm.runInContext(helper+'\nconst passwordEditor=WifiPassword.create($);\n'+fs.readFileSync('web/presets.js','utf8')+'\n'+
+  vm.runInContext(helper+'\nconst passwordEditor=WifiPassword.create($);\n'+fs.readFileSync('web/call-model.js','utf8')+'\n'+fs.readFileSync('web/presets.js','utf8')+'\n'+
     line('async function api(')+'\n'+line('async function load(')+'\n'+line('function applyImport(')+'\n'+line('function editedConfig(')+'\n'+
     html.slice(html.indexOf('async function saveConfig('),html.indexOf("$('save').onclick")),ctx);
-  await ctx.load();assert.equal(get('password').value,'');assert.match(get('passwordStatus').textContent,/設定済み/);
+  for(const [state,label] of [
+    [{engineReady:false,configOutputsAllowed:false},'Engine使用不可（出力停止）'],
+    [{engineReady:true,configOutputsAllowed:false},'設定未読込（出力停止）'],
+    [{configOutputsAllowed:false},'設定未読込（出力停止）'],
+    [{configOutputsAllowed:true},'保存済み']
+  ]){
+    status=state;await ctx.load();assert.equal(get('dirty').textContent,label);
+  }
+  assert.equal(get('password').value,'');assert.match(get('passwordStatus').textContent,/設定済み/);
   assert(!Object.hasOwn(ctx.config.network,'password'));
   const submitted=()=>requests.filter(([p])=>p==='/api/config/begin').at(-1)[1].network;
   get('ssid').value='edited-ssid';get('oscPort').value='9001';

@@ -56,6 +56,7 @@ function hidFields(fields,a){
   }
 }
 function actionSummary(a) {
+  if(a.protocol==='callChain')return `Call → ${CallModel.inputName(a.targetInput)}`;
   if(a.protocol==='loopStart')return `Loop · ${a.count}回`;
   if(a.protocol==='loopEnd')return '';
   if(a.protocol==='obs'&&a.operation==='setInputVolume')return `音量調整 · ${a.inputName} · ${a.volumeMode==='relative'?`${a.volumeDb>=0?'+':''}${a.volumeDb} dB`:`${a.volumeDb} dBに設定`}`;

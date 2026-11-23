@@ -116,6 +116,21 @@ void printDiagnostics(Print& out, const char* reason) {
   outputPrintf(out, "Static sizes: Action=%u Chain=%u Config=%u Engine=%u; recordLimit=%u\n",
     unsigned(sizeof(Action)), unsigned(sizeof(Chain)), unsigned(sizeof(Config)), unsigned(sizeof(Engine)), unsigned(MAX_RECORD_BYTES));
   outputPrintf(out, "Active Config address: %p\n", static_cast<void*>(&config));
+#if CHAINPAD_ENGINE_EXTERNAL || defined(CONFIG_IDF_TARGET_ESP32S3)
+  constexpr uint32_t dmaCaps = MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT;
+  outputPrintf(out, "RAM internal DMA: largest=%u\n", unsigned(heap_caps_get_largest_free_block(dmaCaps)));
+#endif
+#if CHAINPAD_ENGINE_EXTERNAL
+#if CHAINPAD_HAS_OBS
+  const auto* buf = static_cast<const uint8_t*>(obsAssemblyBase());
+  outputPrintf(out, "OBS assembly: base=%p bytes=%u externalRange=%u\n", buf, unsigned(sizeof(obs::Assembly)),
+    unsigned(buf && esp_ptr_external_ram(buf) && esp_ptr_external_ram(buf + sizeof(obs::Assembly) - 1)));
+#endif
+  const auto* first = static_cast<const uint8_t*>(engine.slotBase());
+  outputPrintf(out, "Engine slots: base=%p bytes=%u count=%u externalRange=%u\n", first,
+    unsigned(engine.slotBytes()), unsigned(engine.MAX_RUNNING),
+    unsigned(first && esp_ptr_external_ram(first) && esp_ptr_external_ram(first + engine.slotBytes() - 1)));
+#endif
   outputPrintf(out, "Config external=%u PSRAM total=%u bytes\n", unsigned(esp_ptr_external_ram(&config)),
     unsigned(heap_caps_get_total_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)));
   outputPrintf(out, "Rotation storage: Output=%u Settings=%u count=%u/%u state=%s\n",

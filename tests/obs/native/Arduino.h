@@ -21,6 +21,7 @@ class String {
 public:
   String(const char* s = "") : data(s ? s : "") {}
   String(const std::string& s) : data(s) {}
+  explicit String(int n) : data(std::to_string(n)) {}
   const char* c_str() const { return data.c_str(); }
   size_t length() const { return data.size(); }
   void trim() {

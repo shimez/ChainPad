@@ -1,8 +1,3 @@
-namespace chimera {
-bool commitCallModelForTest(uint32_t token, String& error);
-bool loadCallModelForTest(String& error);
-}
-
 void callStorageTests() {
   Config original, source, decoded;
   String error;
@@ -39,13 +34,11 @@ void callStorageTests() {
     assert(loadConfig(error)); unchanged();
   };
   auto t=stage();
-  assert(!commitConfigSave(t,error) && error=="Call Chain is unsupported by this firmware"); unchanged();
   const auto forward=*fake::files.at("/pending.records");
-  bootRejected(forward,ConfigStorageState::UnsupportedFeature,"unsupported");
-  assert(commitCallModelForTest(stage(),error) && *fake::files.at("/config.records")==forward);
+  assert(commitConfigSave(t,error) && *fake::files.at("/config.records")==forward);
   const uint32_t paced=(uint32_t(1)<<27)|2;
   assert(config.loopReachable==paced); config.loopReachable=0;
-  assert(loadCallModelForTest(error) && encoded(config)==encoded(source)); // no Engine trigger
+  assert(loadConfig(error) && encoded(config)==encoded(source));
   assert(config.loopReachable==paced);
   assert(saveSource(original,error)); unchanged();
 
@@ -55,7 +48,6 @@ void callStorageTests() {
   JsonDocument full; assert(encodeConfig(source,full));
   assert(!decodeConfig(full.as<JsonVariantConst>(),decoded,error) && error==cycle);
   assert(!commitConfigSave(stage(),error) && error==cycle); unchanged();
-  assert(!commitCallModelForTest(stage(),error) && error==cycle); unchanged();
   bootRejected(*fake::files.at("/pending.records"),ConfigStorageState::Corrupt,cycle);
 
   auto invalid=forward;

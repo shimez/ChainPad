@@ -34,6 +34,9 @@ struct ObsSceneMemory {
 };
 #if CHAINPAD_HAS_OBS
 void obsBegin();
+#if defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CHAINPAD_HOST_TEST)
+const void* obsAssemblyBase(); // Diagnostics only; immutable address after obsBegin.
+#endif
 bool obsApplySettings(const ObsSettings& snapshot); // Also explicitly retries terminal errors.
 SendResult obsDispatch(const char* scene, uint32_t& requestId);
 SendResult obsDispatch(const obs::Command&, uint32_t& requestId);

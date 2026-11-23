@@ -10,7 +10,7 @@ namespace chimera { namespace hidtrace {
 enum Event : uint8_t {
   Input, InputQueued, InputDropped, InputConsumed, ActionAccepted, ActionRejected,
   ChainRejected, Push, Pop, Discard, Overflow, Neutral, NotifyCall, NotifyReturn,
-  Status, Subscribe, Disconnect, Reset, Dispatch, Count
+  Status, Subscribe, Disconnect, Reset, Dispatch, PairComplete, CallReturn, Count
 };
 #if CHAINPAD_HID_TRACE
 void record(Event event, uint8_t transport = 255, uint16_t usage = 0,

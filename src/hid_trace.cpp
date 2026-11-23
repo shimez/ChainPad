@@ -28,7 +28,8 @@ unsigned dumpLine = 0;
 uint32_t sequence = 0, reportContext[2]{}; // loop-task owned, independent of recording sessions
 const char* names[] = {"input", "input_queued", "input_dropped", "input_consumed",
   "action_accepted", "action_rejected", "chain_rejected", "push", "pop", "discard",
-  "fifo_overflow", "neutral", "notify_call", "notify_return", "status", "subscribe", "disconnect", "reset", "dispatch"};
+  "fifo_overflow", "neutral", "notify_call", "notify_return", "status", "subscribe", "disconnect", "reset", "dispatch",
+  "pair_complete", "call_return"};
 }
 uint32_t nextId() { return ++sequence; }
 void context(uint8_t t, uint32_t id) { reportContext[t] = id; }

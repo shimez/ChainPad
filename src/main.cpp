@@ -7,6 +7,7 @@
 #include "wifi_setup_flow.h"
 #include "model.h"
 #include "json_wire.h"
+#include "config_get_allocator.h"
 #include "rotation_runtime.h"
 #include "rotation_sender.h"
 #if CHAINPAD_HAS_USB
@@ -55,7 +56,7 @@ uint32_t restartAt = 0, lastActivity = 0;
 #if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
 obscontrol::Controller obsControl;
 bool obsMaintenance() { return maintenanceRecovery || restartAt || factoryResetBlocked(); }
-bool obsGlobalAllowed() { return !obsMaintenance() && configOutputsAllowed(); }
+bool obsGlobalAllowed() { return !obsMaintenance() && engine.ready() && configOutputsAllowed(); }
 #endif
 char bootSsid[33]{}, bootPassword[65]{};
 void jsonResponse(int status, JsonDocument& doc) {
@@ -133,7 +134,13 @@ void setupWeb() {
     if (resetGuard()) return;
     if (configCommittedApplyFailed()) { result(503, "Stored settings require reload. Outputs disabled; Restart required."); return; }
     // Same checked encoder in both passes; retain only one record at a time.
-    JsonDocument doc; String part;
+#if defined(CONFIG_IDF_TARGET_ESP32C5)
+    ConfigGetAllocator allocator; // Must outlive doc, including early error returns.
+    JsonDocument doc(&allocator);
+#else
+    JsonDocument doc;
+#endif
+    String part;
     auto record = [&](uint8_t index) {
       bool ok;
       if (!index) ok = encodeNetworkPublic(activeConfig(), doc);
@@ -229,7 +236,8 @@ void setupWeb() {
     doc["transportRetries"] = s.retries; doc["transportOverflows"] = s.overflows;
     doc["inputOverflows"] = inputOverflows(); doc["pressedMask"] = pressedInputs();
     doc["inputsReady"] = inputReady; doc["bootMessage"] = bootMessage;
-    doc["storageState"] = configStorageStateName(); doc["configOutputsAllowed"] = configOutputsAllowed() && !factoryResetBlocked();
+    doc["storageState"] = configStorageStateName(); doc["configOutputsAllowed"] = engine.ready() && configOutputsAllowed() && !factoryResetBlocked();
+    doc["engineReady"] = engine.ready();
 #if CHAINPAD_HAS_OBS && !defined(CHAINPAD_OBS_TEST)
     obsControl.tick(obsGlobalAllowed());
     obsControl.statusJson(doc["obs"].to<JsonObject>());
@@ -267,6 +275,7 @@ void setupWeb() {
   web.on("/api/trigger", HTTP_POST, [] {
     if (resetGuard()) return;
     if (!configOutputsAllowed()) { result(409, "Settings unavailable; outputs disabled"); return; }
+    if (!engine.ready()) { result(503, "Engine unavailable; outputs disabled"); return; }
     JsonDocument doc;
     if (deserializeJson(doc, web.arg("plain")) || !doc["input"].is<unsigned>() || doc["input"].as<unsigned>() >= INPUT_COUNT) {
       result(400, "input must be 0..27"); return;
@@ -314,7 +323,10 @@ void setup() {
   maintenanceRecovery = reset == ResetBoot::Failed;
   memoryPhase("config/load");
   if (maintenanceRecovery) bootMessage = "Factory Reset failed/stopped; retry explicitly or use Web Installer. Outputs disabled.";
-  else loadConfig(bootMessage);
+  else {
+    loadConfig(bootMessage);
+    if (!engine.begin()) bootMessage += " / Engine PSRAM allocation failed; outputs disabled.";
+  }
   auto& config = activeConfig();
   memoryCheckpoint("config/loaded");
   memcpy(bootSsid, config.ssid, sizeof(bootSsid)); memcpy(bootPassword, config.password, sizeof(bootPassword));
@@ -337,7 +349,7 @@ void setup() {
   setupWeb();
   memoryCheckpoint("web/ready");
   memoryPhase("inputs/begin");
-  if (!maintenanceRecovery) inputReady = inputsBegin();
+  if (!maintenanceRecovery && engine.ready()) inputReady = inputsBegin();
   memoryCheckpoint(inputReady ? "inputs/ready" : "inputs/FAILED");
   memoryPhase("loop");
   serialReport(console, 1024, [&](Print& out) {
@@ -426,15 +438,15 @@ void loop() {
     observedOverflows = overflows; panic(); // Cancel pending work and release HID; no generated MIDI.
   }
   if (!restartAt && !factoryResetBlocked()) {
-    if (configOutputsAllowed()) engine.tick(now);
+    if (engine.ready() && configOutputsAllowed()) engine.tick(now);
     InputEvent event;
     for (unsigned budget = 0; budget < 16 && nextInput(event); ++budget) {
       hidtrace::record(hidtrace::InputConsumed, 255, event.input);
-      if (configOutputsAllowed()) engine.trigger(event);
+      if (engine.ready() && configOutputsAllowed()) engine.trigger(event);
       lastActivity = now;
     }
   } else if (restartAt && static_cast<int32_t>(now - restartAt) >= 0) ESP.restart();
-  if (!restartAt && !factoryResetBlocked() && configOutputsAllowed()) rotationSendTick();
+  if (!restartAt && !factoryResetBlocked() && engine.ready() && configOutputsAllowed()) rotationSendTick();
   const uint32_t ledPhase = now % 1000;
   bool led = setupApReady ? ledPhase < 500 :
              WiFi.status() == WL_CONNECTED ? now - lastActivity > 50 :

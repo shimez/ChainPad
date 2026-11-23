@@ -1,5 +1,6 @@
 #include "model.h"
 #include "json_wire.h"
+#include "config_get_allocator.h"
 #include "factory_reset.h"
 #include "storage_probe.h"
 #include "engine.h"

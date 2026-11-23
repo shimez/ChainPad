@@ -276,11 +276,6 @@ static bool loadWithCapability(String& message, bool supportsCall) {
 }
 bool commitConfigSave(uint32_t token, String& error) { return commitWithCapability(token, error, calls::ENGINE_SUPPORTS_CALL); }
 bool loadConfig(String& message) { return loadWithCapability(message, calls::ENGINE_SUPPORTS_CALL); }
-#if defined(CHAINPAD_HOST_TEST)
-// Host storage tests only: exercise real disk roundtrips without dispatch.
-bool commitCallModelForTest(uint32_t token, String& error) { return commitWithCapability(token, error, true); }
-bool loadCallModelForTest(String& message) { return loadWithCapability(message, true); }
-#endif
 bool saveWifiConfig(const String& json, String& error) {
   auto& config = activeConfig();
   if (saveLocked(error)) return false;

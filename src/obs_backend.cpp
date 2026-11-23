@@ -10,6 +10,7 @@
 #include <atomic>
 #include <esp_heap_caps.h>
 #include <cstring>
+#include <new>
 
 namespace chimera {
 namespace {
@@ -40,7 +41,23 @@ uint32_t lastLoop = 0, maximumLoopUs = 0;
 // Everything below belongs exclusively to the worker/callbacks.
 Settings live;
 obs::Protocol protocol;
-Assembly assembly;
+#if defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CHAINPAD_HOST_TEST)
+Assembly* assembly = nullptr;
+bool assemblyAttempted = false;
+bool beginAssembly() {
+  // obsBegin runs in setup after initArduino. Lifetime is the entire boot;
+  // latch even allocation failure, with no fallback to internal DMA memory.
+  if (!assemblyAttempted) {
+    assemblyAttempted = true;
+    auto* p = heap_caps_malloc(sizeof(Assembly), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (p) assembly = new (p) Assembly{};
+  }
+  return assembly != nullptr;
+}
+#else
+Assembly assemblyStorage;
+constexpr auto assembly = &assemblyStorage;
+#endif
 Epoch session;
 bool fatal = false, identify = false, closed = false;
 uint32_t started = 0, authenticatingAt = 0;
@@ -82,7 +99,7 @@ void discard() {
   result(protocol.pending, false, -2, protocol.operation); protocol.pending = 0;
   Request r;
   while (xQueueReceive(requestQueue, &r, 0) == pdTRUE) result(r.id, false, -2, r.command.operation);
-  assembly.reset(); identify = false;
+  assembly->reset(); identify = false;
 }
 void invalidate() {
   Lock lock; lifecycle.disconnected(); published = State::Disconnected;
@@ -163,12 +180,12 @@ void event(WStype_t type, uint8_t* data, size_t size) {
       authenticatingAt = millis(); connectMs = authenticatingAt - started; break;
     case WStype_DISCONNECTED: closed = true; break;
     case WStype_TEXT:
-      if (assembly.active) { fatal = true; lastError = -8; }
+      if (assembly->active) { fatal = true; lastError = -8; }
       else message(reinterpret_cast<char*>(data), size);
       break;
     case WStype_FRAGMENT_TEXT_START: case WStype_FRAGMENT: case WStype_FRAGMENT_FIN:
-      if (!assembly.append(data, size, type == WStype_FRAGMENT_TEXT_START, millis())) { fatal = true; lastError = -8; }
-      else if (type == WStype_FRAGMENT_FIN) { message(assembly.bytes, assembly.length); assembly.reset(); }
+      if (!assembly->append(data, size, type == WStype_FRAGMENT_TEXT_START, millis())) { fatal = true; lastError = -8; }
+      else if (type == WStype_FRAGMENT_FIN) { message(assembly->bytes, assembly->length); assembly->reset(); }
       break;
     case WStype_PING: case WStype_PONG: break;
     default: fatal = true; lastError = -8; break;
@@ -205,7 +222,7 @@ void worker(void*) {
       uint32_t now = millis();
       if (!active && int32_t(now - nextAttempt) >= 0) {
         { Lock lock; session = lifecycle.epoch; }
-        closed = false; identify = false; assembly.reset();
+        closed = false; identify = false; assembly->reset();
         lastClose = 0; protocol.state = State::Connecting; published = State::Connecting; ++attempts;
         started = now; socket.start(); closed = false; active = true;
       }
@@ -225,7 +242,7 @@ void worker(void*) {
           result(protocol.pending, false, -4, protocol.operation); protocol.pending = 0;
           closed = true; lastError = -4;
         }
-        if (assembly.expired(now) || (protocol.state != State::Ready && uint32_t(now - started) >= HANDSHAKE_TIMEOUT_MS)) {
+        if (assembly->expired(now) || (protocol.state != State::Ready && uint32_t(now - started) >= HANDSHAKE_TIMEOUT_MS)) {
           closed = true; lastError = -5;
         }
         if (fatal || closed || !socket.alive() || !current() || !station()) {
@@ -304,8 +321,14 @@ void worker(void*) {
   }
 }
 }
+#if defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CHAINPAD_HOST_TEST)
+const void* obsAssemblyBase() { return assembly; }
+#endif
 void obsBegin() {
   if (task) return;
+#if defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CHAINPAD_HOST_TEST)
+  if (!beginAssembly()) { lastError = -9; published = obs::State::Error; return; }
+#endif
   protocol.sceneMemoryProbe = [] { sampleSceneMemory(1); };
   requestQueue = xQueueCreateStatic(REQUESTS, sizeof(Request), requestStorage, &requestControl);
   resultQueue = xQueueCreateStatic(RESULTS, sizeof(ObsResult), resultStorage, &resultControl);

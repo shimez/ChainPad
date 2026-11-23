@@ -5,6 +5,11 @@
 #include "invocation_frames.h"
 
 namespace chimera {
+#if defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CHAINPAD_HOST_TEST)
+#define CHAINPAD_ENGINE_EXTERNAL 1
+#else
+#define CHAINPAD_ENGINE_EXTERNAL 0
+#endif
 // Logical event IDs are independent of matrix rows, columns and GPIOs.
 // 0..23: KEY1..12 press/release, 24/25: push, 26/27: CW/CCW.
 struct InputEvent { uint8_t input; uint32_t timeMs; };
@@ -18,6 +23,17 @@ class Engine {
   public:
     static constexpr uint8_t MAX_RUNNING = 32;
     Engine();
+    Engine(const Engine&) = delete;
+    Engine& operator=(const Engine&) = delete;
+#if CHAINPAD_ENGINE_EXTERNAL
+    bool begin();
+    bool ready() const { return jobs != nullptr; }
+    const void* slotBase() const { return jobs; }
+    static constexpr size_t slotBytes() { return sizeof(Invocation) * MAX_RUNNING; }
+#else
+    bool begin() { return true; }
+    bool ready() const { return true; }
+#endif
     // Keep aggregate traffic bounded even when all 32 slots contain OSC Loops.
     static constexpr uint16_t LOOP_CYCLE_BUDGET = 64;
     static constexpr uint8_t LOOP_SLICE_BUDGET = 16;
@@ -25,9 +41,6 @@ class Engine {
     // Call once before HTTP/input dispatch and tick, never from Stop continuation.
     void beginCycle() { loopBudget = LOOP_CYCLE_BUDGET; }
    bool trigger(const InputEvent& event);
-#if defined(CHAINPAD_HOST_TEST)
-   bool triggerCallModelForTest(const InputEvent& event) { return triggerImpl(event, true); }
-#endif
    void tick(uint32_t now);
    void cancelAll();
    uint8_t activeCount() const { return running; }
@@ -38,7 +51,13 @@ class Engine {
        uint8_t input = 0, current = 0, next = 0;
        bool pairPending : 1, budgeted : 1, paceOsc : 1, oscPending : 1;
        uint32_t wakeAt = 0, oscTicket = 0;
-     } jobs[MAX_RUNNING];
+     };
+#if CHAINPAD_ENGINE_EXTERNAL
+    Invocation* jobs = nullptr;
+    bool initAttempted = false;
+#else
+    Invocation jobs[MAX_RUNNING];
+#endif
     // Permutation: [0,running) is the FIFO; [running,MAX_RUNNING) is free.
     uint8_t order[MAX_RUNNING];
     uint16_t loopBudget = LOOP_CYCLE_BUDGET;

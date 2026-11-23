@@ -24,5 +24,6 @@ inline bool enter(const char* kind){if(target!=kind&&!(target=="request"&&std::s
 class FaultDocument : public ArduinoJson::JsonDocument {
 public:
   FaultDocument():ArduinoJson::JsonDocument(&jsonFault::allocator){}
+  explicit FaultDocument(ArduinoJson::Allocator* a):ArduinoJson::JsonDocument(a){}
 };
 #define JsonDocument FaultDocument

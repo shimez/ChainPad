@@ -17,12 +17,12 @@ void callModelTests() {
     assert(decodeModelChain(doc.as<JsonVariantConst>(), 0, chain, error) == valid);
     if (!valid) continue;
     assert(chain.count == 1 && chain.actions[0].protocol == Protocol::CallChain &&
-           chain.actions[0].targetInput == example[1].as<unsigned>() && !executable(chain));
+           chain.actions[0].targetInput == example[1].as<unsigned>() && executable(chain));
     assert(encodeChain(chain, 0, doc));
     auto action = doc["actions"][0];
     assert(action.size() == 3 && action["targetInput"].is<uint8_t>() && action["delayMs"] == 0);
     assert(decodeModelChain(doc.as<JsonVariantConst>(), 0, chain, error));
-    assert(!decodeChain(doc.as<JsonVariantConst>(), 0, chain, error)); // active firmware entry point
+    assert(decodeChain(doc.as<JsonVariantConst>(), 0, chain, error));
   }
   auto appendCall = [](ChainView& chain, uint8_t target) {
     auto& a = chain.actions[chain.count++]; a.protocol = Protocol::CallChain; a.targetInput = target;

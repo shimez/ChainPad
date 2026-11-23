@@ -2,12 +2,29 @@
 #include "chain_call.h"
 #include "hid_trace.h"
 #include "rotation_runtime.h"
+#if CHAINPAD_ENGINE_EXTERNAL
+#include <esp_heap_caps.h>
+#include <new>
+#endif
 
 namespace chimera {
 Engine engine;
 Engine::Engine() {
   for (uint8_t i = 0; i < MAX_RUNNING; ++i) order[i] = i;
 }
+#if CHAINPAD_ENGINE_EXTERNAL
+// Lifetime is the entire boot. setup() calls this after Arduino has registered
+// PSRAM. A failed allocation is latched; no retries or internal fallback.
+bool Engine::begin() {
+  if (!initAttempted) {
+    initAttempted = true;
+    struct Pool { Invocation slots[MAX_RUNNING]; };
+    void* p = heap_caps_malloc(sizeof(Pool), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (p) jobs = (new (p) Pool{})->slots;
+  }
+  return ready();
+}
+#endif
 // Tickets only exist while an invocation waits at an OSC Action. Cancelled
 // jobs disappear from the scan, so Stop/Panic cannot leave a hole in the FIFO.
 // At most 32 tickets coexist; signed differences also order counter wrap.
@@ -26,6 +43,7 @@ bool Engine::admitLoopOsc(Invocation& job, uint32_t now) {
 Engine::AdvanceResult Engine::advance(Invocation& job, uint32_t now, uint8_t& slice) {
   if (job.pairPending) {
     if (pairedActionPending(activeConfig().chains[job.current].actions[job.next - 1])) return AdvanceResult::Waiting;
+    hidtrace::record(hidtrace::PairComplete, 255, job.current, job.input, job.frames.depth, job.next - 1);
     job.pairPending = false;
   }
   for (;;) {
@@ -44,6 +62,7 @@ Engine::AdvanceResult Engine::advance(Invocation& job, uint32_t now, uint8_t& sl
     }
     if (atEnd) {
       if (!job.frames.restore(job.current, job.next)) return AdvanceResult::Complete;
+      hidtrace::record(hidtrace::CallReturn, 255, job.current, job.input, job.frames.depth, job.next);
       continue;
     }
     const uint8_t index = job.next++;
@@ -104,7 +123,7 @@ bool Engine::trigger(const InputEvent& event) {
   return triggerImpl(event, calls::ENGINE_SUPPORTS_CALL);
 }
 bool Engine::triggerImpl(const InputEvent& event, bool supportsCall) {
-  if (event.input >= INPUT_COUNT) return false;
+  if (!ready() || event.input >= INPUT_COUNT) return false;
   ++stats.events;
   if (event.input >= 26 && activeConfig().encoderRotation.mode == RotationMode::RotationValue)
     return rotationRuntime.step(event.input == 26);
@@ -165,6 +184,7 @@ bool Engine::triggerImpl(const InputEvent& event, bool supportsCall) {
   return true;
 }
 void Engine::tick(uint32_t now) {
+  if (!ready()) return;
   for (uint8_t i = 0; i < running;) {
     const auto& job = jobs[order[i]];
     if (static_cast<int32_t>(now - job.wakeAt) < 0) { ++i; continue; }
