@@ -1,0 +1,97 @@
+{
+  "consumer": {
+    "rows": [
+      [
+        "0xe9",
+        [
+          "02e900",
+          "020000"
+        ]
+      ],
+      [
+        "0xea",
+        [
+          "02ea00",
+          "020000"
+        ]
+      ],
+      [
+        "0xe2",
+        [
+          "02e200",
+          "020000"
+        ]
+      ],
+      [
+        "0xcd",
+        [
+          "02cd00",
+          "020000"
+        ]
+      ],
+      [
+        "0xb5",
+        [
+          "02b500",
+          "020000"
+        ]
+      ],
+      [
+        "0xb6",
+        [
+          "02b600",
+          "020000"
+        ]
+      ],
+      [
+        "0xb7",
+        [
+          "02b700",
+          "020000"
+        ]
+      ]
+    ],
+    "before": [
+      "RAM internal: free=94104 minFree=56824 largest=73716 allocated=136612 loopStackMin=5360",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5360",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=88908 minFree=56824 largest=69620 allocated=141568 loopStackMin=5360",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5360",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ]
+  },
+  "panic": {
+    "before": [
+      "RAM internal: free=92336 minFree=56824 largest=71668 allocated=138268 loopStackMin=5360",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5360",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=92344 minFree=56824 largest=75764 allocated=138260 loopStackMin=5360",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5360",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "pc": [
+      [
+        323579.4968602,
+        "903d63"
+      ],
+      [
+        323581.7471334,
+        "803d00"
+      ],
+      [
+        323581.7471682,
+        "b01548"
+      ]
+    ],
+    "activeBefore": 1,
+    "activeAfter": 0
+  }
+}

@@ -1,0 +1,1 @@
+[{"operation":"enable","before":false,"actual":true,"want":true},{"operation":"toggle","before":true,"actual":false,"want":false},{"operation":"enable","before":false,"actual":true,"want":true},{"operation":"disable","before":true,"actual":false,"want":false}]

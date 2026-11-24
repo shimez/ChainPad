@@ -1,0 +1,36 @@
+{
+  "saveBefore": {
+    "failures": 0,
+    "dma": 64500,
+    "stack": 4992,
+    "workerStack": 3660
+  },
+  "overlap": {
+    "before": {
+      "failures": 0,
+      "dma": 41972,
+      "stack": 4992,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "dma": 41972,
+      "stack": 4992,
+      "workerStack": 3660
+    },
+    "details": {
+      "count": 208,
+      "expected": 208,
+      "ordered": true,
+      "duplicates": 0,
+      "missing": 0,
+      "duringGET": 1,
+      "content": true,
+      "httpMs": 1638.49,
+      "gapMin": 0.003700028173625469,
+      "gapMedian": 0.043899985030293465,
+      "gapMax": 1636.7989999707788
+    },
+    "delta": 0
+  }
+}

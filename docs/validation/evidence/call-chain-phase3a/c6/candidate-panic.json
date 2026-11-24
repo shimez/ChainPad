@@ -1,0 +1,24 @@
+{
+  "before": {
+    "events": 71,
+    "uptimeMs": 155462,
+    "runningChains": 32,
+    "rejectedChains": 1,
+    "cancelledChains": 32,
+    "inputOverflows": 0,
+    "transportOverflows": 0
+  },
+  "after": {
+    "events": 71,
+    "uptimeMs": 155565,
+    "runningChains": 0,
+    "rejectedChains": 1,
+    "cancelledChains": 64,
+    "inputOverflows": 0,
+    "transportOverflows": 0
+  },
+  "pcF13": [
+    true,
+    false
+  ]
+}

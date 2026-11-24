@@ -116,7 +116,7 @@ void printDiagnostics(Print& out, const char* reason) {
   outputPrintf(out, "Static sizes: Action=%u Chain=%u Config=%u Engine=%u; recordLimit=%u\n",
     unsigned(sizeof(Action)), unsigned(sizeof(Chain)), unsigned(sizeof(Config)), unsigned(sizeof(Engine)), unsigned(MAX_RECORD_BYTES));
   outputPrintf(out, "Active Config address: %p\n", static_cast<void*>(&config));
-#if CHAINPAD_ENGINE_EXTERNAL || defined(CONFIG_IDF_TARGET_ESP32S3)
+#if CHAINPAD_ENGINE_EXTERNAL || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C6)
   constexpr uint32_t dmaCaps = MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT;
   outputPrintf(out, "RAM internal DMA: largest=%u\n", unsigned(heap_caps_get_largest_free_block(dmaCaps)));
 #endif

@@ -1,0 +1,99 @@
+{
+  "chainHash": "91ffa829d5f5d1d08f342bfc3cc098eeabcdfb4fae4cf9d500118c1bbea268ed",
+  "run0": {
+    "before": {
+      "failures": 0,
+      "dma": 64500,
+      "free": 83700,
+      "minimum": 47568,
+      "stack": 5056,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "dma": 62452,
+      "free": 81992,
+      "minimum": 45436,
+      "stack": 5056,
+      "workerStack": 3660
+    },
+    "details": {
+      "count": 208,
+      "expected": 208,
+      "ordered": true,
+      "duplicates": 0,
+      "missing": 0,
+      "duringGET": 1,
+      "content": true,
+      "httpMs": 1735.66,
+      "gapMin": 0.003600027412176132,
+      "gapMedian": 0.041899969801306725,
+      "gapMax": 1740.1211999822408
+    },
+    "delta": 0
+  },
+  "run1": {
+    "before": {
+      "failures": 0,
+      "dma": 62452,
+      "free": 81992,
+      "minimum": 45436,
+      "stack": 5056,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "dma": 62452,
+      "free": 81992,
+      "minimum": 43396,
+      "stack": 5056,
+      "workerStack": 3660
+    },
+    "details": {
+      "count": 208,
+      "expected": 208,
+      "ordered": true,
+      "duplicates": 0,
+      "missing": 0,
+      "duringGET": 3,
+      "content": true,
+      "httpMs": 1707.66,
+      "gapMin": 0.003600027412176132,
+      "gapMedian": 0.02269999822601676,
+      "gapMax": 1702.7784999809228
+    },
+    "delta": 0
+  },
+  "run2": {
+    "before": {
+      "failures": 0,
+      "dma": 62452,
+      "free": 81992,
+      "minimum": 43396,
+      "stack": 5056,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "dma": 62452,
+      "free": 81992,
+      "minimum": 43396,
+      "stack": 5056,
+      "workerStack": 3660
+    },
+    "details": {
+      "count": 208,
+      "expected": 208,
+      "ordered": true,
+      "duplicates": 0,
+      "missing": 0,
+      "duringGET": 3,
+      "content": true,
+      "httpMs": 1742.83,
+      "gapMin": 0.0036999699659645557,
+      "gapMedian": 0.02359994687139988,
+      "gapMax": 1739.0771000063978
+    },
+    "delta": 0
+  }
+}

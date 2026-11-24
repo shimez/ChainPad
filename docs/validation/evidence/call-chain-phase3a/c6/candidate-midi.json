@@ -1,0 +1,122 @@
+{
+  "midi": {
+    "expected": [
+      "903c64",
+      "803c00",
+      "b00749",
+      "903e58",
+      "803e00",
+      "903c55",
+      "903e55",
+      "803c00",
+      "803e00",
+      "903c5a",
+      "903e5a",
+      "803c00",
+      "803e00"
+    ],
+    "events": [
+      [
+        294737518.35,
+        "903c64"
+      ],
+      [
+        294738013.98,
+        "803c00"
+      ],
+      [
+        294738523.42,
+        "b00749"
+      ],
+      [
+        294739034.27,
+        "903e58"
+      ],
+      [
+        294739228.42,
+        "803e00"
+      ],
+      [
+        294739558.87,
+        "903c55"
+      ],
+      [
+        294739558.94,
+        "903e55"
+      ],
+      [
+        294740053.61,
+        "803c00"
+      ],
+      [
+        294740053.69,
+        "803e00"
+      ],
+      [
+        294740563.15,
+        "903c5a"
+      ],
+      [
+        294740563.42,
+        "903e5a"
+      ],
+      [
+        294740758.43,
+        "803c00"
+      ],
+      [
+        294740758.62,
+        "803e00"
+      ]
+    ],
+    "before": [
+      "RAM internal: free=86456 minFree=62484 largest=67572 allocated=136340 loopStackMin=5088",
+      "RAM internal DMA: largest=67572",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5088",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=84372 minFree=62484 largest=67572 allocated=138248 loopStackMin=5088",
+      "RAM internal DMA: largest=67572",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5088",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ]
+  },
+  "hid": {
+    "states": [
+      [
+        true,
+        false
+      ],
+      [
+        false,
+        false
+      ],
+      [
+        true,
+        false
+      ],
+      [
+        false,
+        false
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        false,
+        false
+      ]
+    ],
+    "after": [
+      "RAM internal: free=84388 minFree=62484 largest=65524 allocated=138232 loopStackMin=5088",
+      "RAM internal DMA: largest=65524",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5088",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ]
+  }
+}

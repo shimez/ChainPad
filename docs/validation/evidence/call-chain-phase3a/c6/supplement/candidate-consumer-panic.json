@@ -1,0 +1,101 @@
+{
+  "consumer": {
+    "rows": [
+      [
+        "0xe9",
+        [
+          "02e900",
+          "020000"
+        ]
+      ],
+      [
+        "0xea",
+        [
+          "02ea00",
+          "020000"
+        ]
+      ],
+      [
+        "0xe2",
+        [
+          "02e200",
+          "020000"
+        ]
+      ],
+      [
+        "0xcd",
+        [
+          "02cd00",
+          "020000"
+        ]
+      ],
+      [
+        "0xb5",
+        [
+          "02b500",
+          "020000"
+        ]
+      ],
+      [
+        "0xb6",
+        [
+          "02b600",
+          "020000"
+        ]
+      ],
+      [
+        "0xb7",
+        [
+          "02b700",
+          "020000"
+        ]
+      ]
+    ],
+    "before": [
+      "RAM internal: free=86104 minFree=61560 largest=65524 allocated=136612 loopStackMin=5056",
+      "RAM internal DMA: largest=65524",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=83916 minFree=61560 largest=65524 allocated=138608 loopStackMin=5056",
+      "RAM internal DMA: largest=65524",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ]
+  },
+  "panic": {
+    "before": [
+      "RAM internal: free=84052 minFree=61560 largest=65524 allocated=138504 loopStackMin=5056",
+      "RAM internal DMA: largest=65524",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=84068 minFree=61560 largest=65524 allocated=138488 loopStackMin=5056",
+      "RAM internal DMA: largest=65524",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "pc": [
+      [
+        323968.824781,
+        "903d63"
+      ],
+      [
+        323970.937502,
+        "803d00"
+      ],
+      [
+        323971.0124052,
+        "b01548"
+      ]
+    ],
+    "activeBefore": 1,
+    "activeAfter": 0
+  }
+}

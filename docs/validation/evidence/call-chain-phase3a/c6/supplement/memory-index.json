@@ -1,0 +1,691 @@
+[
+  {
+    "file": "baseline-common-first.json",
+    "interval": "/save",
+    "before": {
+      "free": 95204,
+      "minimum": 70508,
+      "stack": 5360,
+      "workerStack": 5932,
+      "failures": 0
+    },
+    "after": {
+      "free": 92516,
+      "minimum": 70492,
+      "stack": 5328,
+      "workerStack": 5932,
+      "failures": 0
+    }
+  },
+  {
+    "file": "baseline-common-first.json",
+    "interval": "/single",
+    "before": {
+      "free": 92488,
+      "minimum": 70492,
+      "stack": 5328,
+      "workerStack": 5932,
+      "failures": 0
+    },
+    "after": {
+      "free": 92620,
+      "minimum": 70492,
+      "stack": 5328,
+      "workerStack": 5932,
+      "failures": 0
+    }
+  },
+  {
+    "file": "baseline-common-first.json",
+    "interval": "/typed-twice",
+    "before": {
+      "free": 92624,
+      "minimum": 70492,
+      "stack": 5328,
+      "workerStack": 5932,
+      "failures": 0
+    },
+    "after": {
+      "free": 92620,
+      "minimum": 70492,
+      "stack": 5328,
+      "workerStack": 5932,
+      "failures": 0
+    }
+  },
+  {
+    "file": "baseline-common-first.json",
+    "interval": "/wait",
+    "before": {
+      "free": 92364,
+      "minimum": 70492,
+      "stack": 5328,
+      "workerStack": 5932,
+      "failures": 0
+    },
+    "after": {
+      "free": 92632,
+      "minimum": 70492,
+      "stack": 5328,
+      "workerStack": 5932,
+      "failures": 0
+    }
+  },
+  {
+    "file": "baseline-common-first.json",
+    "interval": "/nested",
+    "before": {
+      "free": 92592,
+      "minimum": 70492,
+      "stack": 5328,
+      "workerStack": 5932,
+      "failures": 0
+    },
+    "after": {
+      "free": 92636,
+      "minimum": 70492,
+      "stack": 5328,
+      "workerStack": 5932,
+      "failures": 0
+    }
+  },
+  {
+    "file": "baseline-midi.json",
+    "interval": "/midi",
+    "before": {
+      "free": 92524,
+      "minimum": 66496,
+      "stack": 5360,
+      "workerStack": 5916,
+      "failures": 0
+    },
+    "after": {
+      "free": 92644,
+      "minimum": 66496,
+      "stack": 5360,
+      "workerStack": 5916,
+      "failures": 0
+    }
+  },
+  {
+    "file": "baseline-midi.json",
+    "interval": "/hid",
+    "before": {},
+    "after": {
+      "free": 92632,
+      "minimum": 66496,
+      "stack": 5360,
+      "workerStack": 5916,
+      "failures": 0
+    }
+  },
+  {
+    "file": "baseline-retry-midi.json",
+    "interval": "/midi",
+    "before": {
+      "free": 94640,
+      "minimum": 70516,
+      "stack": 5328,
+      "workerStack": 5916,
+      "failures": 0
+    },
+    "after": {
+      "free": 94620,
+      "minimum": 70516,
+      "stack": 5328,
+      "workerStack": 5916,
+      "failures": 0
+    }
+  },
+  {
+    "file": "baseline-retry-midi.json",
+    "interval": "/hid",
+    "before": {},
+    "after": {
+      "free": 94608,
+      "minimum": 70516,
+      "stack": 5328,
+      "workerStack": 5916,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-common.json",
+    "interval": "/save",
+    "before": {
+      "free": 87764,
+      "minimum": 66776,
+      "dma": 69620,
+      "stack": 5408,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 84060,
+      "minimum": 62364,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-common.json",
+    "interval": "/single",
+    "before": {
+      "free": 84368,
+      "minimum": 62364,
+      "dma": 63476,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 82292,
+      "minimum": 62364,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-common.json",
+    "interval": "/typed-twice",
+    "before": {
+      "free": 82344,
+      "minimum": 62364,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 82192,
+      "minimum": 62364,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-common.json",
+    "interval": "/wait",
+    "before": {
+      "free": 82344,
+      "minimum": 62364,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 82348,
+      "minimum": 62364,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-common.json",
+    "interval": "/nested",
+    "before": {
+      "free": 82204,
+      "minimum": 62364,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 82348,
+      "minimum": 62364,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-common.json",
+    "interval": "/arm-stop",
+    "before": {
+      "free": 82336,
+      "minimum": 62364,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 84308,
+      "minimum": 60328,
+      "dma": 65524,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-midi.json",
+    "interval": "/midi",
+    "before": {
+      "free": 86456,
+      "minimum": 62484,
+      "dma": 67572,
+      "stack": 5088,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 84372,
+      "minimum": 62484,
+      "dma": 67572,
+      "stack": 5088,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-midi.json",
+    "interval": "/hid",
+    "before": {},
+    "after": {
+      "free": 84388,
+      "minimum": 62484,
+      "dma": 65524,
+      "stack": 5088,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-mixed.json",
+    "interval": "/normal-first",
+    "before": {
+      "free": 84448,
+      "minimum": 58516,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 82376,
+      "minimum": 58516,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-mixed.json",
+    "interval": "/call-first",
+    "before": {
+      "free": 82360,
+      "minimum": 58516,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 82364,
+      "minimum": 58516,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-mixed.json",
+    "interval": "/shared-direct",
+    "before": {
+      "free": 77508,
+      "minimum": 58516,
+      "dma": 55284,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 82372,
+      "minimum": 58516,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-mixed.json",
+    "interval": "/fifo",
+    "before": {
+      "free": 82372,
+      "minimum": 58516,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 82360,
+      "minimum": 58516,
+      "dma": 64500,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-obs-overlap.json",
+    "interval": "/overlap",
+    "before": {
+      "failures": 0,
+      "dma": 41972,
+      "stack": 4992,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "dma": 41972,
+      "stack": 4992,
+      "workerStack": 3660
+    }
+  },
+  {
+    "file": "candidate-physical.json",
+    "interval": "",
+    "before": {
+      "free": 86896,
+      "minimum": 63548,
+      "dma": 67572,
+      "stack": 5408,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 84636,
+      "minimum": 63548,
+      "dma": 65524,
+      "stack": 5408,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-rotation-stop.json",
+    "interval": "",
+    "before": {
+      "free": 87448,
+      "minimum": 63948,
+      "dma": 69620,
+      "stack": 5408,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 85276,
+      "minimum": 63948,
+      "dma": 67572,
+      "stack": 5408,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "candidate-rotation-wrap.json",
+    "interval": "",
+    "before": {
+      "free": 84272,
+      "minimum": 60364,
+      "dma": 56308,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 82328,
+      "minimum": 60364,
+      "dma": 57332,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "supplement/candidate-consumer-panic.json",
+    "interval": "/consumer",
+    "before": {
+      "free": 86104,
+      "minimum": 61560,
+      "dma": 65524,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 83916,
+      "minimum": 61560,
+      "dma": 65524,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "supplement/candidate-consumer-panic.json",
+    "interval": "/panic",
+    "before": {
+      "free": 84052,
+      "minimum": 61560,
+      "dma": 65524,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 84068,
+      "minimum": 61560,
+      "dma": 65524,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "supplement/candidate-latency.json",
+    "interval": "/run0",
+    "before": {
+      "failures": 0,
+      "dma": 64500,
+      "free": 83700,
+      "minimum": 47568,
+      "stack": 5056,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "dma": 62452,
+      "free": 81992,
+      "minimum": 45436,
+      "stack": 5056,
+      "workerStack": 3660
+    }
+  },
+  {
+    "file": "supplement/candidate-latency.json",
+    "interval": "/run1",
+    "before": {
+      "failures": 0,
+      "dma": 62452,
+      "free": 81992,
+      "minimum": 45436,
+      "stack": 5056,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "dma": 62452,
+      "free": 81992,
+      "minimum": 43396,
+      "stack": 5056,
+      "workerStack": 3660
+    }
+  },
+  {
+    "file": "supplement/candidate-latency.json",
+    "interval": "/run2",
+    "before": {
+      "failures": 0,
+      "dma": 62452,
+      "free": 81992,
+      "minimum": 43396,
+      "stack": 5056,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "dma": 62452,
+      "free": 81992,
+      "minimum": 43396,
+      "stack": 5056,
+      "workerStack": 3660
+    }
+  },
+  {
+    "file": "supplement/candidate-retry1-rotation.json",
+    "interval": "/rotation",
+    "before": {
+      "free": 84024,
+      "minimum": 63608,
+      "dma": 65524,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 82008,
+      "minimum": 63608,
+      "dma": 65524,
+      "stack": 5056,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "supplement/group-mem.json",
+    "interval": "",
+    "before": {
+      "free": 84116,
+      "minimum": 60248,
+      "dma": 65524,
+      "stack": 5056,
+      "workerStack": 3532,
+      "failures": 0
+    },
+    "after": {
+      "free": 84120,
+      "minimum": 60248,
+      "dma": 65524,
+      "stack": 5056,
+      "workerStack": 3532,
+      "failures": 0
+    }
+  },
+  {
+    "file": "supplement/original-consumer-panic.json",
+    "interval": "/consumer",
+    "before": {
+      "free": 94104,
+      "minimum": 56824,
+      "stack": 5360,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 88908,
+      "minimum": 56824,
+      "stack": 5360,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "supplement/original-consumer-panic.json",
+    "interval": "/panic",
+    "before": {
+      "free": 92336,
+      "minimum": 56824,
+      "stack": 5360,
+      "workerStack": 3660,
+      "failures": 0
+    },
+    "after": {
+      "free": 92344,
+      "minimum": 56824,
+      "stack": 5360,
+      "workerStack": 3660,
+      "failures": 0
+    }
+  },
+  {
+    "file": "supplement/original-latency.json",
+    "interval": "/run0",
+    "before": {
+      "failures": 0,
+      "free": 92400,
+      "minimum": 52116,
+      "stack": 5360,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "free": 90296,
+      "minimum": 51832,
+      "stack": 5360,
+      "workerStack": 3660
+    }
+  },
+  {
+    "file": "supplement/original-latency.json",
+    "interval": "/run1",
+    "before": {
+      "failures": 0,
+      "free": 90296,
+      "minimum": 51832,
+      "stack": 5360,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "free": 90292,
+      "minimum": 49596,
+      "stack": 5360,
+      "workerStack": 3660
+    }
+  },
+  {
+    "file": "supplement/original-latency.json",
+    "interval": "/run2",
+    "before": {
+      "failures": 0,
+      "free": 90296,
+      "minimum": 49596,
+      "stack": 5360,
+      "workerStack": 3660
+    },
+    "after": {
+      "failures": 0,
+      "free": 90300,
+      "minimum": 49596,
+      "stack": 5360,
+      "workerStack": 3660
+    }
+  }
+]

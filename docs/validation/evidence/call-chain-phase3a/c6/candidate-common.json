@@ -1,0 +1,324 @@
+{
+  "save": {
+    "before": [
+      "RAM internal: free=87764 minFree=66776 largest=69620 allocated=135032 loopStackMin=5408",
+      "RAM internal DMA: largest=69620",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5408",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=84060 minFree=62364 largest=64500 allocated=138608 loopStackMin=5056",
+      "RAM internal DMA: largest=64500",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "start": {
+      "events": 0,
+      "uptimeMs": 17708,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "end": {
+      "events": 0,
+      "uptimeMs": 24263,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "actual": null
+  },
+  "single": {
+    "before": [
+      "RAM internal: free=84368 minFree=62364 largest=63476 allocated=138252 loopStackMin=5056",
+      "RAM internal DMA: largest=63476",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=82292 minFree=62364 largest=64500 allocated=140200 loopStackMin=5056",
+      "RAM internal DMA: largest=64500",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "start": {
+      "events": 0,
+      "uptimeMs": 27033,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "end": {
+      "events": 1,
+      "uptimeMs": 30201,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "actual": [
+      [
+        0.0,
+        "2f70332f74657374000000002c69000000000016"
+      ]
+    ]
+  },
+  "typed-twice": {
+    "before": [
+      "RAM internal: free=82344 minFree=62364 largest=64500 allocated=140164 loopStackMin=5056",
+      "RAM internal DMA: largest=64500",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=82192 minFree=62364 largest=64500 allocated=140284 loopStackMin=5056",
+      "RAM internal DMA: largest=64500",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "start": {
+      "events": 1,
+      "uptimeMs": 33069,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "end": {
+      "events": 3,
+      "uptimeMs": 36566,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "actual": [
+      [
+        [
+          0.0,
+          "2f70332f74657374000000002c690000fffffff9"
+        ],
+        [
+          0.01,
+          "2f70332f74657374000000002c6600003f000000"
+        ],
+        [
+          0.01,
+          "2f70332f74657374000000002c540000"
+        ],
+        [
+          0.01,
+          "2f70332f74657374000000002c460000"
+        ],
+        [
+          0.02,
+          "2f70332f74657374000000002c730000e99fb300"
+        ]
+      ],
+      [
+        [
+          0.0,
+          "2f70332f74657374000000002c690000fffffff9"
+        ],
+        [
+          0.0,
+          "2f70332f74657374000000002c6600003f000000"
+        ],
+        [
+          0.01,
+          "2f70332f74657374000000002c540000"
+        ],
+        [
+          0.01,
+          "2f70332f74657374000000002c460000"
+        ],
+        [
+          0.01,
+          "2f70332f74657374000000002c730000e99fb300"
+        ]
+      ]
+    ]
+  },
+  "wait": {
+    "before": [
+      "RAM internal: free=82344 minFree=62364 largest=64500 allocated=140164 loopStackMin=5056",
+      "RAM internal DMA: largest=64500",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=82348 minFree=62364 largest=64500 allocated=140160 loopStackMin=5056",
+      "RAM internal DMA: largest=64500",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "start": {
+      "events": 3,
+      "uptimeMs": 39419,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "end": {
+      "events": 4,
+      "uptimeMs": 42592,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "actual": [
+      [
+        0.0,
+        "2f70332f74657374000000002c69000000000001"
+      ],
+      [
+        204.04,
+        "2f70332f74657374000000002c69000000000002"
+      ]
+    ]
+  },
+  "nested": {
+    "before": [
+      "RAM internal: free=82204 minFree=62364 largest=64500 allocated=140272 loopStackMin=5056",
+      "RAM internal DMA: largest=64500",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=82348 minFree=62364 largest=64500 allocated=140160 loopStackMin=5056",
+      "RAM internal DMA: largest=64500",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "start": {
+      "events": 4,
+      "uptimeMs": 45358,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "end": {
+      "events": 5,
+      "uptimeMs": 48442,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "actual": [
+      [
+        0.0,
+        "2f70332f74657374000000002c69000000000001"
+      ],
+      [
+        0.01,
+        "2f70332f74657374000000002c69000000000002"
+      ],
+      [
+        0.01,
+        "2f70332f74657374000000002c69000000000002"
+      ],
+      [
+        0.02,
+        "2f70332f74657374000000002c69000000000001"
+      ],
+      [
+        0.02,
+        "2f70332f74657374000000002c69000000000002"
+      ],
+      [
+        0.03,
+        "2f70332f74657374000000002c69000000000002"
+      ],
+      [
+        0.03,
+        "2f70332f74657374000000002c69000000000001"
+      ],
+      [
+        0.03,
+        "2f70332f74657374000000002c69000000000002"
+      ],
+      [
+        0.04,
+        "2f70332f74657374000000002c69000000000002"
+      ],
+      [
+        0.05,
+        "2f70332f74657374000000002c69000000000003"
+      ]
+    ]
+  },
+  "arm-stop": {
+    "before": [
+      "RAM internal: free=82336 minFree=62364 largest=64500 allocated=140172 loopStackMin=5056",
+      "RAM internal DMA: largest=64500",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "after": [
+      "RAM internal: free=84308 minFree=60328 largest=65524 allocated=138344 loopStackMin=5056",
+      "RAM internal DMA: largest=65524",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5056",
+      "STACK chainpad-obs lowWaterBytes=3660"
+    ],
+    "start": {
+      "events": 5,
+      "uptimeMs": 51195,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "end": {
+      "events": 5,
+      "uptimeMs": 57645,
+      "runningChains": 0,
+      "inputOverflows": 0,
+      "transportOverflows": 0,
+      "wifi": true,
+      "bleKeyboard": true,
+      "bleMidi": true
+    },
+    "actual": null
+  }
+}

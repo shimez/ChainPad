@@ -1,0 +1,119 @@
+{
+  "midi": {
+    "expected": [
+      "903c64",
+      "803c00",
+      "b00749",
+      "903e58",
+      "803e00",
+      "903c55",
+      "903e55",
+      "803c00",
+      "803e00",
+      "903c5a",
+      "903e5a",
+      "803c00",
+      "803e00"
+    ],
+    "events": [
+      [
+        294161703.73,
+        "903c64"
+      ],
+      [
+        294162213.5,
+        "803c00"
+      ],
+      [
+        294162753.51,
+        "b00749"
+      ],
+      [
+        294163233.49,
+        "903e58"
+      ],
+      [
+        294163443.43,
+        "803e00"
+      ],
+      [
+        294163773.65,
+        "903c55"
+      ],
+      [
+        294163773.79,
+        "903e55"
+      ],
+      [
+        294164178.46,
+        "803c00"
+      ],
+      [
+        294164178.72,
+        "803e00"
+      ],
+      [
+        294164673.43,
+        "903c5a"
+      ],
+      [
+        294164674.02,
+        "903e5a"
+      ],
+      [
+        294164868.75,
+        "803c00"
+      ],
+      [
+        294164869.32,
+        "803e00"
+      ]
+    ],
+    "before": [
+      "RAM internal: free=94640 minFree=70516 largest=73716 allocated=136156 loopStackMin=5328",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5328",
+      "STACK chainpad-obs lowWaterBytes=5916"
+    ],
+    "after": [
+      "RAM internal: free=94620 minFree=70516 largest=77812 allocated=136224 loopStackMin=5328",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5328",
+      "STACK chainpad-obs lowWaterBytes=5916"
+    ]
+  },
+  "hid": {
+    "states": [
+      [
+        true,
+        false
+      ],
+      [
+        false,
+        false
+      ],
+      [
+        true,
+        false
+      ],
+      [
+        false,
+        false
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        false,
+        false
+      ]
+    ],
+    "after": [
+      "RAM internal: free=94608 minFree=70516 largest=77812 allocated=136236 loopStackMin=5328",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=5328",
+      "STACK chainpad-obs lowWaterBytes=5916"
+    ]
+  }
+}
