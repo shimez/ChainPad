@@ -1,0 +1,33 @@
+{
+  "rows": [
+    91,
+    92
+  ],
+  "before": {
+    "events": 186,
+    "uptimeMs": 881636,
+    "runningChains": 32,
+    "rejectedChains": 0,
+    "cancelledChains": 1,
+    "pressedMask": 0,
+    "inputOverflows": 0,
+    "transportOverflows": 0
+  },
+  "end": {
+    "events": 192,
+    "uptimeMs": 1593779,
+    "runningChains": 0,
+    "rejectedChains": 1,
+    "cancelledChains": 33,
+    "pressedMask": 0,
+    "inputOverflows": 0,
+    "transportOverflows": 0
+  },
+  "after": [
+    "RAM internal: free=57164 minFree=34220 largest=30708 allocated=139300 loopStackMin=4920",
+    "RAM internal DMA: largest=30708",
+    "Memory records: startup=11 failures=0 recordBytes=368",
+    "STACK loopTask lowWaterBytes=4920",
+    "STACK chainpad-obs lowWaterBytes=3492"
+  ]
+}
