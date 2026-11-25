@@ -1,0 +1,67 @@
+{
+  "rows": [
+    {
+      "step": "editor ready",
+      "ms": 1381.7000000029802,
+      "busy": false,
+      "saving": false,
+      "dirty": false
+    },
+    {
+      "step": "initial idle",
+      "ms": 1381.7999999970198,
+      "busy": false,
+      "saving": false,
+      "dirty": false
+    },
+    {
+      "step": "reload pending",
+      "ms": 1382.2000000029802,
+      "busy": true,
+      "saving": false,
+      "dirty": false
+    },
+    {
+      "step": "save rejected",
+      "ms": 1382.6000000014901,
+      "busy": true,
+      "saving": false,
+      "dirty": false
+    },
+    {
+      "step": "reload finished",
+      "ms": 1416.5,
+      "busy": false,
+      "saving": false,
+      "dirty": false
+    },
+    {
+      "step": "before final check",
+      "ms": 1458.8999999985099,
+      "busy": false,
+      "saving": false,
+      "dirty": true
+    },
+    {
+      "step": "save allowed",
+      "ms": 1459,
+      "busy": false,
+      "saving": false,
+      "dirty": true
+    },
+    {
+      "step": "save finished",
+      "ms": 4590.70000000298,
+      "busy": false,
+      "saving": false,
+      "dirty": false
+    }
+  ],
+  "commits": [
+    [
+      "/api/config/commit",
+      200
+    ]
+  ],
+  "fullReadbackMatched": true
+}

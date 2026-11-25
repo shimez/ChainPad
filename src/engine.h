@@ -5,7 +5,7 @@
 #include "invocation_frames.h"
 
 namespace chimera {
-#if defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CHAINPAD_HOST_TEST)
+#if (defined(CONFIG_IDF_TARGET_ESP32C5) || defined(CONFIG_IDF_TARGET_ESP32S3)) && !defined(CHAINPAD_HOST_TEST)
 #define CHAINPAD_ENGINE_EXTERNAL 1
 #else
 #define CHAINPAD_ENGINE_EXTERNAL 0

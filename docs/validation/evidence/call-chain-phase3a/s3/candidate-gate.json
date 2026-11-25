@@ -1,0 +1,553 @@
+[
+  {
+    "boot": 1,
+    "step": "pre",
+    "uptime": 78109,
+    "lines": [
+      "RAM internal: free=48268 minFree=22888 largest=31732 allocated=173312 loopStackMin=4768",
+      "RAM PSRAM: free=8297028 minFree=8296312 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4768",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2876",
+      "STACK esp_timer lowWaterBytes=7648",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=6096"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "installed",
+    "uptime": 85175,
+    "lines": [
+      "RAM internal: free=44000 minFree=22888 largest=24564 allocated=177436 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=6048"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "readback",
+    "uptime": 86711,
+    "lines": [
+      "RAM internal: free=46552 minFree=13840 largest=31732 allocated=174948 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "idle",
+    "uptime": 88453,
+    "lines": [
+      "RAM internal: free=46536 minFree=13840 largest=31732 allocated=174964 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "status",
+    "uptime": 88685,
+    "lines": [
+      "RAM internal: free=46324 minFree=13840 largest=31732 allocated=175160 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "get1",
+    "uptime": 90090,
+    "lines": [
+      "RAM internal: free=46524 minFree=13840 largest=31732 allocated=174976 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "get2",
+    "uptime": 91542,
+    "lines": [
+      "RAM internal: free=46544 minFree=13132 largest=31732 allocated=174956 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "get3",
+    "uptime": 92984,
+    "lines": [
+      "RAM internal: free=46536 minFree=9548 largest=31732 allocated=174964 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "get4",
+    "uptime": 94410,
+    "lines": [
+      "RAM internal: free=46544 minFree=9548 largest=31732 allocated=174956 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "save1",
+    "uptime": 101663,
+    "lines": [
+      "RAM internal: free=46548 minFree=9548 largest=31732 allocated=174952 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "readback1",
+    "uptime": 103110,
+    "lines": [
+      "RAM internal: free=46552 minFree=9548 largest=31732 allocated=174948 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "save2",
+    "uptime": 112619,
+    "lines": [
+      "RAM internal: free=46556 minFree=9548 largest=31732 allocated=174944 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "readback2",
+    "uptime": 114145,
+    "lines": [
+      "RAM internal: free=41516 minFree=9548 largest=31732 allocated=179888 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "save3",
+    "uptime": 122450,
+    "lines": [
+      "RAM internal: free=46572 minFree=9548 largest=31732 allocated=174944 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 1,
+    "step": "readback3",
+    "uptime": 123910,
+    "lines": [
+      "RAM internal: free=46584 minFree=9548 largest=31732 allocated=174932 loopStackMin=4276",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4276",
+      "STACK input-scan lowWaterBytes=2164",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "pre",
+    "uptime": 13119,
+    "lines": [
+      "RAM internal: free=49968 minFree=18724 largest=31732 allocated=171756 loopStackMin=4768",
+      "RAM PSRAM: free=8297028 minFree=8289120 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4768",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2668",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=6096"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "readback",
+    "uptime": 14643,
+    "lines": [
+      "RAM internal: free=49180 minFree=17120 largest=31732 allocated=172496 loopStackMin=4768",
+      "RAM PSRAM: free=8297028 minFree=8289120 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4768",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2668",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=6096"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "idle",
+    "uptime": 16397,
+    "lines": [
+      "RAM internal: free=48652 minFree=17120 largest=31732 allocated=172992 loopStackMin=4768",
+      "RAM PSRAM: free=8297028 minFree=8289120 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4768",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2668",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=6096"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "status",
+    "uptime": 16625,
+    "lines": [
+      "RAM internal: free=47660 minFree=17120 largest=31732 allocated=173920 loopStackMin=4768",
+      "RAM PSRAM: free=8297028 minFree=8289120 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4768",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2668",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=6096"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "get1",
+    "uptime": 18068,
+    "lines": [
+      "RAM internal: free=46888 minFree=15320 largest=31732 allocated=174644 loopStackMin=4768",
+      "RAM PSRAM: free=8297028 minFree=8289120 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4768",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2668",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=6096"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "get2",
+    "uptime": 19483,
+    "lines": [
+      "RAM internal: free=46568 minFree=13912 largest=31732 allocated=174948 loopStackMin=4768",
+      "RAM PSRAM: free=8297028 minFree=8289120 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4768",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2668",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "get3",
+    "uptime": 21014,
+    "lines": [
+      "RAM internal: free=46568 minFree=13912 largest=31732 allocated=174948 loopStackMin=4768",
+      "RAM PSRAM: free=8297028 minFree=8289120 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4768",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2668",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "get4",
+    "uptime": 22464,
+    "lines": [
+      "RAM internal: free=46360 minFree=13912 largest=31732 allocated=175140 loopStackMin=4768",
+      "RAM PSRAM: free=8297028 minFree=8289120 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4768",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2668",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "save1",
+    "uptime": 32895,
+    "lines": [
+      "RAM internal: free=46312 minFree=13912 largest=31732 allocated=175172 loopStackMin=4256",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4256",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "readback1",
+    "uptime": 34324,
+    "lines": [
+      "RAM internal: free=46536 minFree=13912 largest=31732 allocated=174964 loopStackMin=4256",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4256",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "save2",
+    "uptime": 42302,
+    "lines": [
+      "RAM internal: free=46544 minFree=13912 largest=31732 allocated=174956 loopStackMin=4100",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4100",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "readback2",
+    "uptime": 43728,
+    "lines": [
+      "RAM internal: free=46540 minFree=13912 largest=31732 allocated=174960 loopStackMin=4100",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4100",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "save3",
+    "uptime": 51110,
+    "lines": [
+      "RAM internal: free=46532 minFree=13912 largest=31732 allocated=174968 loopStackMin=4100",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4100",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  },
+  {
+    "boot": 2,
+    "step": "readback3",
+    "uptime": 52544,
+    "lines": [
+      "RAM internal: free=46540 minFree=13912 largest=31732 allocated=174960 loopStackMin=4100",
+      "RAM PSRAM: free=8297028 minFree=8275384 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=31732",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4100",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3260",
+      "STACK wifi lowWaterBytes=4464",
+      "STACK tiT lowWaterBytes=2636",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=5984"
+    ]
+  }
+]

@@ -1,0 +1,292 @@
+{
+  "Disabled": [
+    {
+      "phase": "prepare",
+      "event": "boundary",
+      "name": "start",
+      "lines": [
+        "RAM internal: free=57252 minFree=46200 largest=31732 allocated=172312 loopStackMin=5164",
+        "RAM PSRAM: free=8297028 minFree=8296312 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=5164",
+        "STACK input-scan lowWaterBytes=2200",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2880",
+        "STACK esp_timer lowWaterBytes=7648",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=5984"
+      ],
+      "delta": 0
+    },
+    {
+      "phase": "inherited GET",
+      "event": "GET-end",
+      "match": true
+    },
+    {
+      "phase": "inherited GET",
+      "event": "boundary",
+      "name": "inherited",
+      "lines": [
+        "RAM internal: free=56816 minFree=29480 largest=31732 allocated=172764 loopStackMin=5164",
+        "RAM PSRAM: free=8297028 minFree=8291124 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=5164",
+        "STACK input-scan lowWaterBytes=2168",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2880",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=5984"
+      ],
+      "delta": 0
+    },
+    {
+      "phase": "save",
+      "event": "boundary",
+      "name": "saved idle",
+      "lines": [
+        "RAM internal: free=54060 minFree=29480 largest=31732 allocated=175328 loopStackMin=4492",
+        "RAM PSRAM: free=8297028 minFree=8279480 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=4492",
+        "STACK input-scan lowWaterBytes=2168",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2672",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=5984"
+      ],
+      "delta": 0
+    },
+    {
+      "phase": "GET only",
+      "event": "GET-end",
+      "match": true
+    },
+    {
+      "phase": "GET only",
+      "event": "boundary",
+      "name": "GET complete",
+      "lines": [
+        "RAM internal: free=51552 minFree=17256 largest=28660 allocated=177788 loopStackMin=4492",
+        "RAM PSRAM: free=8297028 minFree=8279480 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=4492",
+        "STACK input-scan lowWaterBytes=2168",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2672",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=5984"
+      ],
+      "delta": 0
+    },
+    {
+      "phase": "OSC only",
+      "event": "train-result",
+      "count": 208,
+      "ordered": true,
+      "duringGET": 0
+    },
+    {
+      "phase": "OSC only",
+      "event": "boundary",
+      "name": "train end",
+      "lines": [
+        "RAM internal: free=52040 minFree=17256 largest=31732 allocated=177236 loopStackMin=4492",
+        "RAM PSRAM: free=8297028 minFree=8279480 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=4492",
+        "STACK input-scan lowWaterBytes=2168",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2672",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=5984"
+      ],
+      "delta": 0
+    },
+    {
+      "phase": "GET+OSC",
+      "event": "GET-end",
+      "match": true
+    },
+    {
+      "phase": "GET+OSC",
+      "event": "train-result",
+      "count": 208,
+      "ordered": true,
+      "duringGET": 15
+    },
+    {
+      "phase": "GET+OSC",
+      "event": "boundary",
+      "name": "train end",
+      "lines": [
+        "RAM internal: free=52076 minFree=17184 largest=31732 allocated=177216 loopStackMin=4492",
+        "RAM PSRAM: free=8297028 minFree=8279480 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=4492",
+        "STACK input-scan lowWaterBytes=2168",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2672",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=5984"
+      ],
+      "delta": 0
+    }
+  ],
+  "Ready": [
+    {
+      "phase": "prepare",
+      "event": "boundary",
+      "name": "start",
+      "lines": [
+        "RAM internal: free=53180 minFree=39788 largest=31732 allocated=176096 loopStackMin=5164",
+        "RAM PSRAM: free=8297028 minFree=8296312 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=5164",
+        "STACK input-scan lowWaterBytes=2160",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2756",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=2944"
+      ],
+      "delta": 0
+    },
+    {
+      "phase": "inherited GET",
+      "event": "GET-end",
+      "match": true
+    },
+    {
+      "phase": "inherited GET",
+      "event": "boundary",
+      "name": "inherited",
+      "lines": [
+        "RAM internal: free=47228 minFree=20688 largest=31732 allocated=181824 loopStackMin=5164",
+        "RAM PSRAM: free=8297028 minFree=8291124 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=5164",
+        "STACK input-scan lowWaterBytes=2160",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2756",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=2944"
+      ],
+      "delta": 0
+    },
+    {
+      "phase": "save",
+      "event": "boundary",
+      "name": "saved idle",
+      "lines": [
+        "RAM internal: free=51808 minFree=20688 largest=31732 allocated=177324 loopStackMin=4492",
+        "RAM PSRAM: free=8297028 minFree=8279480 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=4492",
+        "STACK input-scan lowWaterBytes=2160",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2756",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=2944"
+      ],
+      "delta": 0
+    },
+    {
+      "phase": "GET only",
+      "event": "GET-end",
+      "match": true
+    },
+    {
+      "phase": "GET only",
+      "event": "boundary",
+      "name": "GET complete",
+      "lines": [
+        "RAM internal: free=51608 minFree=20688 largest=31732 allocated=177508 loopStackMin=4492",
+        "RAM PSRAM: free=8297028 minFree=8279480 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=4492",
+        "STACK input-scan lowWaterBytes=2160",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2756",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=2944"
+      ],
+      "delta": 0
+    },
+    {
+      "phase": "OSC only",
+      "event": "train-result",
+      "count": 208,
+      "ordered": true,
+      "duringGET": 0
+    },
+    {
+      "phase": "OSC only",
+      "event": "boundary",
+      "name": "train end",
+      "lines": [
+        "RAM internal: free=49784 minFree=20600 largest=31732 allocated=179236 loopStackMin=4492",
+        "RAM PSRAM: free=8297028 minFree=8279480 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=4492",
+        "STACK input-scan lowWaterBytes=2160",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2756",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=2944"
+      ],
+      "delta": 0
+    },
+    {
+      "phase": "GET+OSC",
+      "event": "GET-end",
+      "match": true
+    },
+    {
+      "phase": "GET+OSC",
+      "event": "train-result",
+      "count": 208,
+      "ordered": true,
+      "duringGET": 15
+    },
+    {
+      "phase": "GET+OSC",
+      "event": "boundary",
+      "name": "train end",
+      "lines": [
+        "RAM internal: free=47276 minFree=16136 largest=26612 allocated=181696 loopStackMin=4492",
+        "RAM PSRAM: free=8297028 minFree=8279480 largest=8257524 allocated=89092",
+        "Memory records: startup=11 failures=0 recordBytes=368",
+        "STACK loopTask lowWaterBytes=4492",
+        "STACK input-scan lowWaterBytes=2160",
+        "STACK nimble_host lowWaterBytes=3268",
+        "STACK wifi lowWaterBytes=4468",
+        "STACK tiT lowWaterBytes=2756",
+        "STACK esp_timer lowWaterBytes=7632",
+        "STACK IDLE not found",
+        "STACK chainpad-obs lowWaterBytes=2944"
+      ],
+      "delta": 0
+    }
+  ]
+}

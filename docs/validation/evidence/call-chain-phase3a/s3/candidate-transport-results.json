@@ -1,0 +1,290 @@
+{
+  "usb-midi": {
+    "usb": [
+      "903c64",
+      "803c00",
+      "b00749",
+      "903e58",
+      "803e00",
+      "903c55",
+      "903e55",
+      "803c00",
+      "803e00",
+      "903c5a",
+      "903e5a",
+      "803c00",
+      "803e00"
+    ],
+    "ble": [],
+    "after": [
+      "RAM internal: free=43796 minFree=18364 largest=22516 allocated=177336 loopStackMin=4252",
+      "RAM PSRAM: free=8297028 minFree=8291264 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=22516",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4252",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3268",
+      "STACK wifi lowWaterBytes=4468",
+      "STACK tiT lowWaterBytes=2756",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=3172"
+    ]
+  },
+  "usb-keyboard": {
+    "states": [
+      [
+        true,
+        false
+      ],
+      [
+        false,
+        false
+      ],
+      [
+        true,
+        false
+      ],
+      [
+        false,
+        false
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        false,
+        false
+      ]
+    ],
+    "after": [
+      "RAM internal: free=43796 minFree=18364 largest=22516 allocated=177336 loopStackMin=4252",
+      "RAM PSRAM: free=8297028 minFree=8291264 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=22516",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=4252",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3268",
+      "STACK wifi lowWaterBytes=4468",
+      "STACK tiT lowWaterBytes=2756",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=3172"
+    ]
+  },
+  "routed-midi": {
+    "usb": [
+      "b0170b",
+      "b0170d",
+      "90405a",
+      "804000"
+    ],
+    "ble": [
+      "b0170c",
+      "b0170d",
+      "90405a",
+      "804000"
+    ],
+    "after": [
+      "RAM internal: free=43832 minFree=18112 largest=22516 allocated=177316 loopStackMin=3532",
+      "RAM PSRAM: free=8297028 minFree=8291264 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=22516",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=3532",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3268",
+      "STACK wifi lowWaterBytes=4468",
+      "STACK tiT lowWaterBytes=2672",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=3172"
+    ]
+  },
+  "usb-consumer": {
+    "pre": [
+      "040000"
+    ],
+    "rows": [
+      [
+        233,
+        [
+          "04e900",
+          "040000"
+        ]
+      ],
+      [
+        234,
+        [
+          "04ea00",
+          "040000"
+        ]
+      ],
+      [
+        226,
+        [
+          "04e200",
+          "040000"
+        ]
+      ],
+      [
+        205,
+        [
+          "04cd00",
+          "040000"
+        ]
+      ],
+      [
+        181,
+        [
+          "04b500",
+          "040000"
+        ]
+      ],
+      [
+        182,
+        [
+          "04b600",
+          "040000"
+        ]
+      ],
+      [
+        183,
+        [
+          "04b700",
+          "040000"
+        ]
+      ]
+    ]
+  },
+  "ble-midi": {
+    "usb": [],
+    "ble": [
+      "903c64",
+      "803c00",
+      "b00749",
+      "903e58",
+      "803e00",
+      "903c55",
+      "903e55",
+      "803c00",
+      "803e00",
+      "903c5a",
+      "903e5a",
+      "803c00",
+      "803e00"
+    ],
+    "after": [
+      "RAM internal: free=43836 minFree=18112 largest=22516 allocated=177312 loopStackMin=3532",
+      "RAM PSRAM: free=8297028 minFree=8291264 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=22516",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=3532",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3268",
+      "STACK wifi lowWaterBytes=4468",
+      "STACK tiT lowWaterBytes=2672",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=3172"
+    ]
+  },
+  "ble-keyboard": {
+    "states": [
+      [
+        true,
+        false
+      ],
+      [
+        false,
+        false
+      ],
+      [
+        true,
+        false
+      ],
+      [
+        false,
+        false
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        false,
+        false
+      ]
+    ],
+    "after": [
+      "RAM internal: free=43836 minFree=18112 largest=22516 allocated=177312 loopStackMin=3532",
+      "RAM PSRAM: free=8297028 minFree=8291264 largest=8257524 allocated=89092",
+      "RAM internal DMA: largest=22516",
+      "Memory records: startup=11 failures=0 recordBytes=368",
+      "STACK loopTask lowWaterBytes=3532",
+      "STACK input-scan lowWaterBytes=2156",
+      "STACK nimble_host lowWaterBytes=3268",
+      "STACK wifi lowWaterBytes=4468",
+      "STACK tiT lowWaterBytes=2672",
+      "STACK esp_timer lowWaterBytes=7632",
+      "STACK IDLE not found",
+      "STACK chainpad-obs lowWaterBytes=3172"
+    ]
+  },
+  "ble-consumer": {
+    "pre": [
+      "020000"
+    ],
+    "rows": [
+      [
+        233,
+        [
+          "02e900",
+          "020000"
+        ]
+      ],
+      [
+        234,
+        [
+          "02ea00",
+          "020000"
+        ]
+      ],
+      [
+        226,
+        [
+          "02e200",
+          "020000"
+        ]
+      ],
+      [
+        205,
+        [
+          "02cd00",
+          "020000"
+        ]
+      ],
+      [
+        181,
+        [
+          "02b500",
+          "020000"
+        ]
+      ],
+      [
+        182,
+        [
+          "02b600",
+          "020000"
+        ]
+      ],
+      [
+        183,
+        [
+          "02b700",
+          "020000"
+        ]
+      ]
+    ]
+  }
+}

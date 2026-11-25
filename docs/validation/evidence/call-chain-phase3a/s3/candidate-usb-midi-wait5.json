@@ -1,0 +1,94 @@
+{
+  "timeReference": "PC monotonic milliseconds relative to HTTP trigger start; MIDI timestamps at receiver callback entry",
+  "usbReceiver": "ChainPad MIDI (USB)",
+  "input": 2,
+  "configReadbackMatched": true,
+  "waitMs": 250,
+  "rows": [
+    {
+      "trial": 1,
+      "httpReturnMs": 72.8741,
+      "rxMs": [
+        65.85,
+        317.2904
+      ],
+      "messages": [
+        "b01701",
+        "b01702"
+      ],
+      "intervalMs": 251.4404,
+      "uptimeMs": [
+        1022924,
+        1024036
+      ]
+    },
+    {
+      "trial": 2,
+      "httpReturnMs": 22.6896,
+      "rxMs": [
+        19.4841,
+        269.6454
+      ],
+      "messages": [
+        "b01701",
+        "b01702"
+      ],
+      "intervalMs": 250.1613,
+      "uptimeMs": [
+        1024055,
+        1025265
+      ]
+    },
+    {
+      "trial": 3,
+      "httpReturnMs": 22.2524,
+      "rxMs": [
+        18.7902,
+        269.1862
+      ],
+      "messages": [
+        "b01701",
+        "b01702"
+      ],
+      "intervalMs": 250.396,
+      "uptimeMs": [
+        1025286,
+        1026507
+      ]
+    },
+    {
+      "trial": 4,
+      "httpReturnMs": 15.8484,
+      "rxMs": [
+        12.284,
+        263.6767
+      ],
+      "messages": [
+        "b01701",
+        "b01702"
+      ],
+      "intervalMs": 251.3927,
+      "uptimeMs": [
+        1026583,
+        1027744
+      ]
+    },
+    {
+      "trial": 5,
+      "httpReturnMs": 67.8158,
+      "rxMs": [
+        9.889,
+        260.2336
+      ],
+      "messages": [
+        "b01701",
+        "b01702"
+      ],
+      "intervalMs": 250.3446,
+      "uptimeMs": [
+        1027833,
+        1028953
+      ]
+    }
+  ]
+}

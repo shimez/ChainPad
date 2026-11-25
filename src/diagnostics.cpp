@@ -121,7 +121,7 @@ void printDiagnostics(Print& out, const char* reason) {
   outputPrintf(out, "RAM internal DMA: largest=%u\n", unsigned(heap_caps_get_largest_free_block(dmaCaps)));
 #endif
 #if CHAINPAD_ENGINE_EXTERNAL
-#if CHAINPAD_HAS_OBS
+#if CHAINPAD_HAS_OBS && defined(CONFIG_IDF_TARGET_ESP32C5)
   const auto* buf = static_cast<const uint8_t*>(obsAssemblyBase());
   outputPrintf(out, "OBS assembly: base=%p bytes=%u externalRange=%u\n", buf, unsigned(sizeof(obs::Assembly)),
     unsigned(buf && esp_ptr_external_ram(buf) && esp_ptr_external_ram(buf + sizeof(obs::Assembly) - 1)));

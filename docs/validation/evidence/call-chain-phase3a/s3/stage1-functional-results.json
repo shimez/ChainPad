@@ -1,0 +1,488 @@
+{
+  "waitMs": [
+    251.5184,
+    250.4957,
+    250.4152,
+    249.9269,
+    250.5779
+  ],
+  "deep": {
+    "deep": {
+      "active": 1,
+      "returns": [
+        27,
+        26,
+        25,
+        24,
+        23,
+        22,
+        21,
+        20,
+        19,
+        18,
+        17,
+        16,
+        15,
+        14,
+        13,
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1,
+        0
+      ]
+    },
+    "nested": {
+      "seq": [
+        2,
+        2,
+        1,
+        2,
+        2,
+        1
+      ]
+    },
+    "panic": {
+      "cancelled": 32,
+      "heldBefore": true,
+      "heldAfter": false
+    }
+  },
+  "mixed": {
+    "normal-first": {
+      "active": 2,
+      "observed": [
+        10,
+        20,
+        40,
+        11,
+        41,
+        21
+      ],
+      "end": {
+        "events": 42,
+        "uptimeMs": 38438,
+        "runningChains": 0,
+        "rejectedChains": 0,
+        "cancelledChains": 32,
+        "pressedMask": 0,
+        "inputOverflows": 0,
+        "transportOverflows": 0
+      }
+    },
+    "call-first": {
+      "active": 2,
+      "observed": [
+        20,
+        40,
+        10,
+        41,
+        21,
+        11
+      ],
+      "end": {
+        "events": 44,
+        "uptimeMs": 39877,
+        "runningChains": 0,
+        "rejectedChains": 0,
+        "cancelledChains": 32,
+        "pressedMask": 0,
+        "inputOverflows": 0,
+        "transportOverflows": 0
+      }
+    },
+    "shared-direct": {
+      "active": 3,
+      "observed": [
+        20,
+        40,
+        60,
+        40,
+        40,
+        41,
+        21,
+        41,
+        61,
+        41
+      ],
+      "end": {
+        "events": 47,
+        "uptimeMs": 41318,
+        "runningChains": 0,
+        "rejectedChains": 0,
+        "cancelledChains": 32,
+        "pressedMask": 0,
+        "inputOverflows": 0,
+        "transportOverflows": 0
+      }
+    },
+    "fifo": {
+      "values": [
+        70,
+        70,
+        70,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        70,
+        80,
+        80,
+        80,
+        80
+      ],
+      "end": {
+        "events": 49,
+        "uptimeMs": 42842,
+        "runningChains": 0,
+        "rejectedChains": 0,
+        "cancelledChains": 32,
+        "pressedMask": 0,
+        "inputOverflows": 0,
+        "transportOverflows": 0
+      }
+    },
+    "armed": {
+      "status": {
+        "events": 81,
+        "uptimeMs": 44193,
+        "runningChains": 32,
+        "rejectedChains": 0,
+        "cancelledChains": 32,
+        "pressedMask": 0,
+        "inputOverflows": 0,
+        "transportOverflows": 0
+      }
+    },
+    "physical-full": {
+      "rows": [
+        91,
+        92
+      ],
+      "end": {
+        "events": 86,
+        "uptimeMs": 112787,
+        "runningChains": 0,
+        "rejectedChains": 1,
+        "cancelledChains": 64,
+        "pressedMask": 0,
+        "inputOverflows": 0,
+        "transportOverflows": 0
+      }
+    }
+  },
+  "fullRelease": {
+    "time": "2026-11-25T23:38:08.093014+09:00",
+    "events": 87,
+    "lastInput": "key11.press",
+    "uptimeMs": 135331,
+    "runningChains": 0,
+    "pressedMask": 0,
+    "inputOverflows": 0,
+    "transportOverflows": 0,
+    "rejectedChains": 1,
+    "cancelledChains": 64
+  },
+  "pairs": {
+    "usb-pair-12": {
+      "events": [
+        [
+          56399284412100,
+          "903c64"
+        ],
+        [
+          56399785701700,
+          "803c00"
+        ],
+        [
+          56399789246000,
+          "osc"
+        ]
+      ]
+    },
+    "usb-pair-16": {
+      "events": [
+        [
+          56400842557200,
+          "down"
+        ],
+        [
+          56401344520900,
+          "up"
+        ],
+        [
+          56401344541500,
+          "osc"
+        ]
+      ]
+    },
+    "usb-panic-midi": {
+      "events": [
+        [
+          56402380274200,
+          "903d63"
+        ],
+        [
+          56404610230300,
+          "803d00"
+        ],
+        [
+          56404625767600,
+          "b01548"
+        ]
+      ]
+    },
+    "usb-panic-key": {
+      "cancelled": 32,
+      "released": true
+    },
+    "ble-pair-12": {
+      "events": [
+        [
+          56411485334600,
+          "903c64"
+        ],
+        [
+          56411962731100,
+          "osc"
+        ],
+        [
+          56411994960500,
+          "803c00"
+        ]
+      ]
+    },
+    "ble-pair-16": {
+      "events": [
+        [
+          56412926513900,
+          "down"
+        ],
+        [
+          56413422565100,
+          "osc"
+        ],
+        [
+          56413450811400,
+          "up"
+        ]
+      ]
+    },
+    "ble-panic-midi": {
+      "events": [
+        [
+          56414485196300,
+          "903d63"
+        ],
+        [
+          56416735328700,
+          "803d00"
+        ],
+        [
+          56416735369700,
+          "b01548"
+        ]
+      ]
+    },
+    "ble-panic-key": {
+      "cancelled": 32,
+      "released": true
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{"ms": 3818.4689, "phase": "setup", "index": -1, "report": "020000"}
+{"ms": 4301.1043, "phase": "post-save/pre-trigger", "matched": true}
+{"ms": 4997.8219, "index": 0, "operation": "start trigger"}
+{"ms": 5121.7629, "phase": "post-trigger", "index": 0, "report": "02e900"}
+{"ms": 5122.0269, "phase": "post-trigger", "index": 0, "report": "020000"}
+{"ms": 5762.9963, "index": 0, "operation": "window closed"}
+{"ms": 6011.0778, "index": 1, "operation": "start trigger"}
+{"ms": 6051.73, "phase": "post-trigger", "index": 1, "report": "02ea00"}
+{"ms": 6052.1067, "phase": "post-trigger", "index": 1, "report": "020000"}
+{"ms": 6680.7892, "index": 1, "operation": "window closed"}
+{"ms": 6875.7828, "index": 2, "operation": "start trigger"}
+{"ms": 6966.7319, "phase": "post-trigger", "index": 2, "report": "02e200"}
+{"ms": 6967.0931, "phase": "post-trigger", "index": 2, "report": "020000"}
+{"ms": 7600.4893, "index": 2, "operation": "window closed"}
+{"ms": 7853.6863, "index": 3, "operation": "start trigger"}
+{"ms": 7896.8516, "phase": "post-trigger", "index": 3, "report": "02cd00"}
+{"ms": 7897.1622, "phase": "post-trigger", "index": 3, "report": "020000"}
+{"ms": 8523.1483, "index": 3, "operation": "window closed"}
+{"ms": 8716.7768, "index": 4, "operation": "start trigger"}
+{"ms": 8811.8782, "phase": "post-trigger", "index": 4, "report": "02b500"}
+{"ms": 8841.9183, "phase": "post-trigger", "index": 4, "report": "020000"}
+{"ms": 9444.8844, "index": 4, "operation": "window closed"}
+{"ms": 9709.8158, "index": 5, "operation": "start trigger"}
+{"ms": 9756.8511, "phase": "post-trigger", "index": 5, "report": "02b600"}
+{"ms": 9757.3384, "phase": "post-trigger", "index": 5, "report": "020000"}
+{"ms": 10387.5145, "index": 5, "operation": "window closed"}
+{"ms": 10619.6102, "index": 6, "operation": "start trigger"}
+{"ms": 10657.0998, "phase": "post-trigger", "index": 6, "report": "02b700"}
+{"ms": 10657.6915, "phase": "post-trigger", "index": 6, "report": "020000"}
+{"ms": 11289.2448, "index": 6, "operation": "window closed"}
