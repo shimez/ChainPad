@@ -16,7 +16,7 @@ const config=JSON.parse(fs.readFileSync('web/builtin/ChainPad-Configuration-Defa
 for(const chain of config.chains)chain.actions=[];
 const ctx=vm.createContext({TextEncoder,config,selected:0,saving:false,keyboardLayout:'jis',
   usageNames:{104:'F13',30:'1'},capabilities:{usbKeyboard:true,usbMidi:true,keyboardTransports:['usb','ble']},
-  document:{createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text,children:[]})},
+  document:{createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text,children:[]}),querySelector:()=>null},
   $:id=>nodes[id]??=(new Element('div')),waitWarning(){},changed(){},RotationEditor:{refresh(){}},
   LoopEditor:{render:renderFields=>renderFields()}});
 let sceneCache={state:'unavailable',complete:false,scenes:[]},sceneListener;
