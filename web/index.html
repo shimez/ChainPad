@@ -201,8 +201,7 @@ function current(){return config.chains.find(c=>c.input===selected).actions;}
 function button(text,fn,disabled=false){const b=document.createElement('button');b.textContent=text;b.onclick=fn;b.disabled=disabled;return b;}
 const actionLabels={osc:'🛜OSC',midi:'🎹MIDI',keyboard:'⌨HID',obs:'🎬 OBS',wait:'⏱Wait',stopOtherChains:'他のChainを中断',callChain:'Call Chain'};
 function renderActions(){LoopEditor.render(renderFlatActions);}
-// Unlike ordinary fields these selects can reject an edit. Only accepted
-// changes call changed(); cancelling never needs to restore a dirty snapshot.
+// Each select commits its draft value and refreshes the relevant editor.
 function actionSelect(label,value,options,apply){
   const field=control(label,value,options,()=>{}),select=field.lastChild;
   select.setAttribute('aria-label',label);
@@ -215,7 +214,6 @@ function actionSelectors(fields,detail,actions,i){
   function targetSelect(value,ids,apply){
     const field=actionSelect('呼び出し先（Call target）',value,[],apply),select=field.lastChild;
     field.className='call-target';
-    if(value==='')select.add(new Option('選択してください',''));
     let group;
     for(const id of ids){
       const label=id<24?'キー（Keys）':id<26?'Encoder Push':'回転（Encoder Rotation）';
@@ -227,45 +225,22 @@ function actionSelectors(fields,detail,actions,i){
     return field;
   }
   const feedback=document.createElement('div');feedback.setAttribute('role','status');detail.append(feedback);
-  const clear=()=>feedback.replaceChildren();
-  function check(id){
-    const candidate={...defaults('callChain'),targetInput:id};
-    try{CallModel.checkReplacement(config.chains,selected,i,candidate);return '';}
-    catch(e){return e.message;}
+  function refreshWarning(){
+    try{CallModel.validateGraph(config.chains);feedback.textContent='';}
+    catch(e){feedback.textContent=e.message+(e.code==='Cycle'?'。循環を解消しないと保存できません。':'');}
   }
   function replace(action){
     actions[i]=action;renderActions();changed();
     document.querySelector(`#action-details-${i} .fields select${action.protocol==='callChain'?'[data-call-target]':''}`)?.focus();
   }
   fields.append(actionSelect('Action',a.protocol,Object.entries(actionLabels).filter(([k])=>k!=='callChain'||supported),select=>{
-    clear();
-    const next=defaults(select.value);
-    if(next.protocol==='callChain'){
-      const reason=check(next.targetInput);
-      if(reason){
-        select.value=a.protocol;
-        const valid=targets.filter(id=>!check(id));
-        feedback.textContent=`${reason}。Actionは変更されていません。`+
-          (valid.length?'別の呼び出し先を選んでください。':'選択できる呼び出し先がありません。');
-        if(valid.length){
-          const choice=targetSelect('',valid,s=>{
-            if(s.value==='')return;
-            const id=Number(s.value),error=check(id);
-            if(error){feedback.textContent=error+'。Actionは変更されていません。';return;}
-            replace({...next,targetInput:id});
-          });
-          feedback.append(choice,button('キャンセル',()=>{clear();select.focus();}));choice.lastChild.focus();
-        }
-        return;
-      }
-    }
-    replace(next);
+    replace(defaults(select.value));
   }));
   if(a.protocol==='callChain'){
+    feedback.className='error';
+    refreshWarning();
     const target=targetSelect(a.targetInput,targets,select=>{
-      const id=Number(select.value),reason=check(id);
-      if(reason){select.value=a.targetInput;feedback.textContent=reason+'。呼び出し先は変更されていません。';return;}
-      clear();a.targetInput=id;changed();
+      a.targetInput=Number(select.value);changed();refreshWarning();
     });
     target.lastChild.dataset.callTarget='';fields.append(target);
   }

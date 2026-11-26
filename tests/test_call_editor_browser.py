@@ -115,41 +115,47 @@ def run(browser, screenshots, embedded=False):
         elif scenario == "unsupported":
             assert not kind.locator("option[value=callChain]").count()
         elif scenario == "blocked":
-            before = snap()
             kind.select_option("callChain")
-            assert "選択できる呼び出し先がありません" in note.inner_text()
-            assert kind.input_value() == "wait" and snap() == before
+            assert kind.input_value() == "callChain" and "循環Call" in note.inner_text()
+            page.locator("#save").click()
+            assert "循環Call" in page.locator("#message").inner_text()
+            kind.select_option("wait")
+            assert not note.inner_text()
         else:
-            # Clean draft: default target cycles; cancel without changing anything.
-            before = snap()
-            kind.select_option("callChain")
-            pick = note.get_by_label("呼び出し先")
-            assert pick.evaluate("el=>el===document.activeElement")
-            assert pick.locator("option").count() == 26  # placeholder + 25 valid
-            if screenshots:
-                detail.screenshot(path=screenshots / "choose-target.png")
-            note.get_by_role("button", name="キャンセル").click()
-            assert snap() == before and kind.input_value() == "wait"
+            # Reproduce both old cards reported on hardware: no pending UI.
+            for old in ("osc", "obs"):
+                kind.select_option(old)
+                kind.select_option("callChain")
+                assert detail.locator("select").count() == 2 and not detail.locator("input").count()
+                assert kind.input_value() == "callChain"
+                assert detail.locator("[data-call-target]").input_value() == "1"
+                assert "循環Call" in note.inner_text() and not detail.get_by_text("キャンセル").count()
+                detail.locator("[data-call-target]").select_option("3")
+                assert not note.inner_text()
+            kind.select_option("wait")
             # Another unsaved edit remains intact across rejection in a nested Call.
             delay = detail.get_by_label("待機時間 (ms)")
             delay.fill("350")
             delay.press("Tab")
             edit.last.click()
             target = detail.locator("[data-call-target]")
-            before = snap()
             assert target.locator("option[value='0']").count() == 0
             for bad in ("1", "2"):
                 target.select_option(bad)
-                assert target.input_value() == "27" and snap() == before
+                assert target.input_value() == bad and page.evaluate("config.chains[0].actions[2].targetInput") == int(bad)
                 assert "循環Call" in note.inner_text() and "KEY1 Press #3" in note.inner_text()
+                assert "循環を解消しないと保存できません" in note.inner_text()
+                assert note.evaluate("e=>getComputedStyle(e).color") == "rgb(255, 157, 153)"
+                page.locator("#save").click()
+                assert not writes and page.evaluate("dirty")
             if screenshots:
-                detail.locator("..").screenshot(path=screenshots / "rejected-target.png")
+                detail.locator("..").screenshot(path=screenshots / "cycle-warning.png")
             target.select_option("4")
             assert not note.inner_text() and "Call → KEY3 Press" in page.locator("#actions").inner_text()
             edit.first.click()
             assert delay.input_value() == "350"
             kind.select_option("callChain")
-            note.get_by_label("呼び出し先").select_option("27")
+            target.select_option("27")
             assert target.input_value() == "27"
             kind.select_option("wait")
             assert delay.input_value() == "100"

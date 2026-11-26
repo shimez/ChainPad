@@ -26,12 +26,13 @@ const rows = empty();
   draft[0].actions=[{protocol:'loopStart',delayMs:0,count:2},wait,{protocol:'loopEnd',delayMs:0}];
   draft[1].actions=[call(0)];
   draft[2].actions=[call(1)];
-  const before=structuredClone(draft);
-  for(const [id,depth] of [[0,1],[1,2],[2,3]])
-    assert.throws(()=>M.checkReplacement(draft,0,1,call(id)),e=>e.code==='Cycle'&&e.edges.length===depth&&e.edges[0].index===1);
-  M.checkReplacement(draft,0,1,call(27)); // Empty target is valid.
-  assert.deepEqual(draft,before);
-  assert.equal(draft[0].actions[1],wait);
+  for(const [id,depth] of [[0,1],[1,2],[2,3]]){
+    draft[0].actions[1]=call(id);
+    assert.throws(()=>M.validateGraph(draft),e=>e.code==='Cycle'&&e.edges.length===depth&&e.edges[0].index===1);
+    assert.equal(draft[0].actions[1].targetInput,id);
+  }
+  draft[0].actions[1]=call(27); // Empty target clears the cycle.
+  M.validateGraph(draft);
 }
 for (let i=0;i<27;++i) rows[i].actions.push(call(i+1));
 M.validateGraph(rows);

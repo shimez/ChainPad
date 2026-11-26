@@ -1,5 +1,7 @@
 # Phase 3B-2：Call先選択欄のローカル検証
 
+> 3B-2時点の検証記録。編集時拒否・代替先選択は旧方式。最終仕様と受入結果は[Phase 3B最終判定](../s3-acceptance-results.md)を参照。
+
 基準は3B-1 `76b4543`。`pio run -e xiao_esp32s3` の通常ビルド成功後、生成された `WEB_UI` を `tests/test_call_editor_browser.py --embedded` でChromiumに読み込んだ。APIは合成応答、実機への書込みなし。
 
 | 確認 | 結果 |
