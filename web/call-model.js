@@ -69,6 +69,12 @@ const CallModel = (() => {
     }
     for (let i=0; i<inputs; ++i) if (!color[i]) visit(i);
   }
+  // Validate one prospective edit without exposing it to the live editor.
+  function checkReplacement(chains, input, index, action) {
+    validateGraph(chains.map(row => row.input !== input ? row : {
+      ...row, actions:row.actions.map((old,i) => i === index ? action : old)
+    }));
+  }
   function checkAdmission(chains, supported) {
     validateGraph(chains);
     if (!supported) {
@@ -78,6 +84,6 @@ const CallModel = (() => {
       }
     }
   }
-  return {parseFile, validateAction, validateGraph, checkAdmission, inputName};
+  return {parseFile, validateAction, validateGraph, checkReplacement, checkAdmission, inputName};
 })();
 if (typeof module !== 'undefined') module.exports = CallModel;

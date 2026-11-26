@@ -21,6 +21,18 @@ for (const {edges,cycle} of cases.graphs) {
     e.code === 'Cycle' && (assert.deepEqual(e.edges.map(x=>[x.input,x.index,x.target]),cycle), true));
 }
 const rows = empty();
+{
+  const draft=empty(), wait={protocol:'wait',delayMs:125};
+  draft[0].actions=[{protocol:'loopStart',delayMs:0,count:2},wait,{protocol:'loopEnd',delayMs:0}];
+  draft[1].actions=[call(0)];
+  draft[2].actions=[call(1)];
+  const before=structuredClone(draft);
+  for(const [id,depth] of [[0,1],[1,2],[2,3]])
+    assert.throws(()=>M.checkReplacement(draft,0,1,call(id)),e=>e.code==='Cycle'&&e.edges.length===depth&&e.edges[0].index===1);
+  M.checkReplacement(draft,0,1,call(27)); // Empty target is valid.
+  assert.deepEqual(draft,before);
+  assert.equal(draft[0].actions[1],wait);
+}
 for (let i=0;i<27;++i) rows[i].actions.push(call(i+1));
 M.validateGraph(rows);
 rows[27].actions.push(call(0));
