@@ -14,6 +14,8 @@ USBシリアルモニターを115200 baudで開きます。S3はUSB CDC、C3/C6/
 
 ## 出力項目
 
+S3/C5の `Engine slots` は同時実行32枠のプールです。`externalRange=1` は先頭と末尾を含む全域のPSRAM配置の確認に使います。プールは起動時に確保し、失敗時には内部RAMへ切り替えません。実行受付の可否は `/api/status` の `engineReady` で確認します。C5ではOBSの受信組立領域、設定GETのJSON作業領域も外部配置ですが、S3のInvocationプールとは別の割当です。
+
 - `t`: 起動からのミリ秒、`reason`: 手動／定期／保存段階、`board`: 対象機種。
 - `RAM internal`: 内部8-bit RAMの空き`free`、起動以来の最低空き`minFree`、現在の最大連続空き`largest`、ヒープ割当済み`allocated`。単位はbyte。複数ヒープ領域の最低値は各領域の最低値の合計です。
 - `loopStackMin`: setup/loopが動作するタスクの起動以来の最小未使用スタック量（ESP-IDFのbyte単位）。BLE等の別タスクのスタックは含みません。

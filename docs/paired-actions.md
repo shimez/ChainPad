@@ -22,6 +22,8 @@
 
 ## 送信順・バックプレッシャー
 
+- [Call Chain](action-chain-call.md)で子の末尾にペアを置いた場合も、受理されたペアのバックエンド処理が完了してから親の次のActionへ戻ります。別Transportの出力がPCアプリに届く順序を保証するものではありません。
+
 - 各transportのFIFOにOn/Off全件と待機marker分を一括予約してから追加する。
   容量不足ならそのtransportのbatch全体を拒否し既存backlogを保持。Noteごとの部分追加をしない。
 - 既存Actionの`delayMs`領域を内部的にhold時間にも使うため、Action/Config固定配列サイズは増やさない。

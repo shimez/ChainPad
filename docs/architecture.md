@@ -1,4 +1,4 @@
-# Phase 2 Architecture
+# ChainPad Architecture
 
 > C3は動作上の問題により対応・Web Installer配布を一時停止しています。以下のC3記載は、継続してビルド・検査する開発用実装の説明です。
 
@@ -16,13 +16,13 @@ Setup APの起動成功後、Arduino DNSServerのワイルドカード応答（T
 
 LEDはSetup APの起動成功後に500ms点灯・500ms消灯を繰り返します。STA接続待ち・切断後のAP起動待機中は、100ms点灯→100ms消灯→100ms点灯→700ms消灯の短い2回点滅です。Wi-Fi接続済みでは通常点灯し、入力時に短く消灯します。AP起動失敗では短い2回点滅を維持し、DNS開始失敗だけの場合はAPが起動済みなので500ms周期の点灯・消灯です。入力初期化失敗時の消灯は維持します。スマートフォンの一覧にSSIDが現れるまでには、端末側のスキャンによる遅延があり得ます。
 
-AP側へのHTTP GETではルートと未知のパス（Android/Apple/Windowsの接続確認URLを含む）から `http://<AP IP>/?setup=wifi` に302リダイレクトします。接続先local IPでAPアクセスを判定し、STA側の未知パスと未知の `/api/` は404を維持します。ポータルは `web/wifi.html` のWi-Fi専用画面で、SSID・パスワード・保存して再起動ボタンのみを表示します。`GET /api/wifi` はSSID/Passwordを返し、`PUT /api/wifi` は現行設定のWi-Fi情報だけを更新・検証・保存し、成功時に再起動します。通常のConfiguratorはSTA側のルートまたは `/configurator` から開けます。DNS開始結果はstatusの `captivePortal` に返します。OSによる自動表示は端末設定に依存するため、HTTPのAP IP直接入力でも利用できます。
+AP側へのHTTP GETではルートと未知のパス（Android/Apple/Windowsの接続確認URLを含む）から `http://<AP IP>/?setup=wifi` に302リダイレクトします。接続先local IPでAPアクセスを判定し、STA側の未知パスと未知の `/api/` は404を維持します。ポータルは `web/wifi.html` のWi-Fi専用画面で、SSID・パスワード・保存して再起動ボタンのみを表示します。`GET /api/wifi` はSSIDとパスワード設定有無を返し、`PUT /api/wifi` は現行設定のWi-Fi情報だけを更新・検証・保存し、成功時に再起動します。通常のConfiguratorはSTA側のルートまたは `/configurator` から開けます。DNS開始結果はstatusの `captivePortal` に返します。OSによる自動表示は端末設定に依存するため、HTTPのAP IP直接入力でも利用できます。
 
 ## ボード能力とTransport
 
 `capabilities.h` がコンパイル対象SoCからUSB MIDI/HID能力と機種名を決定します。S3のみUSB OTGのMIDI/HIDを組み込み、C3/C6/C5ではTinyUSB MIDI/HIDのコードをコンパイル対象から外します。これらのUSB Serial/JTAGはコンソールとして使います。
 
-`GET /api/capabilities` は `hardware`, `usbMidi`, `usbKeyboard`, `defaultMidiTransport`, `midiTransports`, `keyboardTransports` を返します。Configuratorは設定読み込みと同時にこの情報を取得し、Transportの選択肢と既定値を決定します。C3/C6/C5はdisabled selectに「BLE（固定）」を表示し、画面の構成は共通です。
+`GET /api/capabilities` は `hardware`, `usbMidi`, `usbKeyboard`, `defaultMidiTransport`, `midiTransports`, `keyboardTransports` などを返します。`callChainSupported` が真の場合にのみCall Chainを種別選択に表示します。Configuratorは設定読み込みと同時にこの情報を取得し、Transportの選択肢と既定値を決定します。C3/C6/C5はdisabled selectに「BLE（固定）」を表示し、画面の構成は共通です。
 
 Firmware側もConfig検証時に、C3/C6/C5のMIDI USB/BothおよびKeyboard USBをBLEへ正規化します。これは有効な既存設定の機種適応であり、未知のTransport文字列やKeyboard Bothは引き続き拒否します。保存/起動後の `/api/config` は正規化された設定を返します。S3では既存Transportを保持します。
 
@@ -62,14 +62,14 @@ BLE advertisingは31-byte制限内で両Service UUID・Appearance・Flagsを格�
 
 実行中止または再接続時、未送信の過去イベントを破棄し、HIDは空reportを送ります。MIDIは保存・実行中止・接続・キューoverflowのいずれでも自動メッセージを生成しません。明示的に設定されたCC Actionは通常どおり送信します。HID送信は端末間ackではありません。
 
-## Config schemaVersion 1
+## Config schemaVersion 2
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "network": {
     "ssid": "",
-    "password": "",
+    "passwordConfigured": false,
     "oscHost": "192.168.1.100",
     "oscPort": 9000
   },
@@ -79,14 +79,15 @@ BLE advertisingは31-byte制限内で両Service UUID・Appearance・Flagsを格�
       "actions": [
         {"protocol":"osc","transport":"wifi","delayMs":0,"address":"/Costume","type":"int","value":2},
         {"protocol":"midi","transport":"usb","delayMs":0,"message":"noteOn","channel":1,"number":48,"value":127},
-        {"protocol":"keyboard","transport":"ble","delayMs":0,"message":"keyDown","usage":104,"modifiers":0}
+        {"protocol":"keyboard","transport":"ble","delayMs":0,"message":"keyDown","usage":104,"modifiers":0},
+        {"protocol":"callChain","delayMs":0,"targetInput":2}
       ]
     }
   ]
 }
 ```
 
-上記は説明用の抜粋です。APIへ送る完全な設定にはinput 0–27を重複なく1回ずつ含めます。空Chainは `actions: []`。
+上記は説明用の抜粋です。APIへ送る完全な設定にはinput 0–27を重複なく1回ずつ含めます。空Chainは `actions: []`。抜粋では省いた `encoderRotation` も全体設定に含まれます。
 
 MIDI `message`: `noteOn`, `noteOff`, `cc`。`value` はVelocityまたはCC Value。NoteOnは1–127、他は0–127。
 
@@ -96,21 +97,21 @@ Keyboard `message`: `keyDown`, `keyUp`, `releaseAll`。`usage` はKeyboard Usage
 
 Waitは `{"protocol":"wait","delayMs":100}`。0〜86400000 msの整数で、Transportを持ちません。他のActionのdelayMsは0です。
 
-Engineは最大32個の独立した実行状態（入力ID・次のAction位置・再開時刻）を固定配列で保持します。Config/Chainの複製はありません。同じ入力の再発火も新しい実行となります。Wait期限をmillisの差分で判定し、期限到達後は登録順に進みます。連続Waitはそれぞれ実際に到達した時点から計時します。0 msはその場で次へ進みます。PressとReleaseの交錯を並べ替えません。同時再開は実行登録順です。
+Engineは同時に最大32個の独立した実行（Invocation）を保持します。Callでは親の入力ID・復帰位置とLoop状態を保持して子へ移り、子の末尾で親へ戻ります。Configや子Chainの複製、新しい実行枠の割当は行いません。同じ入力の再発火は別の実行です。Wait期限は各実行がWaitに到達した時点から計時します。HTTP処理も同じloop上にあり厳密な時間精度は保証しません。
 
-待機枠が満杯の場合、新規の非ゼロWaitを含むChainは先頭Actionの出力前に全体を拒否します。即時Chainは実行できます。statusのrunningChains/rejectedChains/cancelledChainsで確認できます。設定保存・Panic・Restart・入力overflow時は全実行を中止します。HTTP処理は同じloop上にあり厳密な時間精度は保証しません。
+枠が必要な新規実行は満杯なら先頭出力前に拒否します。即時Chainと直線部分のStopの扱いは[Call Chain仕様](action-chain-call.md)を参照。`/api/status` の `runningChains`、`rejectedChains`、`cancelledChains` は実行単位です。設定適用・Panic・Restart・入力overflow時は全実行を中止します。
 
 ### 設定ファイル
 
-共通Action/Chain構造を `web/presets.js` で検証します。Key Presetはformat=`chainpad-key-preset`, version=1, chains=[{input:0,actions:[…]},{input:1,actions:[…]}]。0/1は対象キーのPress/Releaseへ対応します。
+共通Action/Chain構造を `web/presets.js` で検証します。Key Presetはformat=`chainpad-key-preset`, version=1, chains=[{input:0,actions:[…]},{input:1,actions:[…]}]。0/1は対象キーのPress/Releaseへ対応しますが、Call Actionの`targetInput`は絶対IDのままです。貼付後の全28入力で循環を検査してから反映します。
 
-全体ファイルはformat=`chainpad-configuration`, version=1とschemaVersion/network/chainsを持ちます。全28 EventsとOSC送信先を含み、networkにはoscHost/oscPortのみ出力します。SSID・パスワードはExportに含めず、Import時は現在の編集画面のWi-Fi設定を保持します。以前のファイルにWi-Fi設定が含まれていても無視します。Importはブラウザ上で全件検証してから編集へ一括反映します。1 MiBのファイル上限があります。Firmwareへは既存のEvent単位保存APIで送信し、全体JSONをデバイスRAMへ持ち込みません。Action順は保持し、Event IDのみ所定の位置へ対応づけます。
+全体ファイルはformat=`chainpad-configuration`, version=2とschemaVersion/network/chains/encoderRotationを持ちます。全28 EventsとOSC送信先を含み、networkにはoscHost/oscPortのみ出力します。SSID・パスワードはExportに含めず、Import時は現在の編集画面のWi-Fi設定を保持します。以前のファイルにWi-Fi設定が含まれていても無視します。Importはブラウザ上で全件検証してから編集へ一括反映します。1 MiBのファイル上限があります。Firmwareへは既存のEvent単位保存APIで送信し、全体JSONをデバイスRAMへ持ち込みません。Action順は保持し、Event IDのみ所定の位置へ対応づけます。
 
 ### 検証と永続化
 
-内部保存は **LittleFSのみ**。`settings` partitionの `/config.records` に、storageVersion 1とNetworkを含むヘッダー1行＋入力ID順の28個のChain JSON行を保存します。外部GETのschemaVersion 1 JSONとは独立した内部形式です。旧形式の読み込み・移行・fallbackはありません。
+Chain設定はLittleFSの `settings` partitionに保存します。`/config.records` はstorageVersion 2とNetworkを含むヘッダー、入力ID順の28個のChain、最後にRotationのレコードを持ちます。Config schema、Presetの版、内部storageVersionは独立です。未対応のstorageVersionは勝手に上書きしません。
 
-ブラウザ側で設定をsnapshotし、Network（最大2048 bytes）をbegin、各EventのChain（最大24576 bytes）を順にstage、最後にcommitします。192-byte Addressと128-byte Stringを持つ16 ActionsのJSONエスケープ膨張を含めた上限です。FirmwareはNetworkまたは1 Chain分だけを検証・正規化して `/pending.records` へ追記します。Config全体の複製も全体JSONのRAM展開もありません。String長はUTF-8のbyte数で、Protocol/Transport、IPv4、入力ID順序、Action数、型・範囲を検証します。新しいbeginは以前のtokenを無効化し、途中失敗した保存は次のbeginからやり直します。
+ブラウザは保存前に編集内容のsnapshotを検証し、begin→各Chain→Rotation→commitの順に送信します。Firmwareは `/pending.records` に段階保存し、commit時に各レコードと全入力のCallグラフを検証してから確定します。グラフでは使用していない入力も含めて直接・間接循環を拒否し、Loopに到達可能な入力を求めて実行時に利用します。検証に失敗しても従来のactive設定を維持します。
 
 ### RAM上の共有枠
 
@@ -124,17 +125,18 @@ commitは全レコードを逐次再検証した後、LittleFSのrename-over-exi
 
 `GET /api/config` はNetworkと各ChainをHTTP chunkで順次返します。Wi-Fi専用保存も同じレコード形式・トランザクションを使い、変更対象以外を1 Chainずつ転記します。48KBの設定全体サイズ上限はなくなり、一時RAMは全体サイズではなく1 Chainのサイズで制限されます。今後Event数を増やしても保存時の一時RAMは増えません。Action数を増やす場合は1 Chainの上限と実行用Configの静的RAMも評価が必要です。
 
-S3/C5はapplication 6MiB＋LittleFS 1856KiB（0x630000）、C3/C6はapplication 3MiB＋LittleFS 832KiB（0x330000）。application offsetは0x10000です。新しいpartition tableを必ず書き込みます。
+S3/C5はapplication 6MiB＋LittleFS 1856KiB（0x630000）、C3/C6はapplication 3MiB＋LittleFS 832KiB（0x330000）。application offsetは0x10000です。Call Chainの追加によるpartition配置の変更はありません。
 
 ### API
 
 | Method | Path | 内容 |
 |---|---|---|
 | GET | `/` | 埋め込みConfigurator |
-| GET | `/api/capabilities` | ボード名、USB MIDI/HID可否、Transport選択肢・既定値 |
-| GET | `/api/config` | 完全な設定（資格情報を含む） |
+| GET | `/api/capabilities` | ボード名、USB MIDI/HID・Call実行の可否、Transport選択肢・既定値 |
+| GET | `/api/config` | 全入力・Rotation・公開Network設定（パスワード自体は返さない） |
 | POST | `/api/config/begin` | Network JSONを検証し保存tokenを返す |
 | PUT | `/api/config/chain?token=…&input=…` | Event ID順に1 Chainを検証して仮保存 |
+| PUT | `/api/config/rotation?token=…` | 全入力の後にRotationを仮保存 |
 | POST | `/api/config/commit?token=…` | 全件再検証→LittleFS rename→適用→Panic。Wi-Fi変更は再起動で反映 |
 | GET | `/api/status` | 接続、静的ハードウェア情報、実行/失敗/overflow/retry、最終Action |
 | POST | `/api/trigger` | `{"input":0}`：保存済みChainを実行 |

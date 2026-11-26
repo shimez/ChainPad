@@ -350,6 +350,12 @@ OSC・MIDI・HID・OBS・Waitなど全てのActionを内部に配置でき、Loo
 Loop入り設定・Presetは旧Firmware／旧Configuratorでは読み込めません。
 旧版へ戻す場合は、Loop導入前のバックアップを使用してください。
 
+### 4-8. Call Chain（v0.14.0以降）
+
+Call Chainは他のキー等に設定したAction Chainを呼び出すActionです。<br>
+よく使う操作を再利用したり、1回のキー操作で16個を超えるActionを実行したりすることが可能となります。<br>
+複数のCall Chainによってループ（循環）する設定となった場合、警告が表示されます。ループを解消するまで設定の保存はできません。
+
 ## 5. 接続・通信設定
 
 ### 5-1. Wi-Fi
