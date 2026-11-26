@@ -14,14 +14,19 @@ def call(target):
     return dict(protocol="callChain", delayMs=0, targetInput=target)
 
 
-def run(browser, screenshots):
-    for scenario in ("edit", "blocked", "unsupported"):
+def run(browser, screenshots, embedded=False):
+    embedded_html = None
+    if embedded:
+        # Exercise the exact single-page asset produced by the normal build.
+        header = (WEB.parent / "src/web_assets.h").read_text(encoding="utf-8")
+        embedded_html = header.split('WEB_UI[] PROGMEM = R"CHIMERA(', 1)[1].split(')CHIMERA";', 1)[0]
+    for scenario in ("edit", "blocked", "unsupported", "mobile"):
         cfg = json.loads((WEB / "builtin/ChainPad-Configuration-Empty.json").read_bytes())
         cfg["network"].update(ssid="", passwordConfigured=False, oscHost="127.0.0.1")
         rows = cfg["chains"]
         wait = dict(protocol="wait", delayMs=100)
         rows[0]["actions"] = [wait]
-        if scenario == "edit":
+        if scenario in ("edit", "mobile"):
             rows[0]["actions"] += [dict(protocol="loopStart", count=2, delayMs=0),
                                    call(27), dict(protocol="loopEnd", delayMs=0)]
             rows[1]["actions"] = [call(0)]
@@ -32,6 +37,8 @@ def run(browser, screenshots):
 
         writes, errors = [], []
         page = browser.new_page(viewport={"width": 1280, "height": 900})
+        if scenario == "mobile":
+            page.set_viewport_size({"width": 375, "height": 812})
         page.on("pageerror", lambda e: errors.append(str(e)))
 
         def serve(route):
@@ -39,7 +46,7 @@ def run(browser, screenshots):
             assert url.hostname == "127.0.0.1"
             if not url.path.startswith("/api/"):
                 f = WEB / (Path(url.path).name or "index.html")
-                route.fulfill(body=f.read_bytes(), content_type={
+                route.fulfill(body=embedded_html if embedded and f.name == "index.html" else f.read_bytes(), content_type={
                     ".html": "text/html; charset=utf-8", ".js": "text/javascript",
                     ".svg": "image/svg+xml"}[f.suffix])
                 return
@@ -61,7 +68,51 @@ def run(browser, screenshots):
         detail = page.locator(".action-details")
         kind = detail.get_by_label("Action", exact=True)
         note = detail.get_by_role("status")
-        if scenario == "unsupported":
+        if scenario == "mobile":
+            edit.last.click()
+            target = detail.get_by_label("呼び出し先（Call target）", exact=True)
+            assert target.evaluate("el=>el.tagName") == "SELECT"
+            groups = target.locator("optgroup").evaluate_all(
+                "gs=>gs.map(g=>[g.label,[...g.children].map(o=>[+o.value,o.textContent])])")
+            expected = []
+            for label, ids in [("キー（Keys）", range(1, 24)), ("Encoder Push", range(24, 26)),
+                               ("回転（Encoder Rotation）", range(26, 28))]:
+                choices = []
+                for i in ids:
+                    name = ("Encoder " + ("CW", "CCW")[i-26] if i >= 26 else
+                            ("Encoder Push" if i >= 24 else f"KEY{i//2+1}") +
+                            (" Press", " Release")[i % 2])
+                    choices.append([i, name + ("" if rows[i]["actions"] else " — Empty（空）")])
+                expected.append([label, choices])
+            assert groups == expected
+            target.focus()
+            target.press("ArrowUp")  # CCW -> CW
+            assert target.input_value() == "26"
+            target.press("ArrowUp")  # cross optgroup -> Encoder Push Release
+            assert target.input_value() == "25"
+            box = target.bounding_box()
+            assert 0 <= box["x"] and box["x"] + box["width"] <= 375
+            assert page.locator(".action-summary").last.inner_text() == "Call → Encoder Push Release"
+            if screenshots:
+                detail.locator("..").screenshot(path=screenshots / "mobile-loop-target.png")
+            edit.last.click()
+            assert not detail.count() and page.locator(".action-summary").last.inner_text() == "Call → Encoder Push Release"
+            page.locator("#inputs button").nth(4).click()  # paste on KEY5, not KEY1
+            page.locator("#keyPresetMenu summary").click()
+            hint = page.locator("#keyImportHint")
+            assert hint.is_visible() and "絶対ID" in hint.inner_text()
+            if screenshots:
+                page.locator(".preset-menu-items").screenshot(path=screenshots / "key-import-hint.png")
+            with page.expect_file_chooser() as chooser:
+                page.locator("#importKey").click()
+            key = dict(format="chainpad-key-preset", version=1, chains=[
+                dict(input=0, actions=[call(25)]), dict(input=1, actions=[call(26)])])
+            chooser.value.set_files(dict(name="example.json", mimeType="application/json",
+                                         buffer=json.dumps(key).encode()))
+            page.wait_for_function("document.querySelector('#message').textContent.includes('Importしました')")
+            assert page.evaluate("config.chains.slice(8,10).map(c=>c.actions[0].targetInput)") == [25, 26]
+            assert page.locator(".action-summary").inner_text() == "Call → Encoder Push Release"
+        elif scenario == "unsupported":
             assert not kind.locator("option[value=callChain]").count()
         elif scenario == "blocked":
             before = snap()
@@ -124,9 +175,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--browser", help="Chromium executable; default: Playwright Chromium")
     parser.add_argument("--screenshots", type=Path)
+    parser.add_argument("--embedded", action="store_true", help="Use the normal build's generated WEB_UI")
     args = parser.parse_args()
     if args.screenshots:
         args.screenshots.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as pw:
         with pw.chromium.launch(executable_path=args.browser) as browser:
-            run(browser, args.screenshots)
+            run(browser, args.screenshots, args.embedded)

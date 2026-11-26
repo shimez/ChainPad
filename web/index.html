@@ -10,6 +10,7 @@
 body{color:var(--text)}button,input,select{background:var(--field)}button.primary{color:var(--primary-text)}.tag{background:var(--bg)}.error{color:var(--error)!important}.danger{color:var(--danger)}.header-row{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}.theme-choice{min-width:150px}
 #obsConnection::before{color:currentColor}#obsConnection.obs-state-error{color:#ff9d99}#obsConnection.obs-state-pending{color:#f5cd62}#obsConnection.obs-state-disconnected{color:#9ca3af}#obsConnection.obs-state-ready{color:#62d98b}
 :root[data-theme=light] #obsConnection.obs-state-error{color:#b42318}:root[data-theme=light] #obsConnection.obs-state-pending{color:#946200}:root[data-theme=light] #obsConnection.obs-state-disconnected{color:#667085}:root[data-theme=light] #obsConnection.obs-state-ready{color:#167347}
+@media(max-width:700px){.action-card .fields>.call-target{grid-column:1/-1}}
 </style>
 <style>
 header,main{max-width:1280px;padding-left:16px;padding-right:16px}
@@ -113,7 +114,7 @@ try{const theme=localStorage.getItem('chainpad-theme');if(theme==='light'||theme
 <p id="obsMessage" role="status"></p><div class="buttons obs-buttons"><button id="obsSave" class="primary" type="button" disabled>Save OBS</button><button id="obsReconnect" type="button" disabled>Reconnect</button></div>
 <p class="hint">OBS専用の保存です。保存・反映受付と接続成功は別です。Reconnectは編集中の値ではなく、本体に保存済みの設定を使用します。</p></details>
 <div class="chain-editing"><nav class="panel"><h2>Input</h2><div id="inputs"></div></nav>
-<section><div class="panel"><div class="input-heading"><h2 id="title">Action Chain</h2><details id="keyPresetMenu" class="preset-menu" hidden><summary aria-label="Key Preset操作">…</summary><div class="preset-menu-items"><button id="exportKey">Preset Export</button><button id="importKey">Preset Import</button></div></details></div><label>Input Event<select id="event"></select></label><p class="hint">Actionは登録順に実行されます。WaitはこのChainだけを待機させ、他のChainには影響を与えません。</p><p id="actionSlots" class="hint" role="status"></p><p id="waitWarning" class="danger" role="status" hidden></p></div><div id="actions"></div><button id="add">+ Add Action</button></section>
+<section><div class="panel"><div class="input-heading"><h2 id="title">Action Chain</h2><details id="keyPresetMenu" class="preset-menu" hidden><summary aria-label="Key Preset操作">…</summary><div class="preset-menu-items"><button id="exportKey">Preset Export</button><button id="importKey" aria-describedby="keyImportHint">Preset Import</button><small id="keyImportHint">Callの呼び出し先は元の入力（絶対ID）のままです。貼り付け先には置き換わりません。</small></div></details></div><label>Input Event<select id="event"></select></label><p class="hint">Actionは登録順に実行されます。WaitはこのChainだけを待機させ、他のChainには影響を与えません。</p><p id="actionSlots" class="hint" role="status"></p><p id="waitWarning" class="danger" role="status" hidden></p></div><div id="actions"></div><button id="add">+ Add Action</button></section>
 </div><div class="toolbar"><button class="primary" id="save">保存・適用</button><span id="dirty" class="hint"></span></div>
 <div id="message" role="status"></div>
 <section class="network panel"><h2>設定ファイル Import / Export</h2><div class="buttons"><button id="exportFull">全体設定 Export</button><button id="importFull">全体設定 Import</button></div><p class="hint">Exportは未保存の編集も含みます。Wi-Fi設定（SSID・パスワード）は含めず、Import時も現在のWi-Fi設定を保持します。Importは編集画面へ反映され、「保存・適用」で本体に保存します。</p><h3>組み込みConfig</h3><div class="buttons"><button id="loadDefault">Defaultを読み込む</button><button id="loadEmpty">Emptyを読み込む</button></div><p class="hint">KEY・Encoderの編集内容を置き換えます。DefaultはBLEキーボードの入力確認用、Emptyは白紙の設定です。Wi-Fi・OSC送信先は保持し、「保存・適用」までは本体へ反映しません。</p></section>
@@ -210,7 +211,21 @@ function actionSelect(label,value,options,apply){
 }
 function actionSelectors(fields,detail,actions,i){
   const a=actions[i],supported=capabilities.callChainSupported===true;
-  const options=Array.from({length:28},(_,id)=>[id,CallModel.inputName(id)]).filter(([id])=>id!==selected);
+  const targets=config.chains.map(c=>c.input).filter(id=>id!==selected).sort((a,b)=>a-b);
+  function targetSelect(value,ids,apply){
+    const field=actionSelect('呼び出し先（Call target）',value,[],apply),select=field.lastChild;
+    field.className='call-target';
+    if(value==='')select.add(new Option('選択してください',''));
+    let group;
+    for(const id of ids){
+      const label=id<24?'キー（Keys）':id<26?'Encoder Push':'回転（Encoder Rotation）';
+      if(group?.label!==label){group=document.createElement('optgroup');group.label=label;select.append(group);}
+      const empty=!config.chains.find(c=>c.input===id).actions.length;
+      group.append(new Option(CallModel.inputName(id)+(empty?' — Empty（空）':''),id));
+    }
+    select.value=value;
+    return field;
+  }
   const feedback=document.createElement('div');feedback.setAttribute('role','status');detail.append(feedback);
   const clear=()=>feedback.replaceChildren();
   function check(id){
@@ -229,11 +244,11 @@ function actionSelectors(fields,detail,actions,i){
       const reason=check(next.targetInput);
       if(reason){
         select.value=a.protocol;
-        const valid=options.filter(([id])=>!check(id));
+        const valid=targets.filter(id=>!check(id));
         feedback.textContent=`${reason}。Actionは変更されていません。`+
           (valid.length?'別の呼び出し先を選んでください。':'選択できる呼び出し先がありません。');
         if(valid.length){
-          const choice=actionSelect('呼び出し先','',[['','選択してください'],...valid],s=>{
+          const choice=targetSelect('',valid,s=>{
             if(s.value==='')return;
             const id=Number(s.value),error=check(id);
             if(error){feedback.textContent=error+'。Actionは変更されていません。';return;}
@@ -247,7 +262,7 @@ function actionSelectors(fields,detail,actions,i){
     replace(next);
   }));
   if(a.protocol==='callChain'){
-    const target=actionSelect('呼び出し先',a.targetInput,options,select=>{
+    const target=targetSelect(a.targetInput,targets,select=>{
       const id=Number(select.value),reason=check(id);
       if(reason){select.value=a.targetInput;feedback.textContent=reason+'。呼び出し先は変更されていません。';return;}
       clear();a.targetInput=id;changed();
